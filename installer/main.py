@@ -1,6 +1,6 @@
 def promptUser(prompt):
     sys.stdout.write(prompt + ' ')
-    sys.stdout.flush();
+    sys.stdout.flush()
     return sys.stdin.readline().lower().strip()
 
 def enableMod(name):
@@ -30,8 +30,7 @@ def moveFolder(folder):
                 shutil.copy("%s/%s" % (root, file), "%s/%s" % (root.replace("modules/"+folder, targetFolder), file))
 
 try:
-    import os
-    import shutil
+    import os, shutil
     import sys, traceback
 
     version = open("modules/version.txt").readline().strip()
