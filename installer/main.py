@@ -1,10 +1,15 @@
+def promptUser(prompt):
+    print prompt,' ',
+    sys.stdout.flush();
+    return sys.stdin.readline().lower().strip()
+
 def enableMod(name):
     if language == "f":
-        answer = raw_input("Voulez-vous installer %s ? [oui]" % name).lower()
+        answer = promptUser("Voulez-vous installer %s ? [oui]" % name)
     elif language == "e":
-        answer = raw_input("Deseas instalar %s? [si]" % name).lower()
+        answer = promptUser("Deseas instalar %s? [si]" % name)
     else:
-        answer = raw_input("Do you want to install %s? [yes]" % name).lower()
+        answer = promptUser("Do you want to install %s? [yes]" % name)
     if answer == "" or answer == "y" or answer == "yes" or answer == "oui" or answer == "o" or answer == "s" or answer == "si":
         return True
     return False
