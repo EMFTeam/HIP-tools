@@ -31,18 +31,18 @@ try:
     import shutil
     import sys, traceback
 
-    version = open("modules/version.txt").readline()
-    VIETversion = open("modules/VIET_Assets/version.txt").readline()
-    PBversion = open("modules/ProjectBalance/version.txt").readline()
-    SWMHversion = open("modules/SWMH/version.txt").readline()
-    NBRTversion = open("modules/NBRT+/version.txt").readline()
+    version = open("modules/version.txt").readline().strip()
+    VIETversion = open("modules/VIET_Assets/version.txt").readline().strip()
+    PBversion = open("modules/ProjectBalance/version.txt").readline().strip()
+    SWMHversion = open("modules/SWMH/version.txt").readline().strip()
+    NBRTversion = open("modules/NBRT+/version.txt").readline().strip()
     ARKOversion = open("modules/ARKOpack_Armoiries/version.txt").readline()
     language = raw_input("For English, press enter. En francais, taper 'f'. Para espanol, presiona 'e'.").lower()
     if language == "f":
-        print("This version of the Historical Immersion Project was released %s" % version)
+        print("Cette version de Historical Immersion Project date du %s" % version)
         print("Taper 'y' ou 'oui' pour valider, ou laisser le champ vierge. Toute autre reponse sera interpretee comme un non.")
     elif language == "e":
-        print("This version of the Historical Immersion Project was released %s" % version)
+        print("Esta vercion de Historical Immersion Project fecha del %s" % version)
         print("Escribe 'y' o 'si' para aceptar, o deja el campo en blanco. Cualquier otro caso sera considerado un 'no'.")
     else:
         print("This version of the Historical Immersion Project was released %s" % version)

@@ -15,3 +15,5 @@ $RECYCLE.BIN/
 # Mac file indexing crap
 .DS_Store
 
+# PyCharm stuff
+.idea
