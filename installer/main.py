@@ -42,7 +42,7 @@ try:
     SWMHversion = open("modules/SWMH/version.txt").readline().strip()
     NBRTversion = open("modules/NBRT+/version.txt").readline().strip()
     ARKOversion = open("modules/ARKOpack_Armoiries/version.txt").readline()
-    language = promptUser("For English, press enter. En francais, taper 'f'. Para espanol, presiona 'e'.").lower()
+    language = promptUser("For English, press enter. En francais, taper 'f'. Para espanol, presiona 'e'.")
     if language == "f":
         print("Cette version de Historical Immersion Project date du %s" % version)
         print("Taper 'y' ou 'oui' pour valider, ou laisser le champ vierge. Toute autre reponse sera interpretee comme un non.")
@@ -54,13 +54,13 @@ try:
         print("Type 'y' or 'yes' for yes, or leave the field blank. Anything else will be interpreted as 'no'.")
     if language == "f":
         move = promptUser("Deplacer les fichiers plutot que les copier est bien plus rapide, mais rend l'installation de plusieurs copies du mod plus difficile. \n"
-                         "Voulez-vous que les fichiers soient deplaces plutot que copies ? [oui]").lower()
+                         "Voulez-vous que les fichiers soient deplaces plutot que copies ? [oui]")
     elif language == "e":
         move = promptUser("Mover los archivos en lugar de copiarlos es mucho mas rapido, pero hace que la instalacion de varias copias sea mas complicada.\n"
-                         "Quieres que los archivos de los modulos se muevan en lugar de copiarse? [si]").lower()
+                         "Quieres que los archivos de los modulos se muevan en lugar de copiarse? [si]")
     else:
         move = promptUser("Moving the files instead of copying them is much quicker, but makes installing several copies more difficult.\n"
-                         "Do you want to have the module files moved rather than copied? [yes]").lower()
+                         "Do you want to have the module files moved rather than copied? [yes]")
     if move == "" or move == "y" or move == "yes" or move == "oui" or move == "o":
         move = True
     else:
