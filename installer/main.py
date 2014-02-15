@@ -1,5 +1,5 @@
 def promptUser(prompt):
-    print prompt,' ',
+    sys.stdout.write(prompt + ' ')
     sys.stdout.flush();
     return sys.stdin.readline().lower().strip()
 
