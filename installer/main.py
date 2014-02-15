@@ -10,9 +10,7 @@ def enableMod(name):
         answer = promptUser("Deseas instalar %s? [si]" % name)
     else:
         answer = promptUser("Do you want to install %s? [yes]" % name)
-    if answer == "" or answer == "y" or answer == "yes" or answer == "oui" or answer == "o" or answer == "s" or answer == "si":
-        return True
-    return False
+    return answer == "" or answer == "y" or answer == "yes" or answer == "oui" or answer == "o" or answer == "s" or answer == "si"
 
 def moveFolder(folder):
     if language == "f":
