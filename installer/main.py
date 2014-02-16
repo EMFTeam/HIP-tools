@@ -50,12 +50,13 @@ try:
     import os, shutil
     import sys, traceback
 
+    debugMode = (sys.argv[1] == '-D')
     platform = detectPlatform()
 
     if (platform == 'mac'):
-        print('WARNING: Mac OS X support is currently experimental.')
-        print('Please help us make it stable by detailing any problems you')
-        print('may encounter in a direct email to zijistark@gmail.com.\n')
+        print('WARNING: Mac OS X support is currently experimental!\n'
+              'Please help us make it work reliably for you by detailing any problems you '
+              'may encounter in a direct email to zijistark@gmail.com.\n');
 
     version = open("modules/version.txt").readline().strip()
     VIETversion = open("modules/VIET_Assets/version.txt").readline().strip()
@@ -63,40 +64,60 @@ try:
     SWMHversion = open("modules/SWMH/version.txt").readline().strip()
     NBRTversion = open("modules/NBRT+/version.txt").readline().strip()
     ARKOversion = open("modules/ARKOpack_Armoiries/version.txt").readline()
-    language = promptUser("For English, press enter. En francais, taper 'f'. Para espanol, presiona 'e'.")
+
+    # Determine user language for installation
+    language = promptUser("For English, press ENTER. En francais, taper 'f'. Para espanol, presiona 'e'.")
+
+    # Show HIP installer version & explain interactive prompting
     if language == "f":
-        print("Cette version de Historical Immersion Project date du %s" % version)
-        print("Taper 'y' ou 'oui' pour valider, ou laisser le champ vierge. Toute autre reponse sera interpretee comme un non.")
+        print("\nCette version de Historical Immersion Project date du %s.\n" % version)
+        print("Taper 'o' ou 'oui' pour valider, ou laisser le champ vierge. Toute autre reponse sera interpretee comme un non.\n")
     elif language == "e":
-        print("Esta vercion de Historical Immersion Project fecha del %s" % version)
-        print("Escribe 'y' o 'si' para aceptar, o deja el campo en blanco. Cualquier otro caso sera considerado un 'no'.")
+        print("\nEsta vercion de Historical Immersion Project fecha del %s.\n" % version)
+        print("Escribe 's' o 'si' para aceptar, o deja el campo en blanco. Cualquier otro caso sera considerado un 'no'.\n")
     else:
-        print("This version of the Historical Immersion Project was released %s" % version)
-        print("Type 'y' or 'yes' for yes, or leave the field blank. Anything else will be interpreted as 'no'.")
+        print("\nThis version of the Historical Immersion Project was released %s.\n" % version)
+        print("To answer yes to a prompt, respond with 'y' or 'yes' (sans quotes) or simply hit ENTER. Besides a blank line, anything else will be interpreted as 'no'.\n")
+
+    # Are we moving the module content for speed or copying it to preserve the source?
     if language == "f":
-        move = promptUser("Deplacer les fichiers plutot que les copier est bien plus rapide, mais rend l'installation de plusieurs copies du mod plus difficile. \n"
-                         "Voulez-vous que les fichiers soient deplaces plutot que copies ? [oui]")
+        move = promptUser("Deplacer les fichiers plutot que les copier est bien plus rapide, mais rend l'installation de plusieurs copies du mod plus difficile.\n"
+                          "Voulez-vous que les fichiers soient deplaces plutot que copies ? [oui]")
     elif language == "e":
         move = promptUser("Mover los archivos en lugar de copiarlos es mucho mas rapido, pero hace que la instalacion de varias copias sea mas complicada.\n"
-                         "Quieres que los archivos de los modulos se muevan en lugar de copiarse? [si]")
+                          "Quieres que los archivos de los modulos se muevan en lugar de copiarse? [si]")
     else:
-        move = promptUser("Moving the files instead of copying them is much quicker, but makes installing several copies more difficult.\n"
-                         "Do you want to have the module files moved rather than copied? [yes]")
+        move = promptUser("Moving the files instead of copying them is much quicker. "
+                          "Unfortunately, it makes installing and managing multiple versions (e.g., different mod combinations) or reinstalling difficult, "
+                          "because moving effectively destroys the installer's source files rather than keeping them intact.\n\n"
+                          "Do you want to have the module files moved rather than copied? [yes]")
+
     if move == "" or move == "y" or move == "yes" or move == "oui" or move == "o":
         move = True
     else:
         move = False
+
+    # Determine installation target folder...
+    defaultFolder = 'Historical Immersion Project'
+
     if language == "f":
         targetFolder = promptUser("Installer le mod dans un repertoire existant supprimera ce repertoire. Dans quel repertoire souhaitez-vous proceder a l'installation ?\n"
-                                 "Laissez le champ vierge pour 'Historical Immersion Project'. ")
+                                  "Laissez le champ vierge pour '%s'." % defaultFolder)
     elif language == "e":
         targetFolder = promptUser("Instalar el mod en una carpeta existente eliminara dicha carpeta. En que carpeta deseas realizar la instalacion?\n"
-                                 "Dejar en blanco para 'Historical Immersion Project'. ")
+                                  "Dejar en blanco para '%s'." % defaultFolder)
     else:
         targetFolder = promptUser("Installing the mod to a folder that exists will delete that folder. What folder would you like to install to?\n"
-                                 "Leave blank for 'Historical Immersion Project'. ")
-    if targetFolder == "":
-        targetFolder = "Historical Immersion Project"
+                                  "Leave blank for '%s'." % defaultFolder)
+
+    if targetFolder == '':
+        targetFolder = defaultFolder
+    else: pass #TODO: verify it contains no illegal characters
+
+    if debugMode:
+        print("DEBUG: move={},targetFolder={}".format(move, targetFolder))
+
+    # Determine module combination...
     moduleOutput = []
     moduleOutput.append("Historical Immersion Project (%s)\nEnabled modules:\n" % version)
     PB = enableMod("Project Balance (%s)" % PBversion)
@@ -133,16 +154,20 @@ try:
     if VIETtraits or VIETevents or VIETimmersion:
         VIET = True
 
+    # Prepare for installation
     if os.path.exists(targetFolder):
+        if debugMode: print("DEBUG: target folder preexisted: removing it...")
         shutil.rmtree(targetFolder)
+
     os.makedirs(targetFolder)
 
+    # Install...
     moveFolder("Converter/Common")
     if ARKOarmoiries:
-        moduleOutput.append("ARKO Armoiries (%s)\n" %ARKOversion)
+        moduleOutput.append("ARKO Armoiries (%s)\n" % ARKOversion)
         moveFolder("ARKOpack_Armoiries")
     if ARKOinterface:
-        moduleOutput.append("ARKO Interface (%s)\n" %ARKOversion)
+        moduleOutput.append("ARKO Interface (%s)\n" % ARKOversion)
         moveFolder("ARKOpack_Interface")
         if VIET:
             shutil.rmtree("%s/gfx/event_pictures" % targetFolder)
@@ -209,22 +234,33 @@ try:
                 moveFolder("VIET_portrait_fix/PB")
     if move:
         shutil.rmtree("modules") #Cleanup
-    if targetFolder != "Historical Immersion Project":
-        with open("HIP_%s.mod" % targetFolder, "w") as modFile:
-            modFile.write('name = "HIP - %s"\n' % targetFolder)
-            modFile.write('path = "mod/%s"\n' % targetFolder)
-            modFile.write('user_dir = "HIP - %s"\n' % targetFolder)
+
+    modFilename = 'HIP.mod'
+    if targetFolder != defaultFolder:
+        modFilename = "HIP_%s.mod" % targetFolder
+
+    # Generate a new .mod file, regardless of whether it's default
+    with open(modFilename, "w") as modFile:
+        modFile.write('name = "HIP - %s"  #Name that shows in launcher\n' % targetFolder)
+        modFile.write('path = "mod/%s"\n' % targetFolder)
+        if platform != 'mac': modFile.write('user_dir = "HIP_%s"  #Folder component for saves, gfx cache, etc.\n' % targetFolder)
+
+    # Dump modules selected and their respective versions to <mod>/version.txt
     with open("%s/version.txt" % targetFolder, "w") as output:
         output.write("".join(moduleOutput))
+
     if language == "f":
         promptUser("Installation terminee. Taper entree pour sortir.")
     elif language == "e":
         promptUser("Instalacion terminada. Presiona Enter para salir.")
     else:
-        promptUser("Installation done. Hit enter to exit.")
+        promptUser("Installation done. Hit ENTER to exit.")
 
-    # All done. Exit with success.
-    sys.exit(0)
+except KeyboardInterrupt:
+    # Ctrl-C just aborts (with a dedicated error code) rather than cause a
+    # traceback. May want to catch it during filesystem modification stage
+    sys.stderr.write("\nUser interrupt received: terminating early...\n")
+    sys.exit(2)
 
 # Special handling for specific installer-understood error types (all derive from InstallerException)
 except InstallerException as e:
@@ -233,12 +269,6 @@ except InstallerException as e:
     sys.stdin.readline()
     sys.exit(1)
 
-except KeyboardInterrupt:
-    # Ctrl-C just aborts (with a dedicated error code) rather than cause a
-    # traceback. May want to catch it during filesystem modification stage
-    sys.stderr.write("\nUser interrupt signal received: terminating early...\n")
-    sys.exit(2)
-
 # And the unknowns...
 except:
     sys.stderr.write("\nUnexpected fatal error occurred:\n")
@@ -246,3 +276,6 @@ except:
     sys.stderr.write("Screenshot/copy this error and send it to the HIP team. Press ENTER to exit.")
     sys.stdin.readline()
     sys.exit(255)
+
+# Exit cleanly with success code.
+sys.exit(0)
