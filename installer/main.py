@@ -1,3 +1,10 @@
+#!/usr/bin/python
+
+class InstallerException(Exception): pass
+class InstallerOSException(InstallerException):
+    def __str__(self):
+        return "Failed to determine whether platform is supported: platform=%s!\n" % sys.platform
+
 def promptUser(prompt):
     sys.stdout.write(prompt + ' ')
     sys.stdout.flush()
@@ -198,7 +205,20 @@ try:
         promptUser("Instalacion terminada. Presiona Enter para salir.")
     else:
         promptUser("Installation done. Hit enter to exit.")
+
+    # All done. Exit with success code.
+    sys.exit(0)
+
+# Special handling for specific installer-understood error types
+except InstallerException as e:
+    sys.stderr.write("Fatal: " + e + "\nFor help, please provide this error message to the HIP team. Press ENTER to exit.")
+    sys.stdin.readline()
+    sys.exit(1)
+
+# And the rest
 except:
-    print("Error:")
-    traceback.print_exc(file=sys.stdout)
-    input("An error has occurred. Please screenshot/copy this error and send it to the HIP team. Press enter to exit this command line.")
+    sys.stderr.write("Unexpected fatal error occurred:\n")
+    traceback.print_exc(file=sys.stderr)
+    sys.stderr.write("Screenshot/copy this error and send it to the HIP team. Press ENTER to exit.")
+    sys.stdin.readline()
+    sys.exit(2)
