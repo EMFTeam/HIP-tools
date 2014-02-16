@@ -15,10 +15,12 @@ def detectPlatform():
         return 'win'
     raise InstallerOSException()
 
-def promptUser(prompt):
+def promptUser(prompt, lc=True):
     sys.stdout.write(prompt + ' ')
     sys.stdout.flush()
-    return sys.stdin.readline().lower().strip()
+    response = sys.stdin.readline().strip()
+    if lc: return response.lower()
+    else: return response
 
 def enableMod(name):
     if language == "f":
@@ -100,15 +102,17 @@ try:
     # Determine installation target folder...
     defaultFolder = 'Historical Immersion Project'
 
+    # Note that we use the case-preserving form of promptUser for the target folder (also determines name in launcher)
+
     if language == "f":
         targetFolder = promptUser("Installer le mod dans un repertoire existant supprimera ce repertoire. Dans quel repertoire souhaitez-vous proceder a l'installation ?\n"
-                                  "Laissez le champ vierge pour '%s'." % defaultFolder)
+                                  "Laissez le champ vierge pour '%s'." % defaultFolder, lc=False)
     elif language == "e":
         targetFolder = promptUser("Instalar el mod en una carpeta existente eliminara dicha carpeta. En que carpeta deseas realizar la instalacion?\n"
-                                  "Dejar en blanco para '%s'." % defaultFolder)
+                                  "Dejar en blanco para '%s'." % defaultFolder, lc=False)
     else:
         targetFolder = promptUser("Installing the mod to a folder that exists will delete that folder. What folder would you like to install to?\n"
-                                  "Leave blank for '%s'." % defaultFolder)
+                                  "Leave blank for '%s'." % defaultFolder, lc=False)
 
     if targetFolder == '':
         targetFolder = defaultFolder
