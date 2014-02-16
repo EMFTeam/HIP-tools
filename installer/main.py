@@ -3,7 +3,17 @@
 class InstallerException(Exception): pass
 class InstallerOSException(InstallerException):
     def __str__(self):
-        return "Failed to determine whether platform is supported: platform=%s!\n" % sys.platform
+        return "Failed to determine whether platform is supported (platform=%s)!" % sys.platform
+
+def detectPlatform():
+    p = sys.platform
+    if p.startswith('darwin'):
+        return 'mac'
+#    elif p.startswith('linux'): # Unsupported indefinitely
+#        return 'lin'
+    elif p.startswith('win') or p.startswith('cygwin'): #Currently no need to differentiate win(32|64) and cygwin
+        return 'win'
+    raise InstallerOSException()
 
 def promptUser(prompt):
     sys.stdout.write(prompt + ' ')
@@ -39,6 +49,13 @@ def moveFolder(folder):
 try:
     import os, shutil
     import sys, traceback
+
+    platform = detectPlatform()
+
+    if (platform == 'mac'):
+        print('WARNING: Mac OS X support is currently experimental.')
+        print('Please help us make it stable by detailing any problems you')
+        print('may encounter in a direct email to zijistark@gmail.com.\n')
 
     version = open("modules/version.txt").readline().strip()
     VIETversion = open("modules/VIET_Assets/version.txt").readline().strip()
@@ -206,19 +223,26 @@ try:
     else:
         promptUser("Installation done. Hit enter to exit.")
 
-    # All done. Exit with success code.
+    # All done. Exit with success.
     sys.exit(0)
 
-# Special handling for specific installer-understood error types
+# Special handling for specific installer-understood error types (all derive from InstallerException)
 except InstallerException as e:
-    sys.stderr.write("Fatal: " + e + "\nFor help, please provide this error message to the HIP team. Press ENTER to exit.")
+    sys.stderr.write("Fatal error: " + str(e));
+    sys.stderr.write("\nFor help, please provide this error message to the HIP team. Press ENTER to exit.")
     sys.stdin.readline()
     sys.exit(1)
 
-# And the rest
+except KeyboardInterrupt:
+    # Ctrl-C just aborts (with a dedicated error code) rather than cause a
+    # traceback. May want to catch it during filesystem modification stage
+    sys.stderr.write("\nUser interrupt signal received: terminating early...\n")
+    sys.exit(2)
+
+# And the unknowns...
 except:
-    sys.stderr.write("Unexpected fatal error occurred:\n")
+    sys.stderr.write("\nUnexpected fatal error occurred:\n")
     traceback.print_exc(file=sys.stderr)
     sys.stderr.write("Screenshot/copy this error and send it to the HIP team. Press ENTER to exit.")
     sys.stdin.readline()
-    sys.exit(2)
+    sys.exit(255)
