@@ -52,7 +52,7 @@ try:
     import os, shutil
     import sys, traceback
 
-    debugMode = (sys.argv[1] == '-D')
+    debugMode = False
     platform = detectPlatform()
 
     if (platform == 'mac'):
@@ -193,12 +193,9 @@ try:
             moveFolder("PB + SWMH")
     if NBRT:
         moduleOutput.append("NBRT+ (%s)\n" % NBRTversion)
-        if not SWMH:
-            os.remove("modules/NBRT+/map/terrain.bmp")
-            os.remove("modules/NBRT+/map/trees.bmp")
-            os.remove("modules/NBRT+/map/terrain/colormap.dds")
-            os.remove("modules/NBRT+/map/terrain/colormap_water.dds")
         moveFolder("NBRT+")
+        if SWMH:
+            moveFolder("NBRT+SWMH")
         if ARKOarmoiries:
             moveFolder("NBRT+ARKO")
     if VIETtraits:
