@@ -25,7 +25,7 @@ Pull requests will be freely accepted from the public so long as they meet HIP's
 
 Please use email. Current direct collaborators include:
 
-- Meneth (meneth@meneth.com)
+- Meneth (github@meneth.com)
     - Installer (Maintainer)
 
 - zijistark (zijistark@gmail.com)
