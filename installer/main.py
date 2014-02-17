@@ -3,13 +3,31 @@
 class InstallerException(Exception): pass
 class InstallerOSException(InstallerException):
     def __str__(self):
-        return "Failed to determine whether platform is supported (platform=%s)!" % sys.platform
+        return "Platform '%s' is not supported for installation!" % sys.platform
+
+class DebugTrace:
+    def __init__(self, file, prefix='DBG: '):
+        self.file = file
+        self.i = 0
+        self.prefix = prefix
+    def indent(self):
+        self.i += 1
+    def dedent(self):
+        self.i -= 1
+    def trace(self, s):
+        self.file.write('  ' * self.i + self.prefix + s + '\n')        
+class VoidDebugTrace(DebugTrace):
+    def __init__(self): pass
+    def indent(self): pass
+    def dedent(self): pass
+    def trace(self, s): pass
+
 
 def detectPlatform():
     p = sys.platform
     if p.startswith('darwin'):
         return 'mac'
-#    elif p.startswith('linux'): # Unsupported indefinitely
+#    elif p.startswith('linux'): # Unsupported for now
 #        return 'lin'
     elif p.startswith('win') or p.startswith('cygwin'): #Currently no need to differentiate win(32|64) and cygwin
         return 'win'
@@ -20,7 +38,12 @@ def promptUser(prompt, lc=True):
     sys.stdout.flush()
     response = sys.stdin.readline().strip()
     if lc: return response.lower()
-    else: return response
+    else:  return response
+
+def isYes(answer):
+    if   language == 'f': return answer in ('','o','oui');
+    elif language == 'e': return answer in ('','s','si');
+    else:                 return answer in ('','y','yes');
 
 def enableMod(name):
     if language == "f":
@@ -29,7 +52,7 @@ def enableMod(name):
         answer = promptUser("Deseas instalar %s? [si]" % name)
     else:
         answer = promptUser("Do you want to install %s? [yes]" % name)
-    return answer == "" or answer == "y" or answer == "yes" or answer == "oui" or answer == "o" or answer == "s" or answer == "si"
+    return isYes(answer)
 
 def moveFolder(folder):
     if language == "f":
@@ -52,7 +75,11 @@ try:
     import os, shutil
     import sys, traceback
 
-    debugMode = (sys.argv[1] == '-D')
+    dbgMode = (len(sys.argv) > 1 and sys.argv[1] == '-D')
+    
+    if dbgMode: dbg = DebugTrace(file=sys.stderr)
+    else: dbg = VoidDebugTrace()
+
     platform = detectPlatform()
 
     if (platform == 'mac'):
@@ -92,12 +119,9 @@ try:
         move = promptUser("Moving the files instead of copying them is much quicker. "
                           "Unfortunately, it makes installing and managing multiple versions (e.g., different mod combinations) or reinstalling difficult, "
                           "because moving effectively destroys the installer's source files rather than keeping them intact.\n\n"
-                          "Do you want to have the module files moved rather than copied? [yes]")
+                          "Do you want to have the module files moved rather than copied anyway? [yes]")
 
-    if move == "" or move == "y" or move == "yes" or move == "oui" or move == "o":
-        move = True
-    else:
-        move = False
+    move = isYes(move)
 
     # Determine installation target folder...
     defaultFolder = 'Historical Immersion Project'
