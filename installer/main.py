@@ -87,25 +87,41 @@ try:
               'Please help us make it work reliably for you by detailing any problems you '
               'may encounter in a direct email to zijistark@gmail.com.\n');
 
-    version = open("modules/version.txt").readline().strip()
-    VIETversion = open("modules/VIET_Assets/version.txt").readline().strip()
-    PBversion = open("modules/ProjectBalance/version.txt").readline().strip()
-    SWMHversion = open("modules/SWMH/version.txt").readline().strip()
-    NBRTversion = open("modules/NBRT+/version.txt").readline().strip()
-    ARKOversion = open("modules/ARKOpack_Armoiries/version.txt").readline()
+    modDirs = {'VIET':'VIET_Assets',
+               'PB':'ProjectBalance',
+               'SWMH':'SWMH',
+               'NBRT':'NBRT+',
+               'ARKO':'ARKOpack_Armoiries'}
+
+    dbg.trace("reading package/module versions...")
+    dbg.indent()
+
+    versions = {}
+
+    dbg.trace("pkg: reading modules/version.txt")
+    versions['pkg'] = open("modules/version.txt").readline().strip()
+    dbg.trace("pkg: version: %s" % versions['pkg'])
+
+    for mod in modDirs.keys():
+        f = "modules/"+modDirs[mod]+"/version.txt"
+        dbg.trace("%s: reading %s" % (mod, f))
+        versions[mod] = open(f).readline().strip()
+        dbg.trace("%s: version: %s" % (mod, versions[mod]))
+
+    dbg.dedent()
 
     # Determine user language for installation
     language = promptUser("For English, press ENTER. En francais, taper 'f'. Para espanol, presiona 'e'.")
 
     # Show HIP installer version & explain interactive prompting
     if language == "f":
-        print("\nCette version de Historical Immersion Project date du %s.\n" % version)
+        print("\nCette version de Historical Immersion Project date du %s.\n" % versions['pkg'])
         print("Taper 'o' ou 'oui' pour valider, ou laisser le champ vierge. Toute autre reponse sera interpretee comme un non.\n")
     elif language == "e":
-        print("\nEsta vercion de Historical Immersion Project fecha del %s.\n" % version)
+        print("\nEsta vercion de Historical Immersion Project fecha del %s.\n" % versions['pkg'])
         print("Escribe 's' o 'si' para aceptar, o deja el campo en blanco. Cualquier otro caso sera considerado un 'no'.\n")
     else:
-        print("\nThis version of the Historical Immersion Project was released %s.\n" % version)
+        print("\nThis version of the Historical Immersion Project was released %s.\n" % versions['pkg'])
         print("To answer yes to a prompt, respond with 'y' or 'yes' (sans quotes) or simply hit ENTER. Besides a blank line, anything else will be interpreted as 'no'.\n")
 
     # Are we moving the module content for speed or copying it to preserve the source?
@@ -122,6 +138,7 @@ try:
                           "Do you want to have the module files moved rather than copied anyway? [yes]")
 
     move = isYes(move)
+    dbg.trace('user choice: move={}'.format(move))
 
     # Determine installation target folder...
     defaultFolder = 'Historical Immersion Project'
@@ -142,14 +159,13 @@ try:
         targetFolder = defaultFolder
     else: pass #TODO: verify it contains no illegal characters
 
-    if debugMode:
-        print("DEBUG: move={},targetFolder={}".format(move, targetFolder))
+    dbg.trace('user choice: targetFolder={}'.format(targetFolder))
 
     # Determine module combination...
     moduleOutput = []
-    moduleOutput.append("Historical Immersion Project (%s)\nEnabled modules:\n" % version)
-    PB = enableMod("Project Balance (%s)" % PBversion)
-    SWMH = enableMod("SWMH (%s)" % SWMHversion)
+    moduleOutput.append("Historical Immersion Project (%s)\nEnabled modules:\n" % versions['pkg'])
+    PB = enableMod("Project Balance (%s)" % versions['PB'])
+    SWMH = enableMod("SWMH (%s)" % versions['SWMH'])
     if SWMH:
         if language == "f":
             SWMHnative = enableMod("SWMH avec les noms culturels locaux, plutot qu'en anglais ou francises")
@@ -159,15 +175,15 @@ try:
             SWMHnative = enableMod("SWMH with native localisation for cultures and titles, rather than English")
     else:
         SWMHnative = True
-    ARKOarmoiries = enableMod("ARKOpack Armoiries (coats of arms) (%s)" % ARKOversion)
-    ARKOinterface = enableMod("ARKOpack Interface (%s)" % ARKOversion)
-    NBRT = enableMod("NBRT+ (%s)" % NBRTversion)
+    ARKOarmoiries = enableMod("ARKOpack Armoiries (coats of arms) (%s)" % versions['ARKO'])
+    ARKOinterface = enableMod("ARKOpack Interface (%s)" % versions['ARKO'])
+    NBRT = enableMod("NBRT+ (%s)" % versions['NBRT'])
     VIET = False
     if PB:
         VIETtraits = False
     else:
-        VIETtraits = enableMod("VIET traits (%s)" % VIETversion)
-    VIETevents = enableMod("VIET events (%s)" % VIETversion)
+        VIETtraits = enableMod("VIET traits (%s)" % versions['VIET'])
+    VIETevents = enableMod("VIET events (%s)" % versions['VIET'])
     if SWMH:
         if language == "f":
             print("VIET immersion n'est pas compatible avec SWMH et ne peut donc pas etre actif en meme temps qu'SWMH.")
@@ -177,46 +193,50 @@ try:
             print("VIET immersion is not yet compatible with SWMH, thus cannot be enabled as you've enabled SWMH.")
         VIETimmersion = False
     else:
-        VIETimmersion = enableMod("VIET immersion (%s)" % VIETversion)
+        VIETimmersion = enableMod("VIET immersion (%s)" % versions['VIET'])
         #VIETmusic = enableMod("VIET music")
     if VIETtraits or VIETevents or VIETimmersion:
         VIET = True
 
     # Prepare for installation
     if os.path.exists(targetFolder):
-        if debugMode: print("DEBUG: target folder preexisted: removing it...")
+        dbg.trace('targetFolder (%s) preexists. removing...' % targetFolder)
         shutil.rmtree(targetFolder)
 
+    dbg.trace('makedirs: %s' % targetFolder)
     os.makedirs(targetFolder)
 
     # Install...
+    dbg.trace('compiling targetFolder...')
+    dbg.indent()
+
     moveFolder("Converter/Common")
     if ARKOarmoiries:
-        moduleOutput.append("ARKO Armoiries (%s)\n" % ARKOversion)
+        moduleOutput.append("ARKO Armoiries (%s)\n" % versions['ARKO'])
         moveFolder("ARKOpack_Armoiries")
     if ARKOinterface:
-        moduleOutput.append("ARKO Interface (%s)\n" % ARKOversion)
+        moduleOutput.append("ARKO Interface (%s)\n" % versions['ARKO'])
         moveFolder("ARKOpack_Interface")
         if VIET:
             shutil.rmtree("%s/gfx/event_pictures" % targetFolder)
     if VIET:
         moveFolder("VIET_Assets")
     if PB:
-        moduleOutput.append("Project Balance (%s)\n" % PBversion)
+        moduleOutput.append("Project Balance (%s)\n" % versions['PB'])
         moveFolder("ProjectBalance")
         moveFolder("Converter/PB")
     if SWMH:
         if SWMHnative:
-            moduleOutput.append("SWMH - Native localisation (%s)\n" % SWMHversion)
+            moduleOutput.append("SWMH - Native localisation (%s)\n" % versions['SWMH'])
             moveFolder("SWMH")
         if not SWMHnative:
-            moduleOutput.append("SWMH - English localisation(%s)\n" % SWMHversion)
+            moduleOutput.append("SWMH - English localisation (%s)\n" % versions['SWMH'])
             moveFolder("SWMH")
             moveFolder("English SWMH")
         if PB:
             moveFolder("PB + SWMH")
     if NBRT:
-        moduleOutput.append("NBRT+ (%s)\n" % NBRTversion)
+        moduleOutput.append("NBRT+ (%s)\n" % versions['NBRT'])
         if not SWMH:
             os.remove("modules/NBRT+/map/terrain.bmp")
             os.remove("modules/NBRT+/map/trees.bmp")
@@ -226,15 +246,15 @@ try:
         if ARKOarmoiries:
             moveFolder("NBRT+ARKO")
     if VIETtraits:
-        moduleOutput.append("VIET Traits (%s)\n" % VIETversion)
+        moduleOutput.append("VIET Traits (%s)\n" % versions['VIET'])
         moveFolder("VIET_Traits")
     if VIETevents:
-        moduleOutput.append("VIET Events(%s)\n" % VIETversion)
+        moduleOutput.append("VIET Events (%s)\n" % versions['VIET'])
         moveFolder("VIET_Events")
         if PB:
             moveFolder("PB_VIET_Events")
     if VIETimmersion:
-        moduleOutput.append("VIET Immersion(%s)\n" % VIETversion)
+        moduleOutput.append("VIET Immersion (%s)\n" % versions['VIET'])
         if PB: #This should be optimized in the future
             moveFolder("PB_VIET_Immersion")
         if not PB:
@@ -245,8 +265,8 @@ try:
         if language == "e":
             answer = promptUser("VIET inmersion depende de los retratos DLC. Tiene todos los retratos DLC? [si]")
         else:
-            answer = promptUser("VIET Immersion depends on the portrait DLC. Do you have all portrait DLC? [yes]")
-        if not (answer == "" or answer == "y" or answer == "yes" or answer == "oui" or answer == "o" or answer == "s" or answer == "si"):
+            answer = promptUser("VIET Immersion depends on the portrait DLCs. Do you have all of the portrait DLCs? [yes]")
+        if not isYes(answer):
             shutil.rmtree("%s/common/cultures" % targetFolder)
             os.remove("%s/interface/portrait_sprites_DLC.gfx" % targetFolder)
             os.remove("%s/interface/portraits_mediterranean.gfx" % targetFolder)
@@ -263,19 +283,30 @@ try:
     if move:
         shutil.rmtree("modules") #Cleanup
 
-    modFilename = 'HIP.mod'
-    if targetFolder != defaultFolder:
-        modFilename = "HIP_%s.mod" % targetFolder
+    dbg.dedent()
 
     # Generate a new .mod file, regardless of whether it's default
+    modFilename = 'HIP.mod'
+    if targetFolder != defaultFolder:
+        modFilename = 'HIP_%s.mod' % targetFolder
+
+    dbg.trace("generating .mod file '%s'" % modFilename)
+
     with open(modFilename, "w") as modFile:
         modFile.write('name = "HIP - %s"  #Name that shows in launcher\n' % targetFolder)
         modFile.write('path = "mod/%s"\n' % targetFolder)
-        if platform != 'mac': modFile.write('user_dir = "HIP_%s"  #Folder component for saves, gfx cache, etc.\n' % targetFolder)
+        if platform != 'mac':
+            modFile.write('user_dir = "HIP_%s"  #For saves, gfx cache, etc.\n' % targetFolder)
 
     # Dump modules selected and their respective versions to <mod>/version.txt
-    with open("%s/version.txt" % targetFolder, "w") as output:
+    versionFilename = "%s/version.txt" % targetFolder
+    dbg.trace("dumping compiled modpack version summary to %s" % versionFilename)
+
+    with open(versionFilename, "w") as output:
         output.write("".join(moduleOutput))
+
+    # Installation complete
+    dbg.trace("installation complete")
 
     if language == "f":
         promptUser("Installation terminee. Taper entree pour sortir.")
