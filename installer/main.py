@@ -1,38 +1,33 @@
 #!/usr/bin/python
 
 class InstallerException(Exception): pass
-class InstallerOSException(InstallerException):
+class InstallerPlatformError(InstallerException):
     def __str__(self):
         return "Platform '%s' is not supported for installation!" % sys.platform
+class InstallerTraceNestingError(InstallerException):
+    def __str__(self):
+        return "Debugging trace nesting mismatch (more pops than pushes). Programmer error!"
 
 class DebugTrace:
     def __init__(self, file, prefix='DBG: '):
         self.file = file
-        self.i = 0
         self.prefix = prefix
-    def indent(self):
-        self.i += 1
-    def dedent(self):
-        self.i -= 1
-    def trace(self, s):
-        self.file.write('  ' * self.i + self.prefix + s + '\n')
+        self.i = 0
+    def trace(self, msg): #Trace msg to attached stream/file-like object with no output buffering
+        self.file.write('{}{}{}\n'.format('    ' * self.i, self.prefix, msg))
         self.file.flush()
+    def push(self, s): #Trace, then push indent stack
+        self.trace(s)
+        self.i += 1
+    def pop(self): #Pop indent stack
+        if self.i <= 0: raise InstallerTraceNestingError()
+        self.i -= 1
 class VoidDebugTrace(DebugTrace):
     def __init__(self): pass
-    def indent(self): pass
-    def dedent(self): pass
     def trace(self, s): pass
+    def push(self): pass
+    def pop(self): pass
 
-
-def detectPlatform():
-    p = sys.platform
-    if p.startswith('darwin'):
-        return 'mac'
-#    elif p.startswith('linux'): # Unsupported for now
-#        return 'lin'
-    elif p.startswith('win') or p.startswith('cygwin'): #Currently no need to differentiate win(32|64) and cygwin
-        return 'win'
-    raise InstallerOSException()
 
 def promptUser(prompt, lc=True):
     sys.stdout.write(prompt + ' ')
@@ -42,9 +37,9 @@ def promptUser(prompt, lc=True):
     else:  return response
 
 def isYes(answer):
-    if   language == 'f': return answer in ('','o','oui');
-    elif language == 'e': return answer in ('','s','si');
-    else:                 return answer in ('','y','yes');
+    if   language == 'f': return answer in ('','o','oui')
+    elif language == 'e': return answer in ('','s','si')
+    else:                 return answer in ('','y','yes')
 
 def enableMod(name):
     if language == "f":
@@ -55,47 +50,75 @@ def enableMod(name):
         answer = promptUser("Do you want to install %s? [yes]" % name)
     return isYes(answer)
 
-def moveFolder(folder):
-    if language == "f":   print("Fusion repertoire " + folder)
+def quoteIfWS(s):
+    if ' ' in s: return "'{}'".format(s)
+    return s
+def src2Dst(src, dst):
+    return '{} => {}'.format(quoteIfWS(src), quoteIfWS(dst))
+
+def moveFolder(folder, ignoreFiles={}):
+    if   language == "f": print("Fusion repertoire " + folder)
     elif language == "e": print("Carpeta de combinacion " + folder)
     else:                 print("Merging folder " + folder)
 
     srcFolder = os.path.join('modules', folder)
-    dbg.trace("merging source folder '%s' into '%s'..." % (srcFolder, targetFolder))
-    dbg.indent()
+    dbg.push("merging root folder " + src2Dst(srcFolder, targetFolder))
 
     for root, dirs, files in os.walk(srcFolder):
         newRoot = root.replace(srcFolder, targetFolder)
-        dbg.trace("translating path '%s' => '%s'..." % (root, newRoot))
-        dbg.indent()
+        dbg.push('merging dirpath ' + src2Dst(root, newRoot))
+
         for dir in dirs:
             newDir = os.path.join(newRoot, dir)
             if not os.path.exists(newDir):
-                dbg.trace("MD: '%s' => '%s'" % (dir, newDir))
+                dbg.trace('MD: ' + src2Dst(dir, newDir))
                 os.makedirs(newDir)
+
         for file in files:
             src = os.path.join(root, file)
             dst = os.path.join(newRoot, file)
+
+            if os.path.exists(dst): clobberStr = '[!]'
+            else:                   clobberStr = ''
+
+            xferStr = "{} {}: {}".format(clobberStr, quoteIfWS(file), src2Dst(src, dst))
+
+            if src in ignoreFiles: #Selective ignore filter for individual files
+                dbg.trace('IGNORE' + xferStr)
+                continue
+            
             if move:
-                dbg.trace("MV: '%s' => '%s'" % (src, dst))
+                dbg.trace('MV' + xferStr)
                 shutil.move(src, dst)
             else:
-                dbg.trace("CP: '%s' => '%s'" % (src, dst))
+                dbg.trace('CP' + xferStr)
                 shutil.copy(src, dst)
-        dbg.dedent()
-    dbg.dedent()
+
+        dbg.pop()
+    dbg.pop()
+
+def detectPlatform():
+    p = sys.platform
+    if p.startswith('darwin'):
+        return 'mac'
+#    elif p.startswith('linux'): # Unsupported for now
+#        return 'lin'
+    elif p.startswith('win') or p.startswith('cygwin'): #Currently no need to differentiate win(32|64) and cygwin
+        return 'win'
+    raise InstallerPlatformError()
 
 try:
     import os, shutil
     import sys, traceback
 
-    dbgMode = (len(sys.argv) > 1 and sys.argv[1] == '-D')
+    dbgMode = (len(sys.argv) > 1 and '-D' in sys.argv[1:])
+    versionMode = (len(sys.argv) > 1 and '-V' in sys.argv[1:])
     
     if dbgMode: dbg = DebugTrace(file=sys.stderr)
     else: dbg = VoidDebugTrace()
 
     platform = detectPlatform()
-    dbg.trace('detected supported platform class: %s' % platform)
+    dbg.trace('detected supported platform class: ' + platform)
 
     if (platform == 'mac'):
         print('WARNING: Mac OS X support is currently experimental!\n'
@@ -108,10 +131,9 @@ try:
                'NBRT':'NBRT+',
                'ARKO':'ARKOpack_Armoiries'}
 
-    dbg.trace("reading package/module versions...")
-    dbg.indent()
-
     versions = {}
+
+    dbg.push("reading package/module versions")
 
     dbg.trace("pkg: reading modules/version.txt")
     versions['pkg'] = open("modules/version.txt").readline().strip()
@@ -123,7 +145,7 @@ try:
         versions[mod] = open(f).readline().strip()
         dbg.trace("%s: version: %s" % (mod, versions[mod]))
 
-    dbg.dedent()
+    dbg.pop()
 
     # Determine user language for installation
     language = promptUser("For English, press ENTER. En francais, taper 'f'. Para espanol, presiona 'e'.")
@@ -153,7 +175,7 @@ try:
                           "Do you want to have the module files moved rather than copied anyway? [yes]")
 
     move = isYes(move)
-    dbg.trace('user choice: move={}'.format(move))
+    dbg.trace('user choice: move instead of copy: {}'.format(move))
 
     # Determine installation target folder...
     defaultFolder = 'Historical Immersion Project'
@@ -174,7 +196,7 @@ try:
         targetFolder = defaultFolder
     else: pass #TODO: verify it contains no illegal characters
 
-    dbg.trace('user choice: targetFolder={}'.format(targetFolder))
+    dbg.trace('user choice: target folder: {}'.format(quoteIfWS(targetFolder)))
 
     # Determine module combination...
     moduleOutput = []
@@ -215,15 +237,15 @@ try:
 
     # Prepare for installation
     if os.path.exists(targetFolder):
-        dbg.trace('targetFolder (%s) preexists. removing...' % targetFolder)
+        dbg.trace('target folder preexists. removing...')
+        dbg.trace('RD: ' + quoteIfWS(targetFolder))
         shutil.rmtree(targetFolder)
 
-    dbg.trace('MD: %s' % targetFolder)
+    dbg.trace('MD: ' + quoteIfWS(targetFolder))
     os.makedirs(targetFolder)
 
     # Install...
-    dbg.trace('compiling targetFolder...')
-    dbg.indent()
+    dbg.push('installing to target folder...')
 
     moveFolder("Converter/Common")
     if ARKOarmoiries:
@@ -296,26 +318,27 @@ try:
             else:
                 moveFolder("VIET_portrait_fix/PB")
     if move:
+        dbg.trace('RD: modules')
         shutil.rmtree("modules") #Cleanup
 
-    dbg.dedent()
+    dbg.pop()
 
     # Generate a new .mod file, regardless of whether it's default
-    modFilename = 'HIP.mod'
-    if targetFolder != defaultFolder:
-        modFilename = 'HIP_%s.mod' % targetFolder
+    if targetFolder != defaultFolder: modFileBase = 'HIP_'+targetFolder
+    else:                             modFileBase = 'HIP'
 
-    dbg.trace("generating .mod file '%s'" % modFilename)
+    modFilename = modFileBase + '.mod'
+    dbg.trace("generating .mod file " + quoteIfWS(modFilename))
 
     with open(modFilename, "w") as modFile:
         modFile.write('name = "HIP - %s"  #Name that shows in launcher\n' % targetFolder)
         modFile.write('path = "mod/%s"\n' % targetFolder)
         if platform != 'mac':
-            modFile.write('user_dir = "HIP_%s"  #For saves, gfx cache, etc.\n' % targetFolder)
+            modFile.write('user_dir = "{}"  #For saves, gfx cache, etc.\n'.format(modFileBase))
 
     # Dump modules selected and their respective versions to <mod>/version.txt
     versionFilename = "%s/version.txt" % targetFolder
-    dbg.trace("dumping compiled modpack version summary to %s" % versionFilename)
+    dbg.trace("dumping compiled modpack version summary to " + quoteIfWS(versionFilename))
 
     with open(versionFilename, "w") as output:
         output.write("".join(moduleOutput))
@@ -333,12 +356,18 @@ try:
 except KeyboardInterrupt:
     # Ctrl-C just aborts (with a dedicated error code) rather than cause a
     # traceback. May want to catch it during filesystem modification stage
-    sys.stderr.write("\nUser interrupt received: terminating early...\n")
+    sys.stderr.write("\nUser interrupt: terminating early...\n")
     sys.exit(2)
+
+except InstallerTraceNestingError as e:
+    sys.stderr.write("\nFatal error: " + str(e));
+    traceback.print_exc(file=sys.stderr)
+    sys.stderr.write("Screenshot/copy this error and send it to the HIP team. Press ENTER to exit.")
+    sys.exit(255)
 
 # Special handling for specific installer-understood error types (all derive from InstallerException)
 except InstallerException as e:
-    sys.stderr.write("Fatal error: " + str(e));
+    sys.stderr.write("\nFatal error: " + str(e));
     sys.stderr.write("\nFor help, please provide this error message to the HIP team. Press ENTER to exit.")
     sys.stdin.readline()
     sys.exit(1)
