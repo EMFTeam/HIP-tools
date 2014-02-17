@@ -15,7 +15,8 @@ class DebugTrace:
     def dedent(self):
         self.i -= 1
     def trace(self, s):
-        self.file.write('  ' * self.i + self.prefix + s + '\n')        
+        self.file.write('  ' * self.i + self.prefix + s + '\n')
+        self.file.flush()
 class VoidDebugTrace(DebugTrace):
     def __init__(self): pass
     def indent(self): pass
@@ -55,21 +56,34 @@ def enableMod(name):
     return isYes(answer)
 
 def moveFolder(folder):
-    if language == "f":
-        print("Fusion repertoire " + folder)
-    elif language == "e":
-        print("Carpeta de combinacion " + folder)
-    else:
-        print("Merging folder " + folder)
-    for root, dirs, files in os.walk("modules/"+folder):
+    if language == "f":   print("Fusion repertoire " + folder)
+    elif language == "e": print("Carpeta de combinacion " + folder)
+    else:                 print("Merging folder " + folder)
+
+    srcFolder = os.path.join('modules', folder)
+    dbg.trace("merging source folder '%s' into '%s'..." % (srcFolder, targetFolder))
+    dbg.indent()
+
+    for root, dirs, files in os.walk(srcFolder):
+        newRoot = root.replace(srcFolder, targetFolder)
+        dbg.trace("translating path '%s' => '%s'..." % (root, newRoot))
+        dbg.indent()
         for dir in dirs:
-            if not os.path.exists("%s/%s" % (root.replace("modules/"+folder, targetFolder),dir)):
-                os.makedirs(root.replace("modules/"+folder, targetFolder)+"/"+dir)
+            newDir = os.path.join(newRoot, dir)
+            if not os.path.exists(newDir):
+                dbg.trace("MD: '%s' => '%s'" % (dir, newDir))
+                os.makedirs(newDir)
         for file in files:
+            src = os.path.join(root, file)
+            dst = os.path.join(newRoot, file)
             if move:
-                shutil.move("%s/%s" % (root, file), "%s/%s" % (root.replace("modules/"+folder, targetFolder), file))
+                dbg.trace("MV: '%s' => '%s'" % (src, dst))
+                shutil.move(src, dst)
             else:
-                shutil.copy("%s/%s" % (root, file), "%s/%s" % (root.replace("modules/"+folder, targetFolder), file))
+                dbg.trace("CP: '%s' => '%s'" % (src, dst))
+                shutil.copy(src, dst)
+        dbg.dedent()
+    dbg.dedent()
 
 try:
     import os, shutil
@@ -81,11 +95,12 @@ try:
     else: dbg = VoidDebugTrace()
 
     platform = detectPlatform()
+    dbg.trace('detected supported platform class: %s' % platform)
 
     if (platform == 'mac'):
         print('WARNING: Mac OS X support is currently experimental!\n'
               'Please help us make it work reliably for you by detailing any problems you '
-              'may encounter in a direct email to zijistark@gmail.com.\n');
+              'may encounter in a direct email to zijistark@gmail.com.\n')
 
     modDirs = {'VIET':'VIET_Assets',
                'PB':'ProjectBalance',
@@ -203,7 +218,7 @@ try:
         dbg.trace('targetFolder (%s) preexists. removing...' % targetFolder)
         shutil.rmtree(targetFolder)
 
-    dbg.trace('makedirs: %s' % targetFolder)
+    dbg.trace('MD: %s' % targetFolder)
     os.makedirs(targetFolder)
 
     # Install...
