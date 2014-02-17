@@ -13,8 +13,9 @@ class DebugTrace:
         self.file = file
         self.prefix = prefix
         self.i = 0
+        self.indentStr = ' ' * 2
     def trace(self, msg): #Trace msg to attached stream/file-like object with no output buffering
-        self.file.write('{}{}{}\n'.format('    ' * self.i, self.prefix, msg))
+        self.file.write('{}{}{}\n'.format(self.indentStr * self.i, self.prefix, msg))
         self.file.flush()
     def push(self, s): #Trace, then push indent stack
         self.trace(s)
@@ -27,7 +28,6 @@ class VoidDebugTrace(DebugTrace):
     def trace(self, s): pass
     def push(self): pass
     def pop(self): pass
-
 
 def promptUser(prompt, lc=True):
     sys.stdout.write(prompt + ' ')
@@ -55,6 +55,18 @@ def quoteIfWS(s):
     return s
 def src2Dst(src, dst):
     return '{} => {}'.format(quoteIfWS(src), quoteIfWS(dst))
+def rmTree(dir, traceMsg=None):
+    if traceMsg: dbg.trace(traceMsg)
+    dbg.trace("RD: " + quoteIfWS(dir));
+    shutil.rmtree(dir);
+def rmFile(f, traceMsg=None):
+    if traceMsg: dbg.trace(traceMsg)
+    dbg.trace("D: " + quoteIfWS(f));
+    os.remove(f);
+def mkTree(dir, traceMsg=None):
+    if traceMsg: dbg.trace(traceMsg)
+    dbg.trace("MD: " + quoteIfWS(dir));
+    os.makedirs(dir);
 
 def moveFolder(folder, prunePaths={}, ignoreFiles={}):
     if   language == "f": print("Fusion repertoire " + folder)
@@ -76,13 +88,11 @@ def moveFolder(folder, prunePaths={}, ignoreFiles={}):
         for dir in dirs:
             srcPath = os.path.join(root, dir)
             if srcPath in prunePaths:
-                dbg.trace("SKIP: " + srcPath)
+                dbg.trace("PRUNE: " + srcPath)
             else:
                 prunedDirs.append(dir)
                 newDir = os.path.join(newRoot, dir)
-                if not os.path.exists(newDir):
-                    dbg.trace('MD: ' + src2Dst(dir, newDir))
-                    os.makedirs(newDir)
+                if not os.path.exists(newDir): mkTree(newDir)
 
         dirs[:] = prunedDirs #Filter subdirectories into which we should recurse on next os.walk()
 
@@ -93,7 +103,7 @@ def moveFolder(folder, prunePaths={}, ignoreFiles={}):
             if os.path.exists(dst): clobberStr = '[!]'
             else:                   clobberStr = ''
 
-            xferStr = "{} {}: {}".format(clobberStr, quoteIfWS(file), src2Dst(src, dst))
+            xferStr = "{}: {}: {}".format(clobberStr, quoteIfWS(file), src2Dst(src, dst))
 
             if src in ignoreFiles: #Selective ignore filter for individual files
                 dbg.trace('IGNORE' + xferStr)
@@ -244,37 +254,44 @@ try:
     else:
         VIETimmersion = enableMod("VIET immersion (%s)" % versions['VIET'])
         #VIETmusic = enableMod("VIET music")
-    if VIETtraits or VIETevents or VIETimmersion:
-        VIET = True
+    VIET = (VIETtraits or VIETevents or VIETimmersion)
 
     # Prepare for installation
     if os.path.exists(targetFolder):
-        dbg.trace('target folder preexists. removing...')
-        dbg.trace('RD: ' + quoteIfWS(targetFolder))
-        shutil.rmtree(targetFolder)
+        rmTree(targetFolder, 'target folder preexists. removing...')
 
-    dbg.trace('MD: ' + quoteIfWS(targetFolder))
-    os.makedirs(targetFolder)
+    mkTree(targetFolder)
 
     # Install...
-    dbg.push('installing to target folder...')
+    dbg.push('merging source files into target folder...')
 
     moveFolder("Converter/Common")
     if ARKOarmoiries:
+        dbg.push("merging ARKO CoA...")
         moduleOutput.append("ARKO Armoiries (%s)\n" % versions['ARKO'])
         moveFolder("ARKOpack_Armoiries")
+        dbg.pop()
+
     if ARKOinterface:
+        dbg.push("merging ARKO Interface...")
         moduleOutput.append("ARKO Interface (%s)\n" % versions['ARKO'])
         moveFolder("ARKOpack_Interface")
         if VIET:
-            shutil.rmtree("%s/gfx/event_pictures" % targetFolder)
+            rmTree("%s/gfx/event_pictures" % targetFolder, 'removing ARKO event pictures')
+        dbg.pop()
+
     if VIET:
         moveFolder("VIET_Assets")
+
     if PB:
+        dbg.push("merging PB...")
         moduleOutput.append("Project Balance (%s)\n" % versions['PB'])
         moveFolder("ProjectBalance")
         moveFolder("Converter/PB")
+        dbg.pop()
+
     if SWMH:
+        dbg.push("merging SWMH...")
         if SWMHnative:
             moduleOutput.append("SWMH - Native localisation (%s)\n" % versions['SWMH'])
             moveFolder("SWMH")
@@ -284,56 +301,77 @@ try:
             moveFolder("English SWMH")
         if PB:
             moveFolder("PB + SWMH")
+        dbg.pop()
+
     if NBRT:
+        dbg.push("merging NBRT+...")
         moduleOutput.append("NBRT+ (%s)\n" % versions['NBRT'])
+        ignoreF = {}
         if not SWMH:
-            os.remove("modules/NBRT+/map/terrain.bmp")
-            os.remove("modules/NBRT+/map/trees.bmp")
-            os.remove("modules/NBRT+/map/terrain/colormap.dds")
-            os.remove("modules/NBRT+/map/terrain/colormap_water.dds")
-        moveFolder("NBRT+")
+            ignoreF = {"modules/NBRT+/map/terrain.bmp":1,
+                       "modules/NBRT+/map/trees.bmp":1,
+                       "modules/NBRT+/map/terrain/colormap.dds":1,
+                       "modules/NBRT+/map/terrain/colormap_water.dds":1}
+        moveFolder("NBRT+", ignoreFiles=ignoreF)
         if ARKOarmoiries:
             moveFolder("NBRT+ARKO")
+        dbg.pop()
+
     if VIETtraits:
+        dbg.push("merging VIET Traits...")
         moduleOutput.append("VIET Traits (%s)\n" % versions['VIET'])
         moveFolder("VIET_Traits")
+        dbg.pop()
+
     if VIETevents:
+        dbg.push("merging VIET Events...")
         moduleOutput.append("VIET Events (%s)\n" % versions['VIET'])
         moveFolder("VIET_Events")
         if PB:
             moveFolder("PB_VIET_Events")
+        dbg.pop()
+
     if VIETimmersion:
+        dbg.push("merging VIET Immersion...")
         moduleOutput.append("VIET Immersion (%s)\n" % versions['VIET'])
-        if PB: #This should be optimized in the future
+        if PB: #This should be optimized in the future (Z: this entire process should be optimized to never copy/move a target file more than once)
             moveFolder("PB_VIET_Immersion")
         if not PB:
             moveFolder("VIET_Immersion")
             moveFolder("Converter/VIET")
+
         if language == "f":
             answer = promptUser("VIET Immersion necessite tous les DLC de portraits. Les avez-vous tous ? [oui]")
         if language == "e":
             answer = promptUser("VIET inmersion depende de los retratos DLC. Tiene todos los retratos DLC? [si]")
         else:
             answer = promptUser("VIET Immersion depends on the portrait DLCs. Do you have all of the portrait DLCs? [yes]")
+
         if not isYes(answer):
-            shutil.rmtree("%s/common/cultures" % targetFolder)
-            os.remove("%s/interface/portrait_sprites_DLC.gfx" % targetFolder)
-            os.remove("%s/interface/portraits_mediterranean.gfx" % targetFolder)
-            os.remove("%s/interface/portraits_norse.gfx" % targetFolder)
-            os.remove("%s/interface/portraits_persian.gfx" % targetFolder)
-            os.remove("%s/interface/portraits_saxon.gfx" % targetFolder)
-            os.remove("%s/interface/portraits_turkish.gfx" % targetFolder)
-            os.remove("%s/interface/portraits_ugric.gfx" % targetFolder)
-            os.remove("%s/interface/portraits_westernslavic.gfx" % targetFolder)
+            dbg.push("user chose VIET Immersion but does not have all portrait DLCs. applying fix...")
+            rmTree("%s/common/cultures" % targetFolder, "removing merged cultures")
+            dbg.push("removing portrait .gfx files...")
+            rmFile("%s/interface/portrait_sprites_DLC.gfx" % targetFolder)
+            rmFile("%s/interface/portraits_mediterranean.gfx" % targetFolder)
+            rmFile("%s/interface/portraits_norse.gfx" % targetFolder)
+            rmFile("%s/interface/portraits_persian.gfx" % targetFolder)
+            rmFile("%s/interface/portraits_saxon.gfx" % targetFolder)
+            rmFile("%s/interface/portraits_turkish.gfx" % targetFolder)
+            rmFile("%s/interface/portraits_ugric.gfx" % targetFolder)
+            rmFile("%s/interface/portraits_westernslavic.gfx" % targetFolder)
+            dbg.pop()
             if not PB:
                 moveFolder("VIET_portrait_fix/VIET")
             else:
                 moveFolder("VIET_portrait_fix/PB")
-    if move:
-        dbg.trace('RD: modules')
-        shutil.rmtree("modules") #Cleanup
+            dbg.pop()
+        dbg.pop()
 
     dbg.pop()
+    dbg.trace("merge complete")
+
+    if move:
+        rmTree("modules") #Cleanup
 
     # Generate a new .mod file, regardless of whether it's default
     if targetFolder != defaultFolder: modFileBase = 'HIP_'+targetFolder
