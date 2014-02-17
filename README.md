@@ -26,7 +26,7 @@ Pull requests will be freely accepted from the public so long as they meet HIP's
 Please use email. Current direct collaborators include:
 
 - Meneth (github@meneth.com)
-    - Installer (Maintainer)
+    - Installer (Author)
 
 - zijistark (zijistark@gmail.com)
     - Project Balance Tools
