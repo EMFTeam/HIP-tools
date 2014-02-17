@@ -56,7 +56,7 @@ def quoteIfWS(s):
 def src2Dst(src, dst):
     return '{} => {}'.format(quoteIfWS(src), quoteIfWS(dst))
 
-def moveFolder(folder, ignoreFiles={}):
+def moveFolder(folder, prunePaths={}, ignoreFiles={}):
     if   language == "f": print("Fusion repertoire " + folder)
     elif language == "e": print("Carpeta de combinacion " + folder)
     else:                 print("Merging folder " + folder)
@@ -68,11 +68,23 @@ def moveFolder(folder, ignoreFiles={}):
         newRoot = root.replace(srcFolder, targetFolder)
         dbg.push('merging dirpath ' + src2Dst(root, newRoot))
 
+        # Prune the source directory walk in-place according to prunePaths option,
+        # and, of course, don't create pruned directories (none of the files in
+        # them will be copied/moved)
+        prunedDirs = []
+
         for dir in dirs:
-            newDir = os.path.join(newRoot, dir)
-            if not os.path.exists(newDir):
-                dbg.trace('MD: ' + src2Dst(dir, newDir))
-                os.makedirs(newDir)
+            srcPath = os.path.join(root, dir)
+            if srcPath in prunePaths:
+                dbg.trace("SKIP: " + srcPath)
+            else:
+                prunedDirs.append(dir)
+                newDir = os.path.join(newRoot, dir)
+                if not os.path.exists(newDir):
+                    dbg.trace('MD: ' + src2Dst(dir, newDir))
+                    os.makedirs(newDir)
+
+        dirs[:] = prunedDirs #Filter subdirectories into which we should recurse on next os.walk()
 
         for file in files:
             src = os.path.join(root, file)
