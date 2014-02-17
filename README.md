@@ -26,9 +26,10 @@ Pull requests will be freely accepted from the public so long as they meet HIP's
 Please use email. Current direct collaborators include:
 
 - Meneth (github@meneth.com)
-    - Installer (Author)
+    - HIP Installer (Creator)
 
 - zijistark (zijistark@gmail.com)
+    - HIP Installer
     - Project Balance Tools
     - SWMH Tools
-    - Installer
+
