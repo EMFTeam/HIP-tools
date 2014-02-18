@@ -150,7 +150,72 @@ def detectPlatform():
   raise InstallerPlatformError()
 
 
+# If necessary, changes the current working directory to that of the resolved
+# location of this script itself. This is to enable the installer to be invoked
+# from any directory, so long as it's been properly extracted to the CKII mod
+# folder. In general, that is useful, but it also ensures that GUI-based
+# invocation of the installer will always still result in the correct working
+# directory.
+def normalizeCwd():  
+  pass
+
+def initVersionInfo():
+  global version
+  version = {}
+  version['major'] = 1
+  version['minor'] = 1
+  version['micro'] = 0
+
+  # extended elements
+  version['SHA'] = 'cd67d5bc01edf9787f03add81573beb5d0ca4f33'
+  version['commitDate'] = 'Mon Feb 17 21:17:42 2014 -0800'
+  version['buildDate'] = '2014-02-18 07:17:47 +0100'
+
+  global versionStr
+  versionStr = '{}.{}.{}'.format( version['major'], version['minor'], version['micro'] )
+
+  if 'SHA' in version:
+    versionStr += '-git~' + version['SHA'][0:10]
+
+
+def printVersionEnvInfo():
+  # Print the installer's version info (installer *script*, not module package)
+
+  # Ideally, we will add another component to the HIP installer's build
+  # automation that does a quick-n-easy parse of the output of `git rev-parse`
+  # and then embeds the actual repository commit SHA (first 7 digits) and commit
+  # time as well as the exact build time directly in this script. Thus, no
+  # external dependencies will be needed to exactly identify the source revision
+  # in question when a bug is reported. In the meantime, we do the uber-simple
+  # thing instead.
+
+  print('HIP Installer:')
+  print(versionStr + '\n')
+  
+  if 'commitDate' in version:
+    print('[commit] ' + version['commitDate'])
+  if 'buildDate' in version:
+    print('[build]  ' + version['buildDate'])
+
+  sys.stdout.write('\n')
+  
+  # Print the OS version/build info
+  import platform as p
+
+  print('OS / Platform:')
+  print(sys.platform + ': ' + p.platform() + '\n')
+
+  # Print our runtime interpreter's version/build info
+
+  print("Python Runtime:")
+  print(sys.version)
+
+  return 0
+
+
 def main():
+  initVersionInfo()
+  
   try:
     dbgMode = (len(sys.argv) > 1 and '-D' in sys.argv[1:])
     versionMode = (len(sys.argv) > 1 and '-V' in sys.argv[1:])
@@ -164,6 +229,9 @@ def main():
     global platform
     platform = detectPlatform()
     dbg.trace('detected supported platform class: ' + platform)
+
+    if versionMode:
+      return printVersionEnvInfo()
 
     if (platform == 'mac'):
       print('WARNING: Mac OS X support is currently experimental!\n'
