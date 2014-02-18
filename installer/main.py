@@ -388,7 +388,7 @@ def main():
       moveFolder("ARKOpack_Interface")
       if VIET:
         rmTree("%s/gfx/event_pictures" % targetFolder, 'removing ARKO event pictures')
-        dbg.pop()
+      dbg.pop()
 
     if VIET:
       moveFolder("VIET_Assets")
@@ -438,7 +438,7 @@ def main():
       moveFolder("VIET_Events")
       if PB:
         moveFolder("PB_VIET_Events")
-        dbg.pop()
+      dbg.pop()
 
     if VIETimmersion:
       dbg.push("merging VIET Immersion...")
