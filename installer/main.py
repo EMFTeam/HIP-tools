@@ -11,6 +11,12 @@ class InstallerPlatformError(InstallerException):
 class InstallerTraceNestingError(InstallerException):
   def __str__(self):
     return "Debugging trace nesting mismatch (more pops than pushes). Programmer error!"
+class InstallerEmptyArgvError(InstallerException):
+  def __str__(self):
+    return "The runtime environment did not setup the program path."
+class InstallerPackageNotFoundError(InstallerException):
+  def __str__(self):
+    return "The installer package files (modules/ folder) were not found!"
 
 class DebugTrace:
   def __init__(self, file, prefix='DBG: '):
@@ -150,33 +156,73 @@ def detectPlatform():
   raise InstallerPlatformError()
 
 
-# If necessary, changes the current working directory to that of the resolved
-# location of this script itself. This is to enable the installer to be invoked
-# from any directory, so long as it's been properly extracted to the CKII mod
-# folder. In general, that is useful, but it also ensures that GUI-based
-# invocation of the installer will always still result in the correct working
-# directory.
-def normalizeCwd():  
-  pass
+# Changes the current working directory to the same as that of the
+# fully-resolved path to this program. This is to enable the installer to be
+# invoked from any directory, so long as it's been properly extracted to the
+# right folder. While useful and the proper behavior in all cases where we
+# depend upon data in the same directory (./modules/), the main use case is to
+# enable GUI-based invocations of the installer on all platforms to always
+# magically be in the right working directory before touching any files.
+def normalizeCwd():
+  # All but the final step was done in initVersionEnvInfo() already.
+  d = os.path.dirname(programPath)
+  if d != '':
+    os.chdir(d)
 
-def initVersionInfo():
+def initVersionEnvInfo():
   global version
   version = {}
   version['major'] = 1
   version['minor'] = 1
   version['micro'] = 0
 
-  # extended elements
-  version['SHA'] = 'cd67d5bc01edf9787f03add81573beb5d0ca4f33'
-  version['commitDate'] = 'Mon Feb 17 21:17:42 2014 -0800'
-  version['buildDate'] = '2014-02-18 07:17:47 +0100'
+  # Extended elements (may or may not be present, don't mess with the text
+  # replacement anchors with the weird comment syntax-- contents will be
+  # replaced by the build script). Anything could be inserted here by the build
+  # script or nothing at all (special tags, commit author, git branch, checksum,
+  # checksum of modules/, information about the building machine/toolkit, etc.).
+  # Overkill for this script, but if you're going to support any info embedded
+  # by the build script dynamically, you might as well support all.
+  
+  # <*!EXTENDED_VERSION_INFO
+  version['Commit-ID']    = 'cd67d5bc01edf9787f03add81573beb5d0ca4f33'
+  version['Commit-Date']  = 'Mon Feb 17 21:17:42 2014 -0800'
+  version['Release-Date'] = '2014-02-18 07:17:47 +0100'
+  version['Released-By']  = 'zijistark <zijistark@gmail.com>'
+  # !*>
 
   global versionStr
   versionStr = '{}.{}.{}'.format( version['major'], version['minor'], version['micro'] )
 
-  if 'SHA' in version:
-    versionStr += '-git~' + version['SHA'][0:10]
+  if 'Commit-ID' in version:
+    versionStr += '-git~' + version['Commit-ID'][0:7]
 
+  # Note that the above generates a version string that is lexicographically
+  # ordered from semantic 'earlier' to 'later' in all cases, even with
+  # variable-digit components in the version number (with equal major, minor,
+  # and micro version numbers and an included commit ID prefix, there is no
+  # correct ordering between commit hashes, hence the special tilde used, which
+  # has an ASCII code of 0x7F (max. possible, ergo least priority in a compare),
+  # which will make the compare effectively skip that field for semantic
+  # purposes but still treat them as distinct versions).
+
+  # Resolve the installer's own absolute path. Needs to be tested with a py2exe
+  # rebuild, hence the exception-raising case below.
+
+  # We have have a relative or absolute path in sys.argv[0] (in either case,
+  # it may still be the right directory, but we'll have to find out)
+
+  if len(sys.argv) == 0 or sys.argv[0] == '':
+    raise InstallerEmptyArgvError()
+
+  global programPath
+  
+  # Resolve any symbolic links in path elements and canonicalize it
+  programPath = os.path.realpath( sys.argv[0] )
+
+  # Make sure it's normalized and absolute with respect to platform conventions
+  programPath = os.path.abspath( programPath )
+  return
 
 def printVersionEnvInfo():
   # Print the installer's version info (installer *script*, not module package)
@@ -191,13 +237,24 @@ def printVersionEnvInfo():
 
   print('HIP Installer:')
   print(versionStr + '\n')
-  
-  if 'commitDate' in version:
-    print('[commit] ' + version['commitDate'])
-  if 'buildDate' in version:
-    print('[build]  ' + version['buildDate'])
 
-  sys.stdout.write('\n')
+  # Fill this with any extended version info keys we want printed, if present.
+  # This is the order in which they'll be displayed.
+  extKeys = ['Commit-Date', 'Release-Date', 'Released-By']
+
+  # Resolve optional keys to found keys
+  extKeys = [ k for k in extKeys if k in version ]
+
+  if extKeys:
+    extVals = [ version[k] for k in extKeys ]
+    extKeys = [ k + ': ' for k in extKeys ]
+    maxKeyWidth = len( max(extKeys, key=len) )
+    for k, v in zip(extKeys, extVals):
+      print( '% -*s%s' % (maxKeyWidth, k, v) )
+    sys.stdout.write('\n')
+
+  print('Installer Path: ')
+  print(programPath + '\n')
   
   # Print the OS version/build info
   import platform as p
@@ -209,14 +266,13 @@ def printVersionEnvInfo():
 
   print("Python Runtime:")
   print(sys.version)
+  return
 
-  return 0
 
-
-def main():
-  initVersionInfo()
-  
+def main():  
   try:
+    initVersionEnvInfo()
+    
     dbgMode = (len(sys.argv) > 1 and '-D' in sys.argv[1:])
     versionMode = (len(sys.argv) > 1 and '-V' in sys.argv[1:])
         
@@ -231,12 +287,24 @@ def main():
     dbg.trace('detected supported platform class: ' + platform)
 
     if versionMode:
-      return printVersionEnvInfo()
+      printVersionEnvInfo()
+      return 0
+
+    # Normal operation from here on...
 
     if (platform == 'mac'):
       print('WARNING: Mac OS X support is currently experimental!\n'
             'Please help us make it work reliably for you by detailing any problems you '
             'may encounter in a direct email to zijistark@gmail.com.\n')
+
+    # Ensure the runtime's current working directory corresponds exactly to the
+    # location of this module itself. In other words, allow it to be run from
+    # anywhere on the system but still be able to assume the relative path to,
+    # e.g., "modules/" is just that.
+    normalizeCwd()
+
+    if not os.path.isdir('modules'):
+      raise InstallerPackageNotFoundError()
 
     # modDirs dynamic folders and straightforward keys are obviously
     # incomplete toward their end, which is encoding almost all of the logic
