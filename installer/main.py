@@ -1,5 +1,7 @@
 #!/usr/bin/python
+# -*- coding: cp1252 -*-
 # -*- python-indent-offset: 2 -*-
+
 
 import os, shutil
 import sys, traceback
@@ -34,6 +36,7 @@ class DebugTrace:
     if self.i <= 0: raise InstallerTraceNestingError()
     self.i -= 1
     if s: self.trace(s)
+    
 class VoidDebugTrace(DebugTrace):
   def __init__(self): pass
   def trace(self, s): pass
@@ -75,17 +78,18 @@ def src2Dst(src, dst):
 
 def rmTree(dir, traceMsg=None):
   if traceMsg: dbg.trace(traceMsg)
-  dbg.trace("RD: " + quoteIfWS(dir));
-  shutil.rmtree(dir);
+  dbg.trace("RD: " + quoteIfWS(dir))
+  if os.path.exists(dir):
+    shutil.rmtree(dir)
 
 def rmFile(f, traceMsg=None):
   if traceMsg: dbg.trace(traceMsg)
-  dbg.trace("D: " + quoteIfWS(f));
+  dbg.trace("D: " + quoteIfWS(f))
   os.remove(f);
 
 def mkTree(dir, traceMsg=None):
   if traceMsg: dbg.trace(traceMsg)
-  dbg.trace("MD: " + quoteIfWS(dir));
+  dbg.trace("MD: " + quoteIfWS(dir))
   os.makedirs(dir);
 
 def moveFolder(folder, prunePaths={}, ignoreFiles={}):
@@ -155,6 +159,36 @@ def detectPlatform():
     return 'win'
   raise InstallerPlatformError()
 
+def cleanUserDir(userDir):
+  if platform != 'mac':
+    print('Clearing cache in ' + quoteIfWS(userDir))
+
+  dbg.push('clearing cache in ' + quoteIfWS(userDir))
+  for d in [ os.path.join(userDir, e) for e in ['gfx', 'map', 'interface', 'logs'] ]:
+    rmTree(d)
+  dbg.pop()
+
+def resetCaches():
+  if platform == 'mac':
+    print('Clearing preexisting gfx/map cache')
+    cleanUserDir('..')
+  elif platform == 'win':
+    print('Clearing preexisting HIP gfx/map caches...')
+
+    # Match *all* userdirs in CKII user directory which include 'HIP' in their
+    # directory name, as this also covers all cases with external mods used with
+    # HIP, and then clear their caches. It works, because, without editing the
+    # user_dir line in the .mod file, it is impossible to select a target folder
+    # that won't result in a substring of 'HIP' somewhere in the combined
+    # user_dir name.
+
+    dirEntries = [ os.path.join('..', e) for e in os.listdir('..') ]
+    for userDir in dirEntries:
+      if os.path.isdir(userDir) and 'HIP' in userDir:
+        cleanUserDir(userDir)
+    
+  else:
+    pass # TODO: linux user dirs are where?
 
 # Changes the current working directory to the same as that of the
 # fully-resolved path to this program. This is to enable the installer to be
@@ -184,7 +218,7 @@ def initVersionEnvInfo():
   
   version['major'] = 1
   version['minor'] = 2
-  version['micro'] = 0
+  version['micro'] = 2
 
   # Extended elements
 
@@ -200,9 +234,9 @@ def initVersionEnvInfo():
   # building machine/toolkit, etc.). This is WIP.
 
   # <*!EXTENDED_VERSION_INFO
-  version['Commit-ID']    = '02037acc82fe8851c77ddfedbb790d741db9b451'
-  version['Commit-Date']  = 'Tue Feb 18 16:56:33 2014 -0800'
-  version['Release-Date'] = '2014-02-18 21:44:51 -0800'
+##  version['Commit-ID']    = '361fe74959ee65a5b6e7f9144097e1eb66fa33cd' # parent
+##  version['Commit-Date']  = 'Tue Feb 18 16:56:33 2014 -0800'
+  version['Release-Date'] = '2014-02-20 02:42:34 -0800'
   version['Released-By']  = 'zijistark <zijistark@gmail.com>'
   # !*>
 
@@ -250,7 +284,7 @@ def printVersionEnvInfo():
 
   # Fill this with any extended version info keys we want printed, if present.
   # This is the order in which they'll be displayed.
-  extKeys = ['Commit-ID', 'Commit-Date', 'Release-Date', 'Released-By']
+  extKeys = ['Commit-ID', 'Release-Date', 'Released-By']
 
   # Resolve optional keys to found keys
   extKeys = [ k for k in extKeys if k in version ]
@@ -303,9 +337,11 @@ def main():
     # Normal operation from here on...
 
     if (platform == 'mac'):
-      print('WARNING: Mac OS X support is currently experimental!\n'
-            'Please help us make it work reliably for you by detailing any problems you '
-            'may encounter in a direct email to zijistark@gmail.com.\n')
+      print('WARNING: Mac OS X support is currently in beta.\n'
+            'While all mods and the installer should now work with OS X for all users, YMMV.\n'
+            'Please report any problems you encounter or any feedback that you\'d like to\n'
+            'share on the HIP forums. zijistark is the poor fellow responsible for the OS X\n'
+            'initiative, and he can also be reached at <zijistark@gmail.com>.')
 
     # Ensure the runtime's current working directory corresponds exactly to the
     # location of this module itself. In other words, allow it to be run from
@@ -359,9 +395,9 @@ def main():
       print("Escribe 's' o 'si' para aceptar, o deja el campo en blanco. Cualquier otro caso sera considerado un 'no'.\n")
     else:
       print("\nThis version of the Historical Immersion Project was released %s.\n" % versions['pkg'])
-      print("To answer yes to a prompt, respond with 'y' or 'yes' (sans quotes) or simply hit ENTER. Besides a blank line, anything else will be interpreted as 'no'.\n")
+      print("To confirm a prompt, respond with 'y' or 'yes' (sans quotes) or simply hit\n"
+            "ENTER. Besides a blank line, anything else will be interpreted as 'no.'\n")
 
-    # Are we moving the module content for speed or copying it to preserve the source?
     global move
 
     if language == "f":
@@ -371,12 +407,31 @@ def main():
       move = promptUser("Mover los archivos en lugar de copiarlos es mucho mas rapido, pero hace que la instalacion de varias copias sea mas complicada.\n"
                         "Quieres que los archivos de los modulos se muevan en lugar de copiarse? [si]")
     else:
-      move = promptUser("Moving the files instead of copying them is much quicker. "
-                        "Unfortunately, it makes installing and managing multiple versions (e.g., different mod combinations) or reinstalling difficult, "
-                        "because moving effectively destroys the installer's source files rather than keeping them intact.\n\n"
-                        "Do you want to have the module files moved rather than copied anyway? [yes]")
+      move = promptUser("The installer can either directly MOVE the module package's data files\n"
+                        "into your installation folder, deleting the package in the process, or\n"
+                        "it can preserve the installation package by COPYING the files into the\n"
+                        "installation folder. Moving is faster than copying, but copying allows\n"
+                        "you to reinstall at will (e.g., with different module combinations).\n\n"
+                        "Would you like to MOVE rather than COPY? [yes]")
 
     move = isYes(move)
+
+    # Confirm. "User studies" now "prove" this default is questionable, but I
+    # think it should stay default if you hit ENTER to everything.
+    
+    if move:
+      if language == 'f':
+        move = promptUser("Etes-vous sûr?\n"
+                          "Voulez-vous supprimer le paquet après l'installation? [oui]")        
+      elif language == 'e':
+        move = promptUser("¿Está seguro?\n"
+                          "¿Quieres eliminar el paquete después de la instalación? [si]")
+      else:
+        move = promptUser("Are you sure?\n"
+                          "Do you want to delete the package after installation? [yes]")
+
+    move = isYes(move)
+    
     dbg.trace('user choice: move instead of copy: {}'.format(move))
 
     # Determine installation target folder...
@@ -434,7 +489,7 @@ def main():
     VIETevents = enableMod("VIET events (%s)" % versions['VIET'])
 
     if SWMH:
-      VIETimmersion = false
+      VIETimmersion = False
       if language == "f":
         print("VIET immersion n'est pas compatible avec SWMH et ne peut donc pas etre actif en meme temps qu'SWMH.")
       elif language == "e":
@@ -496,13 +551,9 @@ def main():
     if NBRT:
       dbg.push("merging NBRT+...")
       moduleOutput.append("NBRT+ (%s)\n" % versions['NBRT'])
-      ignoreF = {}
-      if not SWMH:
-        ignoreF = {"modules/NBRT+/map/terrain.bmp":1,
-                   "modules/NBRT+/map/trees.bmp":1,
-                   "modules/NBRT+/map/terrain/colormap.dds":1,
-                   "modules/NBRT+/map/terrain/colormap_water.dds":1}
-        moveFolder("NBRT+", ignoreFiles=ignoreF)
+      moveFolder("NBRT+")
+      if SWMH:
+        moveFolder("NBRT+SWMH")
       if ARKOarmoiries:
         moveFolder("NBRT+ARKO")
       dbg.pop()
@@ -583,6 +634,10 @@ def main():
 
     with open(versionFilename, "w") as output:
       output.write("".join(moduleOutput))
+
+    # Reset all gfx/map/interface/logs cache for every instance of a preexisting
+    # user_dir that includes HIP, platform-agnostic
+    resetCaches()
 
     # Installation complete
     dbg.trace("installation complete")
