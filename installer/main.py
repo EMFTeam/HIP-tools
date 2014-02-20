@@ -94,14 +94,14 @@ def mkTree(dir, traceMsg=None):
 
 def moveFolder(folder, prunePaths={}, ignoreFiles={}):
   if language == "f":
-    print("Fusion repertoire " + folder)
+    print("Fusion repertoire " + quoteIfWS(folder) + '...')
   elif language == "e":
-    print("Carpeta de combinacion " + folder)
+    print("Carpeta de combinacion " + quoteIfWS(folder) + '...')
   else:
-    print("Merging folder " + folder)
+    print("Merging folder " + quoteIfWS(folder) + '...')
 
   srcFolder = os.path.join('modules', folder)
-  dbg.push("merging root folder " + src2Dst(srcFolder, targetFolder))
+  dbg.push("merging folder " + src2Dst(srcFolder, targetFolder))
 
   for root, dirs, files in os.walk(srcFolder):
     newRoot = root.replace(srcFolder, targetFolder)
@@ -313,15 +313,103 @@ def printVersionEnvInfo():
   return
 
 def getPkgVersions(modDirs):
-    versions = {}
-    dbg.push("reading package/module versions")
-    for mod in modDirs.keys():
-      f = os.path.join("modules/", modDirs[mod], "version.txt")
-      dbg.trace("%s: reading %s" % (mod, f))
-      versions[mod] = open(f).readline().strip()
-      dbg.trace("%s: version: %s" % (mod, versions[mod]))
-    dbg.pop()
-    return versions
+  versions = {}
+  dbg.push("reading package/module versions")
+  for mod in modDirs.keys():
+    f = os.path.join("modules/", modDirs[mod], "version.txt")
+    dbg.trace("%s: reading %s" % (mod, f))
+    versions[mod] = open(f).readline().strip()
+    dbg.trace("%s: version: %s" % (mod, versions[mod]))
+  dbg.pop()
+  return versions
+
+def getInstallOptions():
+  # Determine user language for installation
+  global language
+  language = promptUser("For English, hit ENTER. En francais, taper 'f'. Para espanol, presiona 'e'.")
+
+  # Show HIP installer version & explain interactive prompting
+  if language == "f":
+    print("\nCette version de Historical Immersion Project date du %s.\n" % versions['pkg'])
+    print("Taper 'o' ou 'oui' pour valider, ou laisser le champ vierge. Toute autre reponse sera interpretee comme un non.\n")
+  elif language == "e":
+    print("\nEsta vercion de Historical Immersion Project fecha del %s.\n" % versions['pkg'])
+    print("Escribe 's' o 'si' para aceptar, o deja el campo en blanco. Cualquier otro caso sera considerado un 'no'.\n")
+  else:
+    print("\nThis version of the Historical Immersion Project was released %s.\n" % versions['pkg'])
+    print("To confirm a prompt, respond with 'y' or 'yes' (sans quotes) or simply hit\n"
+          "ENTER. Besides a blank line, anything else will be interpreted as 'no.'\n")
+
+  global move
+
+  if language == "f":
+    move = promptUser("Deplacer les fichiers plutot que les copier est bien plus rapide, mais rend l'installation de plusieurs copies du mod plus difficile.\n"
+                      "Voulez-vous que les fichiers soient deplaces plutot que copies ? [oui]")
+  elif language == "e":
+    move = promptUser("Mover los archivos en lugar de copiarlos es mucho mas rapido, pero hace que la instalacion de varias copias sea mas complicada.\n"
+                      "Quieres que los archivos de los modulos se muevan en lugar de copiarse? [si]")
+  else:
+    move = promptUser("The installer can either directly MOVE the module package's data files\n"
+                      "into your installation folder, deleting the package in the process, or\n"
+                      "it can preserve the installation package by COPYING the files into the\n"
+                      "installation folder. Moving is faster than copying, but copying allows\n"
+                      "you to reinstall at will (e.g., with different module combinations).\n\n"
+                      "Would you like to MOVE rather than COPY? [yes]")
+
+  move = isYes(move)
+
+  # Confirm. "User studies" now "prove" this default is questionable (i.e.,
+  # copy not being default), but I think the move method should remain the
+  # default if you hit ENTER to everything. Not because of speed. Not only are
+  # all the package data files freshly primed in the OS filesystem cache due
+  # to the installer archive extraction done previously, but the installer's
+  # compilation logic will soon be overhauled for single-pass compilation,
+  # thus dramatically reducing the number of file operations while merging to
+  # the minimum possible required.
+
+  # The reason MOVE ought to be default is simply that most users *should*
+  # have their source package deleted after use (as they can simply unzip
+  # again, worst-case). It avoids scenarios where users forget to delete a
+  # preexisting modules/, unzip a new HIP release that deleted or renamed some
+  # files into the mod folder, and then have multiple or old, extranneous
+  # versions of files mixed into the new release.
+  
+  if move:
+    if language == 'f':
+      move = promptUser("Etes-vous sûr?\n"
+                        "Voulez-vous supprimer le paquet après l'installation? [oui]")        
+    elif language == 'e':
+      move = promptUser("¿Está seguro?\n"
+                        "¿Quieres eliminar el paquete después de la instalación? [si]")
+    else:
+      move = promptUser("Are you sure?\n"
+                        "Do you want to delete the package after installation? [yes]")
+
+  move = isYes(move)
+  dbg.trace('user choice: move instead of copy: {}'.format(move))
+
+  # Determine installation target folder...
+  defaultFolder = 'Historical Immersion Project'
+
+  # Note that we use the case-preserving form of promptUser for the target folder (also determines name in launcher)
+
+  global targetFolder
+
+  if language == "f":
+    targetFolder = promptUser("Installer le mod dans un repertoire existant supprimera ce repertoire. Dans quel repertoire souhaitez-vous proceder a l'installation ?\n"
+                              "Laissez le champ vierge pour '%s'." % defaultFolder, lc=False)
+  elif language == "e":
+    targetFolder = promptUser("Instalar el mod en una carpeta existente eliminara dicha carpeta. En que carpeta deseas realizar la instalacion?\n"
+                              "Dejar en blanco para '%s'." % defaultFolder, lc=False)
+  else:
+    targetFolder = promptUser("Installing the mod to a folder that exists will delete that folder. What folder would you like to install to?\n"
+                              "Leave blank for '%s'." % defaultFolder, lc=False)
+
+  if targetFolder == '':
+    targetFolder = defaultFolder
+  else: pass #TODO: verify it contains no illegal characters
+  dbg.trace('user choice: target folder: {}'.format(quoteIfWS(targetFolder)))
+
 
 def main():  
   try:
@@ -354,8 +442,8 @@ def main():
       print('WARNING: Mac OS X support is currently in beta.\n'
             'While all mods and the installer should now work with OS X for all users, YMMV.\n'
             'Please report any problems you encounter or any feedback that you\'d like to\n'
-            'share on the HIP forums. zijistark is the poor fellow responsible for the OS X\n'
-            'initiative, and he can also be reached at <zijistark@gmail.com>.')
+            'share on the HIP forums or via an email to the owner of the OS X initiative:\n'
+            'zijistark <zijistark@gmail.com>')
 
     # Ensure the runtime's current working directory corresponds exactly to the
     # location of this module itself. In other words, allow it to be run from
@@ -382,97 +470,10 @@ def main():
 
     versions = getPkgVersions(modDirs)
 
-    # Determine user language for installation
-    global language
-    language = promptUser("For English, press ENTER. En francais, taper 'f'. Para espanol, presiona 'e'.")
-
-    # Show HIP installer version & explain interactive prompting
-    if language == "f":
-      print("\nCette version de Historical Immersion Project date du %s.\n" % versions['pkg'])
-      print("Taper 'o' ou 'oui' pour valider, ou laisser le champ vierge. Toute autre reponse sera interpretee comme un non.\n")
-    elif language == "e":
-      print("\nEsta vercion de Historical Immersion Project fecha del %s.\n" % versions['pkg'])
-      print("Escribe 's' o 'si' para aceptar, o deja el campo en blanco. Cualquier otro caso sera considerado un 'no'.\n")
-    else:
-      print("\nThis version of the Historical Immersion Project was released %s.\n" % versions['pkg'])
-      print("To confirm a prompt, respond with 'y' or 'yes' (sans quotes) or simply hit\n"
-            "ENTER. Besides a blank line, anything else will be interpreted as 'no.'\n")
-
-    global move
-
-    if language == "f":
-      move = promptUser("Deplacer les fichiers plutot que les copier est bien plus rapide, mais rend l'installation de plusieurs copies du mod plus difficile.\n"
-                        "Voulez-vous que les fichiers soient deplaces plutot que copies ? [oui]")
-    elif language == "e":
-      move = promptUser("Mover los archivos en lugar de copiarlos es mucho mas rapido, pero hace que la instalacion de varias copias sea mas complicada.\n"
-                        "Quieres que los archivos de los modulos se muevan en lugar de copiarse? [si]")
-    else:
-      move = promptUser("The installer can either directly MOVE the module package's data files\n"
-                        "into your installation folder, deleting the package in the process, or\n"
-                        "it can preserve the installation package by COPYING the files into the\n"
-                        "installation folder. Moving is faster than copying, but copying allows\n"
-                        "you to reinstall at will (e.g., with different module combinations).\n\n"
-                        "Would you like to MOVE rather than COPY? [yes]")
-
-    move = isYes(move)
-
-    # Confirm. "User studies" now "prove" this default is questionable (i.e.,
-    # copy not being default), but I think the move method should remain the
-    # default if you hit ENTER to everything. Not because of speed. Not only are
-    # all the package data files freshly primed in the OS filesystem cache due
-    # to the installer archive extraction done previously, but the installer's
-    # compilation logic will soon be overhauled for single-pass compilation,
-    # thus dramatically reducing the number of file operations while merging to
-    # the minimum possible required.
-
-    # The reason MOVE ought to be default is simply that most users *should*
-    # have their source package deleted after use (as they can simply unzip
-    # again, worst-case). It avoids scenarios where users forget to delete a
-    # preexisting modules/, unzip a new HIP release that deleted or renamed some
-    # files into the mod folder, and then have multiple or old, extranneous
-    # versions of files mixed into the new release.
-    
-    if move:
-      if language == 'f':
-        move = promptUser("Etes-vous sûr?\n"
-                          "Voulez-vous supprimer le paquet après l'installation? [oui]")        
-      elif language == 'e':
-        move = promptUser("¿Está seguro?\n"
-                          "¿Quieres eliminar el paquete después de la instalación? [si]")
-      else:
-        move = promptUser("Are you sure?\n"
-                          "Do you want to delete the package after installation? [yes]")
-
-    move = isYes(move)
-    
-    dbg.trace('user choice: move instead of copy: {}'.format(move))
-
-    # Determine installation target folder...
-    defaultFolder = 'Historical Immersion Project'
-
-    # Note that we use the case-preserving form of promptUser for the target folder (also determines name in launcher)
-
-    global targetFolder
-
-    if language == "f":
-      targetFolder = promptUser("Installer le mod dans un repertoire existant supprimera ce repertoire. Dans quel repertoire souhaitez-vous proceder a l'installation ?\n"
-                                "Laissez le champ vierge pour '%s'." % defaultFolder, lc=False)
-    elif language == "e":
-      targetFolder = promptUser("Instalar el mod en una carpeta existente eliminara dicha carpeta. En que carpeta deseas realizar la instalacion?\n"
-                                "Dejar en blanco para '%s'." % defaultFolder, lc=False)
-    else:
-      targetFolder = promptUser("Installing the mod to a folder that exists will delete that folder. What folder would you like to install to?\n"
-                                "Leave blank for '%s'." % defaultFolder, lc=False)
-
-    if targetFolder == '':
-      targetFolder = defaultFolder
-    else: pass #TODO: verify it contains no illegal characters
-
-    dbg.trace('user choice: target folder: {}'.format(quoteIfWS(targetFolder)))
+    # Prompt user for options related to this install
+    getInstallOptions()
 
     # Determine module combination...
-    moduleOutput = []
-    moduleOutput.append("Historical Immersion Project (%s)\nEnabled modules:\n" % versions['pkg'])
 
     PB = enableMod("Project Balance (%s)" % versions['PB'])
 
@@ -521,8 +522,10 @@ def main():
     mkTree(targetFolder)
 
     # Install...
+    moduleOutput = []
+    moduleOutput.append("Historical Immersion Project (%s)\nEnabled modules:\n" % versions['pkg'])
     dbg.push('merging source files into target folder...')
-
+  
     moveFolder("Converter/Common")
 
     if ARKOarmoiries:
