@@ -172,39 +172,49 @@ def normalizeCwd():
 def initVersionEnvInfo():
   global version
   version = {}
+
+  # Once I achieved successful, tested Mac support (and boy did it take a long
+  # time to sort-out) post-overhaul, the version number was arbitrarily assigned
+  # to 1.2.0. The micro version will increment with each public release in which
+  # the installer's functionality is nontrivially patched. It should not be
+  # incremented simply due to a HIP release; changes to the module package data
+  # are independent of the installer's version. However, altered data
+  # compilation logic (i.e., different compatch results) is relevant to the
+  # installer version.
+  
   version['major'] = 1
-  version['minor'] = 1
+  version['minor'] = 2
   version['micro'] = 0
 
-  # Extended elements (may or may not be present, don't mess with the text
-  # replacement anchors with the weird comment syntax-- contents will be
-  # replaced by the build script). Anything could be inserted here by the build
-  # script or nothing at all (special tags, commit author, git branch, checksum,
-  # checksum of modules/, information about the building machine/toolkit, etc.).
-  # Overkill for this script, but if you're going to support any info embedded
-  # by the build script dynamically, you might as well support all.
+  # Extended elements
+
+  # May or may not be present. Don't mess with the text replacement anchors
+  # within the weird comment syntax, as the contents will be replaced by the
+  # build script. Everything between the first comment line beginning with
+  # "<*!EXTENDED_VERSION_INFO" and the closing comment line composed only of
+  # "!*>" will be replaced or emptied at build time. Ergo, anything there
+  # that's checked-into the repository is purely an example.
   
+  # Anything could be inserted here by the build script or nothing at all
+  # (special tags, commit author, git branch, checksum, information about the
+  # building machine/toolkit, etc.). This is WIP.
+
   # <*!EXTENDED_VERSION_INFO
-  version['Commit-ID']    = 'cd67d5bc01edf9787f03add81573beb5d0ca4f33'
-  version['Commit-Date']  = 'Mon Feb 17 21:17:42 2014 -0800'
-  version['Release-Date'] = '2014-02-18 07:17:47 +0100'
+  version['Commit-ID']    = '02037acc82fe8851c77ddfedbb790d741db9b451'
+  version['Commit-Date']  = 'Tue Feb 18 16:56:33 2014 -0800'
+  version['Release-Date'] = '2014-02-18 21:44:51 -0800'
   version['Released-By']  = 'zijistark <zijistark@gmail.com>'
   # !*>
 
   global versionStr
   versionStr = '{}.{}.{}'.format( version['major'], version['minor'], version['micro'] )
 
-  if 'Commit-ID' in version:
-    versionStr += '-git~' + version['Commit-ID'][0:7]
+##  if 'Commit-ID' in version:
+##    versionStr += '.git~' + version['Commit-ID'][0:7]
 
   # Note that the above generates a version string that is lexicographically
-  # ordered from semantic 'earlier' to 'later' in all cases, even with
-  # variable-digit components in the version number (with equal major, minor,
-  # and micro version numbers and an included commit ID prefix, there is no
-  # correct ordering between commit hashes, hence the special tilde used, which
-  # has an ASCII code of 0x7F (max. possible, ergo least priority in a compare),
-  # which will make the compare effectively skip that field for semantic
-  # purposes but still treat them as distinct versions).
+  # ordered from semantic 'earlier' to 'later' in all cases, including variable
+  # numbers of digits in any of the components.
 
   # Resolve the installer's own absolute path. Needs to be tested with a py2exe
   # rebuild, hence the exception-raising case below.
@@ -240,7 +250,7 @@ def printVersionEnvInfo():
 
   # Fill this with any extended version info keys we want printed, if present.
   # This is the order in which they'll be displayed.
-  extKeys = ['Commit-Date', 'Release-Date', 'Released-By']
+  extKeys = ['Commit-ID', 'Commit-Date', 'Release-Date', 'Released-By']
 
   # Resolve optional keys to found keys
   extKeys = [ k for k in extKeys if k in version ]
@@ -410,6 +420,9 @@ def main():
       SWMHnative = True
 
     ARKOarmoiries = enableMod("ARKOpack Armoiries (coats of arms) (%s)" % versions['ARKO'])
+
+    # One of these is to be disabled for Mac installs until its issues are
+    # fixed, but I haven't determined which with certainty yet.
     ARKOinterface = enableMod("ARKOpack Interface (%s)" % versions['ARKO'])
     NBRT = enableMod("NBRT+ (%s)" % versions['NBRT'])
 
@@ -586,7 +599,7 @@ def main():
   except KeyboardInterrupt:
     # Ctrl-C just aborts (with a dedicated error code) rather than cause a
     # traceback. May want to catch it during filesystem modification stage
-    sys.stderr.write("\nUser interrupt: terminating early...\n")
+    sys.stderr.write("\nUser interrupt: Exiting installer early...\n")
     sys.exit(2)
 
   except InstallerTraceNestingError as e:
