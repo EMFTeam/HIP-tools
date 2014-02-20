@@ -6,6 +6,30 @@
 import os, shutil
 import sys, traceback
 
+
+def localise(key):
+  database = {'INTRO':
+               {
+                 'fr':"Cette version de Historical Immersion Project date du %s.\n"
+                      "Taper 'o' ou 'oui' pour valider, ou laisser le champ vierge. Toute autre\n"
+                      "reponse sera interpretee comme un non.\n",
+                 'es':"Esta vercion de Historical Immersion Project fecha del %s.\n"
+                      "Escribe 's' o 'si' para aceptar, o deja el campo en blanco. Cualquier otro\n"
+                      "caso sera considerado un 'no'.\n",
+                 'en':"This version of the Historical Immersion Project was released %s.\n"
+                      "To confirm a prompt, respond with 'y' or 'yes' (sans quotes) or simply hit\n"
+                      "ENTER. Besides a blank line, anything else will be interpreted as 'no.'\n",
+               },
+              'ENABLE_MOD':
+               {
+                 'fr':"Voulez-vous installer %s ? [oui]",
+                 'es':"Deseas instalar %s? [si]",
+                 'en':"Do you want to install %s? [yes]",
+               }
+             }
+  
+  return database[key][language]
+
 class InstallerException(Exception): pass
 class InstallerPlatformError(InstallerException):
   def __str__(self):
@@ -53,21 +77,15 @@ def promptUser(prompt, lc=True):
     return response
 
 def isYes(answer):
-  if language == 'f':
+  if language == 'fr':
     return answer in ('','o','oui')
-  elif language == 'e':
+  elif language == 'es':
     return answer in ('','s','si')
   else:
     return answer in ('','y','yes')
 
 def enableMod(name):
-  if language == "f":
-    answer = promptUser("Voulez-vous installer %s ? [oui]" % name)
-  elif language == "e":
-    answer = promptUser("Deseas instalar %s? [si]" % name)
-  else:
-    answer = promptUser("Do you want to install %s? [yes]" % name)
-  return isYes(answer)
+  return isYes( promptUser(localise('ENABLE_MOD') % name) )
 
 def quoteIfWS(s):
   if ' ' in s: return "'{}'".format(s)
@@ -93,9 +111,9 @@ def mkTree(dir, traceMsg=None):
   os.makedirs(dir);
 
 def moveFolder(folder, prunePaths={}, ignoreFiles={}):
-  if language == "f":
+  if language == 'fr':
     print("Fusion repertoire " + quoteIfWS(folder) + '...')
-  elif language == "e":
+  elif language == 'es':
     print("Carpeta de combinacion " + quoteIfWS(folder) + '...')
   else:
     print("Merging folder " + quoteIfWS(folder) + '...')
@@ -313,6 +331,7 @@ def printVersionEnvInfo():
   return
 
 def getPkgVersions(modDirs):
+  global versions
   versions = {}
   dbg.push("reading package/module versions")
   for mod in modDirs.keys():
@@ -321,31 +340,28 @@ def getPkgVersions(modDirs):
     versions[mod] = open(f).readline().strip()
     dbg.trace("%s: version: %s" % (mod, versions[mod]))
   dbg.pop()
-  return versions
 
 def getInstallOptions():
   # Determine user language for installation
   global language
   language = promptUser("For English, hit ENTER. En francais, taper 'f'. Para espanol, presiona 'e'.")
 
-  # Show HIP installer version & explain interactive prompting
-  if language == "f":
-    print("\nCette version de Historical Immersion Project date du %s.\n" % versions['pkg'])
-    print("Taper 'o' ou 'oui' pour valider, ou laisser le champ vierge. Toute autre reponse sera interpretee comme un non.\n")
-  elif language == "e":
-    print("\nEsta vercion de Historical Immersion Project fecha del %s.\n" % versions['pkg'])
-    print("Escribe 's' o 'si' para aceptar, o deja el campo en blanco. Cualquier otro caso sera considerado un 'no'.\n")
+  if language == 'f':
+    language = 'fr'
+  elif language == 'e':
+    language = 'es'
   else:
-    print("\nThis version of the Historical Immersion Project was released %s.\n" % versions['pkg'])
-    print("To confirm a prompt, respond with 'y' or 'yes' (sans quotes) or simply hit\n"
-          "ENTER. Besides a blank line, anything else will be interpreted as 'no.'\n")
+    language = 'en'
+
+  # Show HIP installer version & explain interactive prompting
+  print(localise('INTRO') % versions['pkg'])
 
   global move
 
-  if language == "f":
+  if language == 'fr':
     move = promptUser("Deplacer les fichiers plutot que les copier est bien plus rapide, mais rend l'installation de plusieurs copies du mod plus difficile.\n"
                       "Voulez-vous que les fichiers soient deplaces plutot que copies ? [oui]")
-  elif language == "e":
+  elif language == 'es':
     move = promptUser("Mover los archivos en lugar de copiarlos es mucho mas rapido, pero hace que la instalacion de varias copias sea mas complicada.\n"
                       "Quieres que los archivos de los modulos se muevan en lugar de copiarse? [si]")
   else:
@@ -395,10 +411,10 @@ def getInstallOptions():
 
   global targetFolder
 
-  if language == "f":
+  if language == 'fr':
     targetFolder = promptUser("Installer le mod dans un repertoire existant supprimera ce repertoire. Dans quel repertoire souhaitez-vous proceder a l'installation ?\n"
                               "Laissez le champ vierge pour '%s'." % defaultFolder, lc=False)
-  elif language == "e":
+  elif language == 'es':
     targetFolder = promptUser("Instalar el mod en una carpeta existente eliminara dicha carpeta. En que carpeta deseas realizar la instalacion?\n"
                               "Dejar en blanco para '%s'." % defaultFolder, lc=False)
   else:
@@ -468,7 +484,7 @@ def main():
                'NBRT':'NBRT+',
                'ARKO':'ARKOpack_Armoiries'}
 
-    versions = getPkgVersions(modDirs)
+    getPkgVersions(modDirs)
 
     # Prompt user for options related to this install
     getInstallOptions()
@@ -479,9 +495,9 @@ def main():
 
     SWMH = enableMod("SWMH (%s)" % versions['SWMH'])
     if SWMH:
-      if language == "f":
+      if language == 'fr':
         SWMHnative = enableMod("SWMH avec les noms culturels locaux, plutot qu'en anglais ou francises")
-      elif language == "e":
+      elif language == 'es':
         SWMHnative = enableMod("SWMH con localizacion nativa para culturas y titulos, en lugar de ingles")
       else:
         SWMHnative = enableMod("SWMH with native localisation for cultures and titles, rather than English")
@@ -504,9 +520,9 @@ def main():
 
     if SWMH:
       VIETimmersion = False
-      if language == "f":
+      if language == 'fr':
         print("VIET immersion n'est pas compatible avec SWMH et ne peut donc pas etre actif en meme temps qu'SWMH.")
-      elif language == "e":
+      elif language == 'es':
         print("VIET immersion no es todavia compatible con SWMH y no puede ser activado si has activado SWMH.")
       else:
         print("VIET immersion is not yet compatible with SWMH, thus cannot be enabled as you've enabled SWMH.")
@@ -597,9 +613,9 @@ def main():
         moveFolder("VIET_Immersion")
         moveFolder("Converter/VIET")
 
-      if language == "f":
+      if language == 'fr':
         answer = promptUser("VIET Immersion necessite tous les DLC de portraits. Les avez-vous tous ? [oui]")
-      if language == "e":
+      if language == 'es':
         answer = promptUser("VIET inmersion depende de los retratos DLC. Tiene todos los retratos DLC? [si]")
       else:
         answer = promptUser("VIET Immersion depends on the portrait DLCs. Do you have all of the portrait DLCs? [yes]")
@@ -658,9 +674,9 @@ def main():
     # Installation complete
     dbg.trace("installation complete")
 
-    if language == "f":
+    if language == 'fr':
       promptUser("Installation terminee. Taper entree pour sortir.")
-    elif language == "e":
+    elif language == 'es':
       promptUser("Instalacion terminada. Presiona Enter para salir.")
     else:
       promptUser("Installation done. Hit ENTER to exit.")
