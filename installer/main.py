@@ -6,29 +6,30 @@
 import os, shutil
 import sys, traceback
 
-
-def localise(key):
-  database = {'INTRO':
-               {
-                 'fr':"Cette version de Historical Immersion Project date du %s.\n"
-                      "Taper 'o' ou 'oui' pour valider, ou laisser le champ vierge. Toute autre\n"
-                      "reponse sera interpretee comme un non.\n",
-                 'es':"Esta vercion de Historical Immersion Project fecha del %s.\n"
-                      "Escribe 's' o 'si' para aceptar, o deja el campo en blanco. Cualquier otro\n"
-                      "caso sera considerado un 'no'.\n",
-                 'en':"This version of the Historical Immersion Project was released %s.\n"
-                      "To confirm a prompt, respond with 'y' or 'yes' (sans quotes) or simply hit\n"
-                      "ENTER. Besides a blank line, anything else will be interpreted as 'no.'\n",
-               },
-              'ENABLE_MOD':
-               {
-                 'fr':"Voulez-vous installer %s ? [oui]",
-                 'es':"Deseas instalar %s? [si]",
-                 'en':"Do you want to install %s? [yes]",
-               }
+def initLocalisation():
+  global i18nDB
+  i18nDB = {'INTRO':
+             {
+               'fr':"Cette version de Historical Immersion Project date du %s.\n"
+                    "Taper 'o' ou 'oui' pour valider, ou laisser le champ vierge. Toute autre\n"
+                    "reponse sera interpretee comme un non.\n",
+               'es':"Esta vercion de Historical Immersion Project fecha del %s.\n"
+                    "Escribe 's' o 'si' para aceptar, o deja el campo en blanco. Cualquier otro\n"
+                    "caso sera considerado un 'no'.\n",
+               'en':"This version of the Historical Immersion Project was released %s.\n"
+                    "To confirm a prompt, respond with 'y' or 'yes' (sans quotes) or simply hit\n"
+                    "ENTER. Besides a blank line, anything else will be interpreted as 'no.'\n",
+             },
+            'ENABLE_MOD':
+             {
+               'fr':"Voulez-vous installer %s ? [oui]",
+               'es':"Deseas instalar %s? [si]",
+               'en':"Do you want to install %s? [yes]",
              }
+           }
   
-  return database[key][language]
+def localise(key):
+  return i18nDB[key][language]
 
 class InstallerException(Exception): pass
 class InstallerPlatformError(InstallerException):
@@ -112,11 +113,11 @@ def mkTree(dir, traceMsg=None):
 
 def moveFolder(folder, prunePaths={}, ignoreFiles={}):
   if language == 'fr':
-    print("Fusion repertoire " + quoteIfWS(folder) + '...')
+    print("Fusion repertoire " + quoteIfWS(folder))
   elif language == 'es':
-    print("Carpeta de combinacion " + quoteIfWS(folder) + '...')
+    print("Carpeta de combinacion " + quoteIfWS(folder))
   else:
-    print("Merging folder " + quoteIfWS(folder) + '...')
+    print("Merging folder " + quoteIfWS(folder))
 
   srcFolder = os.path.join('modules', folder)
   dbg.push("merging folder " + src2Dst(srcFolder, targetFolder))
@@ -236,7 +237,7 @@ def initVersionEnvInfo():
   
   version['major'] = 1
   version['minor'] = 2
-  version['micro'] = 2
+  version['micro'] = 3
 
   # Extended elements
 
@@ -254,7 +255,7 @@ def initVersionEnvInfo():
   # <*!EXTENDED_VERSION_INFO
 ##  version['Commit-ID']    = '361fe74959ee65a5b6e7f9144097e1eb66fa33cd' # parent
 ##  version['Commit-Date']  = 'Tue Feb 18 16:56:33 2014 -0800'
-  version['Release-Date'] = '2014-02-20 02:42:34 -0800'
+  version['Release-Date'] = '2014-02-21 04:45:35 UTC'
   version['Released-By']  = 'zijistark <zijistark@gmail.com>'
   # !*>
 
@@ -359,10 +360,12 @@ def getInstallOptions():
   global move
 
   if language == 'fr':
-    move = promptUser("Deplacer les fichiers plutot que les copier est bien plus rapide, mais rend l'installation de plusieurs copies du mod plus difficile.\n"
+    move = promptUser("Deplacer les fichiers plutot que les copier est bien plus rapide, mais\n"
+                      "rend l'installation de plusieurs copies du mod plus difficile.\n"
                       "Voulez-vous que les fichiers soient deplaces plutot que copies ? [oui]")
   elif language == 'es':
-    move = promptUser("Mover los archivos en lugar de copiarlos es mucho mas rapido, pero hace que la instalacion de varias copias sea mas complicada.\n"
+    move = promptUser("Mover los archivos en lugar de copiarlos es mucho mas rapido, pero hace\n"
+                      "que la instalacion de varias copias sea mas complicada.\n"
                       "Quieres que los archivos de los modulos se muevan en lugar de copiarse? [si]")
   else:
     move = promptUser("The installer can either directly MOVE the module package's data files\n"
@@ -412,14 +415,17 @@ def getInstallOptions():
   global targetFolder
 
   if language == 'fr':
-    targetFolder = promptUser("Installer le mod dans un repertoire existant supprimera ce repertoire. Dans quel repertoire souhaitez-vous proceder a l'installation ?\n"
+    targetFolder = promptUser("Installer le mod dans un repertoire existant supprimera ce repertoire.\n"
+                              "Dans quel repertoire souhaitez-vous proceder a l'installation ?\n"
                               "Laissez le champ vierge pour '%s'." % defaultFolder, lc=False)
   elif language == 'es':
-    targetFolder = promptUser("Instalar el mod en una carpeta existente eliminara dicha carpeta. En que carpeta deseas realizar la instalacion?\n"
+    targetFolder = promptUser("Instalar el mod en una carpeta existente eliminara dicha carpeta.\n"
+                              "En que carpeta deseas realizar la instalacion?\n"
                               "Dejar en blanco para '%s'." % defaultFolder, lc=False)
   else:
-    targetFolder = promptUser("Installing the mod to a folder that exists will delete that folder. What folder would you like to install to?\n"
-                              "Leave blank for '%s'." % defaultFolder, lc=False)
+    targetFolder = promptUser("Installing the mod into a folder that exists will first delete that folder.\n"
+                              "Into what folder would you like to install?\n"
+                              "Leave blank for '%s':" % defaultFolder, lc=False)
 
   if targetFolder == '':
     targetFolder = defaultFolder
@@ -429,11 +435,12 @@ def getInstallOptions():
 
 def main():  
   try:
+    initLocalisation()
     initVersionEnvInfo()
     
     dbgMode = (len(sys.argv) > 1 and '-D' in sys.argv[1:])
     versionMode = (len(sys.argv) > 1 and '-V' in sys.argv[1:])
-        
+    
     global dbg
     if dbgMode:
       # the debug tracer's file object is unbuffered (always flushes all writes
@@ -459,7 +466,7 @@ def main():
             'While all mods and the installer should now work with OS X for all users, YMMV.\n'
             'Please report any problems you encounter or any feedback that you\'d like to\n'
             'share on the HIP forums or via an email to the owner of the OS X initiative:\n'
-            'zijistark <zijistark@gmail.com>')
+            'zijistark <zijistark@gmail.com>\n')
 
     # Ensure the runtime's current working directory corresponds exactly to the
     # location of this module itself. In other words, allow it to be run from
@@ -505,9 +512,6 @@ def main():
       SWMHnative = True
 
     ARKOarmoiries = enableMod("ARKOpack Armoiries (coats of arms) (%s)" % versions['ARKO'])
-
-    # One of these is to be disabled for Mac installs until its issues are
-    # fixed, but I haven't determined which with certainty yet.
     ARKOinterface = enableMod("ARKOpack Interface (%s)" % versions['ARKO'])
     NBRT = enableMod("NBRT+ (%s)" % versions['NBRT'])
 
@@ -653,6 +657,7 @@ def main():
 
     modFilename = modFileBase + '.mod'
     dbg.trace("generating .mod file " + quoteIfWS(modFilename))
+    print("Generating mod definition file: " + quoteIfWS(modFilename))
 
     with open(modFilename, "w") as modFile:
       modFile.write('name = "HIP - %s"  #Name that shows in launcher\n' % targetFolder)
@@ -663,6 +668,7 @@ def main():
     # Dump modules selected and their respective versions to <mod>/version.txt
     versionFilename = "%s/version.txt" % targetFolder
     dbg.trace("dumping compiled modpack version summary to " + quoteIfWS(versionFilename))
+    print("Generating mod combination/versions summary: " + quoteIfWS(versionFilename))
 
     with open(versionFilename, "w") as output:
       output.write("".join(moduleOutput))
