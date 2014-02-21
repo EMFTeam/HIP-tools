@@ -1,32 +1,33 @@
 #!/usr/bin/python
 # -*- coding: cp1252 -*-
-# -*- python-indent-offset: 2 -*-
+# -*- python-indent-offset: 4 -*-
 
-
-import os, shutil
-import sys, traceback
+import os
+import sys
+import shutil
+import traceback
 
 
 def initLocalisation():
-    global i18nDB
-    i18nDB = {'INTRO':
-                  {
-                      'fr': "Cette version de Historical Immersion Project date du %s.\n"
-                            "Taper 'o' ou 'oui' pour valider, ou laisser le champ vierge. Toute autre\n"
-                            "reponse sera interpretee comme un non.\n",
-                      'es': "Esta vercion de Historical Immersion Project fecha del %s.\n"
-                            "Escribe 's' o 'si' para aceptar, o deja el campo en blanco. Cualquier otro\n"
-                            "caso sera considerado un 'no'.\n",
-                      'en': "This version of the Historical Immersion Project was released %s.\n"
-                            "To confirm a prompt, respond with 'y' or 'yes' (sans quotes) or simply hit\n"
-                            "ENTER. Besides a blank line, anything else will be interpreted as 'no.'\n",
-                  },
-              'ENABLE_MOD':
-                  {
-                      'fr': "Voulez-vous installer %s ? [oui]",
-                      'es': "Deseas instalar %s? [si]",
-                      'en': "Do you want to install %s? [yes]",
-                  }
+    global i18n
+    i18n = {'INTRO':
+                {
+                    'fr': "Cette version de Historical Immersion Project date du %s.\n"
+                          "Taper 'o' ou 'oui' pour valider, ou laisser le champ vierge. Toute autre\n"
+                          "reponse sera interpretee comme un non.\n",
+                    'es': "Esta vercion de Historical Immersion Project fecha del %s.\n"
+                          "Escribe 's' o 'si' para aceptar, o deja el campo en blanco. Cualquier otro\n"
+                          "caso sera considerado un 'no'.\n",
+                    'en': "This version of the Historical Immersion Project was released %s.\n"
+                          "To confirm a prompt, respond with 'y' or 'yes' (sans quotes) or simply hit\n"
+                          "ENTER. Besides a blank line, anything else will be interpreted as 'no.'\n",
+                    },
+            'ENABLE_MOD':
+                {
+                    'fr': "Voulez-vous installer %s ? [oui]",
+                    'es': "Deseas instalar %s? [si]",
+                    'en': "Do you want to install %s? [yes]",
+                    }
     }
 
 
@@ -36,21 +37,17 @@ def localise(key):
 
 class InstallerException(Exception): pass
 
-
 class InstallerPlatformError(InstallerException):
     def __str__(self):
         return "Platform '%s' is not supported for installation!" % sys.platform
-
 
 class InstallerTraceNestingError(InstallerException):
     def __str__(self):
         return "Debugging trace nesting mismatch (more pops than pushes). Programmer error!"
 
-
 class InstallerEmptyArgvError(InstallerException):
     def __str__(self):
         return "The runtime environment did not setup the program path."
-
 
 class InstallerPackageNotFoundError(InstallerException):
     def __str__(self):
@@ -80,11 +77,8 @@ class DebugTrace:
 
 class VoidDebugTrace(DebugTrace):
     def __init__(self): pass
-
     def trace(self, s): pass
-
     def push(self, s): pass
-
     def pop(self, s=None): pass
 
 
@@ -92,19 +86,14 @@ def promptUser(prompt, lc=True):
     sys.stdout.write(prompt + ' ')
     sys.stdout.flush()
     response = sys.stdin.readline().strip()
-    if lc:
-        return response.lower()
-    else:
-        return response
+    return response.lower() if lc else response
 
 
 def isYes(answer):
-    if language == 'fr':
-        return answer in ('', 'o', 'oui')
-    elif language == 'es':
-        return answer in ('', 's', 'si')
-    else:
-        return answer in ('', 'y', 'yes')
+    yesSet = {'fr': ('', 'o', 'oui'),
+              'es': ('', 's', 'si'),
+              'en': ('', 'y', 'yes')}
+    return yesSet[language]
 
 
 def enableMod(name):
@@ -112,8 +101,7 @@ def enableMod(name):
 
 
 def quoteIfWS(s):
-    if ' ' in s: return "'{}'".format(s)
-    return s
+    return "'{}'".format(s) if ' ' in s else s
 
 
 def src2Dst(src, dst):
@@ -122,8 +110,8 @@ def src2Dst(src, dst):
 
 def rmTree(directory, traceMsg=None):
     if traceMsg: dbg.trace(traceMsg)
-    dbg.trace("RD: " + quoteIfWS(directory))
     if os.path.exists(directory):
+        dbg.trace("RD: " + quoteIfWS(directory))
         shutil.rmtree(directory)
 
 
@@ -236,7 +224,6 @@ def resetCaches():
         for userDir in dirEntries:
             if os.path.isdir(userDir) and 'HIP' in userDir:
                 cleanUserDir(userDir)
-
     else:
         pass  # TODO: linux user dirs are where?
 
@@ -247,8 +234,6 @@ def resetCaches():
 # depend upon data in the same directory (./modules/), the main use case is to
 # enable GUI-based invocations of the installer on all platforms to always
 # magically be in the right working directory before touching any files.
-
-
 def normalizeCwd():
     # All but the final step was done in initVersionEnvInfo() already.
     d = os.path.dirname(programPath)
@@ -258,34 +243,25 @@ def normalizeCwd():
 
 def initVersionEnvInfo():
     global version
-    version = {'major': 1, 'minor': 2, 'micro': 3, 'Release-Date': '2014-02-21 04:45:35 UTC',
-               'Released-By': 'zijistark <zijistark@gmail.com>'}
+    version = {'major': 1, 'minor': 2, 'micro': 3}
 
-    # Once I achieved successful, tested Mac support (and boy did it take a long
-    # time to sort-out) post-overhaul, the version number was arbitrarily assigned
-    # to 1.2.0. The micro version will increment with each public release in which
-    # the installer's functionality is nontrivially patched. It should not be
-    # incremented simply due to a HIP release; changes to the module package data
-    # are independent of the installer's version. However, altered data
-    # compilation logic (i.e., different compatch results) is relevant to the
-    # installer version.
-
-    # Extended elements
+    # Extended, dynamically-embedded versioning elements
 
     # May or may not be present. Don't mess with the text replacement anchors
     # within the weird comment syntax, as the contents will be replaced by the
-    # build script. Everything between the first comment line beginning with
+    #  build script. Everything between the first comment line beginning with
     # "<*!EXTENDED_VERSION_INFO" and the closing comment line composed only of
-    # "!*>" will be replaced or emptied at build time. Ergo, anything there
-    # that's checked-into the repository is purely an example.
+    # "!*>" will be replaced at build time.
 
     # Anything could be inserted here by the build script or nothing at all
-    # (special tags, commit author, git branch, checksum, information about the
-    # building machine/toolkit, etc.). This is WIP.
+    # (special tags, commit author, git branch, checksum, pkg checksum,
+    # information about the building machine/toolchain, etc.). This is WIP.
 
     # <*!EXTENDED_VERSION_INFO
-    ##    version['Commit-ID']        = '361fe74959ee65a5b6e7f9144097e1eb66fa33cd' # parent
-    ##    version['Commit-Date']    = 'Tue Feb 18 16:56:33 2014 -0800'
+    ## version['Commit-ID']   = '361fe74959ee65a5b6e7f9144097e1eb66fa33cd'
+    ## version['Commit-Date'] = 'Tue Feb 18 16:56:33 2014 -0800'
+    version['Release-Date'] = '2014-02-21 04:45:35 UTC'
+    version['Released-By']  = 'zijistark <zijistark@gmail.com>'
     # !*>
 
     global versionStr
@@ -301,8 +277,8 @@ def initVersionEnvInfo():
     # Resolve the installer's own absolute path. Needs to be tested with a py2exe
     # rebuild, hence the exception-raising case below.
 
-    # We have have a relative or absolute path in sys.argv[0] (in either case,
-    # it may still be the right directory, but we'll have to find out)
+    # We have a relative or absolute path in sys.argv[0] (in either case, it may
+    # still be the right directory, but we'll have to find out).
 
     if len(sys.argv) == 0 or sys.argv[0] == '':
         raise InstallerEmptyArgvError()
@@ -320,15 +296,7 @@ def initVersionEnvInfo():
 def printVersionEnvInfo():
     # Print the installer's version info (installer *script*, not module package)
 
-    # Ideally, we will add another component to the HIP installer's build
-    # automation that does a quick-n-easy parse of the output of `git rev-parse`
-    # and then embeds the actual repository commit SHA (first 7 digits) and commit
-    # time as well as the exact build time directly in this script. Thus, no
-    # external dependencies will be needed to exactly identify the source revision
-    # in question when a bug is reported. In the meantime, we do the uber-simple
-    # thing instead.
-
-    print('HIP Installer:')
+    print('HIP Installer Version:')
     print(versionStr + '\n')
 
     # Fill this with any extended version info keys we want printed, if present.
@@ -341,23 +309,23 @@ def printVersionEnvInfo():
     if extKeys:
         extVals = [version[k] for k in extKeys]
         extKeys = [k + ': ' for k in extKeys]
-        maxKeyWidth = len(max(extKeys, key=len))
+        maxKeyWidth = len( max(extKeys, key=len) )
         for k, v in zip(extKeys, extVals):
             print('% -*s%s' % (maxKeyWidth, k, v))
         sys.stdout.write('\n')
 
-    print('Installer Path: ')
+    print('HIP Installer Path: ')
     print(programPath + '\n')
 
     # Print the OS version/build info
     import platform as p
 
-    print('OS / Platform:')
+    print('Operating System / Platform:')
     print(sys.platform + ': ' + p.platform() + '\n')
 
     # Print our runtime interpreter's version/build info
 
-    print("Python Runtime:")
+    print("Python Runtime Version:")
     print(sys.version)
     return
 
@@ -367,7 +335,7 @@ def getPkgVersions(modDirs):
     versions = {}
     dbg.push("reading package/module versions")
     for mod in modDirs.keys():
-        f = os.path.join("modules/", modDirs[mod], "version.txt")
+        f = os.path.join("modules", modDirs[mod], "version.txt")
         dbg.trace("%s: reading %s" % (mod, f))
         versions[mod] = open(f).readline().strip()
         dbg.trace("%s: version: %s" % (mod, versions[mod]))
@@ -394,7 +362,7 @@ def getInstallOptions():
     if language == 'fr':
         move = promptUser("Deplacer les fichiers plutot que les copier est bien plus rapide, mais\n"
                           "rend l'installation de plusieurs copies du mod plus difficile.\n"
-                          "Voulez-vous que les fichiers soient deplaces plutot que copies ? [oui]")
+                          "Voulez-vous que les fichiers soient deplaces plutot que copies? [oui]")
     elif language == 'es':
         move = promptUser("Mover los archivos en lugar de copiarlos es mucho mas rapido, pero hace\n"
                           "que la instalacion de varias copias sea mas complicada.\n"
@@ -426,10 +394,10 @@ def getInstallOptions():
     # versions of files mixed into the new release.
 
     if move:
-        if language == 'f':
+        if language == 'fr':
             move = promptUser("Etes-vous s�r?\n"
                               "Voulez-vous supprimer le paquet apr�s l'installation? [oui]")
-        elif language == 'e':
+        elif language == 'es':
             move = promptUser("�Est� seguro?\n"
                               "�Quieres eliminar el paquete despu�s de la instalaci�n? [si]")
         else:
@@ -440,7 +408,7 @@ def getInstallOptions():
     dbg.trace('user choice: move instead of copy: {}'.format(move))
 
     # Determine installation target folder...
-    global defaultFolder
+    global defaultFolder #Z: not referenced globally anywhere, why is this global?
     defaultFolder = 'Historical Immersion Project'
 
     # Note that we use the case-preserving form of promptUser for the target folder (also determines name in launcher)
@@ -476,15 +444,14 @@ def main():
         dbgMode = (len(sys.argv) > 1 and '-D' in sys.argv[1:])
         versionMode = (len(sys.argv) > 1 and '-V' in sys.argv[1:])
 
+        # The debug tracer's file object is unbuffered (always flushes all writes
+        # to disk/pipe immediately), and it lives until the end of the program, so
+        # we don't need to worry about closing it properly (e.g., upon an
+        # exception), because it will be closed by the OS on program exit, and all
+        # trace data will have already had its __write() syscalls queued to the OS.
+
         global dbg
-        if dbgMode:
-            # the debug tracer's file object is unbuffered (always flushes all writes
-            # to disk/pipe immediately), and it lives until the end of the program, so
-            # we don't need to worry about closing it properly (e.g., upon an
-            # exception), because it will be closed by the OS on program exit.
-            dbg = DebugTrace(open('HIP_debug.log', 'w', 0))
-        else:
-            dbg = VoidDebugTrace()
+        dbg = DebugTrace(open('HIP_debug.log', 'w', 0)) if dbgMode else VoidDebugTrace()
 
         global platform
         platform = detectPlatform()
@@ -653,12 +620,14 @@ def main():
                 moveFolder("Converter/VIET")
 
             if language == 'fr':
-                answer = promptUser("VIET Immersion necessite tous les DLC de portraits. Les avez-vous tous ? [oui]")
+                answer = promptUser("VIET Immersion necessite tous les DLC de portraits. Les avez-vous\n"
+                                    "tous? [oui]")
             elif language == 'es':
-                answer = promptUser("VIET inmersion depende de los retratos DLC. Tiene todos los retratos DLC? [si]")
+                answer = promptUser("VIET inmersion depende de los retratos DLC. Tiene todos los retratos\n"
+                                    "DLC? [si]")
             else:
-                answer = promptUser(
-                    "VIET Immersion depends on the portrait DLCs. Do you have all of the portrait DLCs? [yes]")
+                answer = promptUser("VIET Immersion depends on the portrait DLCs. Do you have all of the\n"
+                                    "portrait DLCs? [yes]")
 
             if not isYes(answer):
                 dbg.push("user chose VIET Immersion but does not have all portrait DLCs. applying fix...")
@@ -699,7 +668,7 @@ def main():
             modFile.write('name = "HIP - %s"    #Name that shows in launcher\n' % targetFolder)
             modFile.write('path = "mod/%s"\n' % targetFolder)
             if platform != 'mac':
-                modFile.write('user_dir = "{}"    #For saves, gfx cache, etc.\n'.format(modFileBase))
+                modFile.write('user_dir = "%s"    #For saves, gfx cache, etc.\n' % modFileBase)
 
         # Dump modules selected and their respective versions to <mod>/version.txt
         versionFilename = "%s/version.txt" % targetFolder
@@ -710,7 +679,7 @@ def main():
             output.write("".join(moduleOutput))
 
         # Reset all gfx/map/interface/logs cache for every instance of a preexisting
-        # user_dir that includes HIP, platform-agnostic
+        # user_dir that includes HIP, platform-agnostic.
         resetCaches()
 
         # Installation complete
@@ -728,7 +697,7 @@ def main():
     except KeyboardInterrupt:
         # Ctrl-C just aborts (with a dedicated error code) rather than cause a
         # traceback. May want to catch it during filesystem modification stage
-        sys.stderr.write("\nUser interrupt: Exiting installer early...\n")
+        sys.stderr.write("\nUser interrupt: Aborting installer early...\n")
         sys.exit(2)
 
     except InstallerTraceNestingError as e:
@@ -740,7 +709,7 @@ def main():
     # Special handling for specific installer-understood error types (all derive from InstallerException)
     except InstallerException as e:
         sys.stderr.write("\nFatal error: " + str(e))
-        sys.stderr.write("\nFor help, please provide this error message to the HIP team. Press ENTER to exit.")
+        sys.stderr.write("\nFor help, provide this error to the HIP team. Press ENTER to exit.")
         sys.stdin.readline()
         sys.exit(1)
 
