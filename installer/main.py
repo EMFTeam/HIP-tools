@@ -8,6 +8,7 @@ import shutil
 import traceback
 
 
+# noinspection PyPep8
 def initLocalisation():
     global i18n
     i18n = {'INTRO':
@@ -21,42 +22,80 @@ def initLocalisation():
                     'en': "This version of the Historical Immersion Project was released %s.\n"
                           "To confirm a prompt, respond with 'y' or 'yes' (sans quotes) or simply hit\n"
                           "ENTER. Besides a blank line, anything else will be interpreted as 'no.'\n",
-                    },
+                },
             'ENABLE_MOD':
                 {
                     'fr': "Voulez-vous installer %s ? [oui]",
                     'es': "Deseas instalar %s? [si]",
                     'en': "Do you want to install %s? [yes]",
-                    }
-    }
+                },
+            'PUSH_FOLDER':
+                {
+                    'fr': 'Préparation %s',
+                    'es': 'Preparación %s',
+                    'en': 'Preparing %s',
+                },
+            'COMPILING':
+                {
+                    'fr': "Compilation '%s' ...",
+                    'es': "Compilar '%s' ...",
+                    'en': "Compiling '%s' ...",
+                },
+            }
 
 
 def localise(key):
-    return i18nDB[key][language]
+    return i18n[key][language]
 
 
-class InstallerException(Exception): pass
+class InstallerException(Exception):
+    def __str__(self):
+        return "Internal installer error"
+
+
+class InstallerPathException(InstallerException):
+    def __str__(self):
+        return "Internal error: path separator expected in file path"
+
 
 class InstallerPlatformError(InstallerException):
     def __str__(self):
         return "Platform '%s' is not supported for installation!" % sys.platform
 
+
 class InstallerTraceNestingError(InstallerException):
     def __str__(self):
         return "Debugging trace nesting mismatch (more pops than pushes). Programmer error!"
 
+
 class InstallerEmptyArgvError(InstallerException):
     def __str__(self):
         return "The runtime environment did not setup the program path."
+
 
 class InstallerPackageNotFoundError(InstallerException):
     def __str__(self):
         return "The installer package files (modules/ folder) were not found!"
 
 
-class DebugTrace:
-    def __init__(self, file, prefix='DBG: '):
-        self.file = file
+class NullDebugTrace:
+    def __init__(self):
+        pass
+
+    def trace(self, msg):
+        pass
+
+    def push(self, s):
+        pass
+
+    def pop(self, s=None):
+        pass
+
+
+# noinspection PyMissingConstructor
+class DebugTrace(NullDebugTrace):
+    def __init__(self, f, prefix='DBG: '):
+        self.file = f
         self.prefix = prefix
         self.i = 0
         self.indentStr = ' ' * 2
@@ -70,16 +109,18 @@ class DebugTrace:
         self.i += 1
 
     def pop(self, s=None):  # Pop indent stack
-        if self.i <= 0: raise InstallerTraceNestingError()
+        if self.i <= 0:
+            raise InstallerTraceNestingError()
         self.i -= 1
-        if s: self.trace(s)
+        if s:
+            self.trace(s)
 
 
-class VoidDebugTrace(DebugTrace):
-    def __init__(self): pass
-    def trace(self, s): pass
-    def push(self, s): pass
-    def pop(self, s=None): pass
+class TargetSource:
+    def __init__(self, folder, srcPath, isDir=False):
+        self.folder = folder
+        self.srcPath = srcPath
+        self.isDir = isDir
 
 
 def promptUser(prompt, lc=True):
@@ -93,7 +134,7 @@ def isYes(answer):
     yesSet = {'fr': ('', 'o', 'oui'),
               'es': ('', 's', 'si'),
               'en': ('', 'y', 'yes')}
-    return yesSet[language]
+    return answer in yesSet[language]
 
 
 def enableMod(name):
@@ -104,43 +145,42 @@ def quoteIfWS(s):
     return "'{}'".format(s) if ' ' in s else s
 
 
-def src2Dst(src, dst):
-    return '{} => {}'.format(quoteIfWS(src), quoteIfWS(dst))
-
-
 def rmTree(directory, traceMsg=None):
-    if traceMsg: dbg.trace(traceMsg)
+    if traceMsg:
+        dbg.trace(traceMsg)
     if os.path.exists(directory):
         dbg.trace("RD: " + quoteIfWS(directory))
         shutil.rmtree(directory)
 
 
 def rmFile(f, traceMsg=None):
-    if traceMsg: dbg.trace(traceMsg)
+    if traceMsg:
+        dbg.trace(traceMsg)
     dbg.trace("D: " + quoteIfWS(f))
     os.remove(f)
 
 
-def mkTree(dir, traceMsg=None):
-    if traceMsg: dbg.trace(traceMsg)
-    dbg.trace("MD: " + quoteIfWS(dir))
-    os.makedirs(dir)
+def mkTree(d, traceMsg=None):
+    if traceMsg:
+        dbg.trace(traceMsg)
+    dbg.trace("MD: " + quoteIfWS(d))
+    os.makedirs(d)
 
 
-def moveFolder(folder, prunePaths={}, ignoreFiles={}):
-    if language == 'fr':
-        print("Fusion repertoire " + quoteIfWS(folder))
-    elif language == 'es':
-        print("Carpeta de combinacion " + quoteIfWS(folder))
-    else:
-        print("Merging folder " + quoteIfWS(folder))
+def pushFolder(folder, prunePaths=None, ignoreFiles=None):
+    if not ignoreFiles:
+        ignoreFiles = {}
+    if not prunePaths:
+        prunePaths = {}
+
+    print(localise('PUSH_FOLDER') % quoteIfWS(folder))
 
     srcFolder = os.path.join('modules', folder)
-    dbg.push("merging folder " + src2Dst(srcFolder, targetFolder))
+    dbg.push("compile: pushing folder " + srcFolder)
 
     for root, dirs, files in os.walk(srcFolder):
         newRoot = root.replace(srcFolder, targetFolder)
-        dbg.push('merging dirpath ' + src2Dst(root, newRoot))
+        dbg.push('adding path ' + root)
 
         # Prune the source directory walk in-place according to prunePaths option,
         # and, of course, don't create pruned directories (none of the files in
@@ -154,35 +194,47 @@ def moveFolder(folder, prunePaths={}, ignoreFiles={}):
             else:
                 prunedDirs.append(directory)
                 newDir = os.path.join(newRoot, directory)
-                if not os.path.exists(newDir):
-                    mkTree(newDir)
+                targetSrc[newDir] = TargetSource(folder, srcPath, isDir=True)
 
         dirs[:] = prunedDirs  # Filter subdirectories into which we should recurse on next os.walk()
 
-        for file in files:
-            src = os.path.join(root, file)
-            dst = os.path.join(newRoot, file)
-
-            if os.path.exists(dst):
-                clobberStr = '[!]'
-            else:
-                clobberStr = ''
-
-            xferStr = "{}: {}: {}".format(clobberStr, quoteIfWS(file), src2Dst(src, dst))
+        for f in files:
+            src = os.path.join(root, f)
+            dst = os.path.join(newRoot, f)
 
             if src in ignoreFiles:  # Selective ignore filter for individual files
-                dbg.trace('IGNORE' + xferStr)
+                dbg.trace('IGNORE: ' + quoteIfWS(src))
                 continue
 
-            if move:
-                dbg.trace('MV' + xferStr)
-                shutil.move(src, dst)
-            else:
-                dbg.trace('CP' + xferStr)
-                shutil.copy(src, dst)
-
+            targetSrc[dst] = TargetSource(folder, src)
         dbg.pop()
     dbg.pop()
+
+
+def stripPathHead(path):
+    i = path.find('/')
+    if i == -1:
+        i = path.find('\\')
+    if i == -1:
+        raise InstallerPathException()
+    newStart = i + 1
+    return path[newStart:]
+
+
+def compileTarget():
+    print(localise('COMPILING') % targetFolder)
+    mapFilename = os.path.join(targetFolder, 'file2mod_map.txt')
+    dbg.push("compiling target with file->mod mapping dumped to '%s'..." % mapFilename)
+    with open(mapFilename, "w") as mapFile:
+        for dstPath in sorted(targetSrc):
+            src = targetSrc[dstPath]
+            mapFile.write('%s <= [%s]\n' % (stripPathHead(dstPath), src.folder))
+            if src.isDir:
+                mkTree(dstPath)
+            elif move:
+                shutil.move(src.srcPath, dstPath)
+            else:
+                shutil.copy(src.srcPath, dstPath)
 
 
 def detectPlatform():
@@ -227,6 +279,7 @@ def resetCaches():
     else:
         pass  # TODO: linux user dirs are where?
 
+
 # Changes the current working directory to the same as that of the
 # fully-resolved path to this program. This is to enable the installer to be
 # invoked from any directory, so long as it's been properly extracted to the
@@ -241,9 +294,10 @@ def normalizeCwd():
         os.chdir(d)
 
 
+# noinspection PyDictCreation
 def initVersionEnvInfo():
     global version
-    version = {'major': 1, 'minor': 2, 'micro': 3}
+    version = {'major': 1, 'minor': 2, 'micro': 4}
 
     # Extended, dynamically-embedded versioning elements
 
@@ -260,8 +314,8 @@ def initVersionEnvInfo():
     # <*!EXTENDED_VERSION_INFO
     ## version['Commit-ID']   = '361fe74959ee65a5b6e7f9144097e1eb66fa33cd'
     ## version['Commit-Date'] = 'Tue Feb 18 16:56:33 2014 -0800'
-    version['Release-Date'] = '2014-02-21 04:45:35 UTC'
-    version['Released-By']  = 'zijistark <zijistark@gmail.com>'
+    version['Release-Date'] = '2014-02-22 01:19:20 UTC'
+    version['Released-By'] = 'zijistark <zijistark@gmail.com>'
     # !*>
 
     global versionStr
@@ -309,7 +363,7 @@ def printVersionEnvInfo():
     if extKeys:
         extVals = [version[k] for k in extKeys]
         extKeys = [k + ': ' for k in extKeys]
-        maxKeyWidth = len( max(extKeys, key=len) )
+        maxKeyWidth = len(max(extKeys, key=len))
         for k, v in zip(extKeys, extVals):
             print('% -*s%s' % (maxKeyWidth, k, v))
         sys.stdout.write('\n')
@@ -408,7 +462,7 @@ def getInstallOptions():
     dbg.trace('user choice: move instead of copy: {}'.format(move))
 
     # Determine installation target folder...
-    global defaultFolder #Z: not referenced globally anywhere, why is this global?
+    global defaultFolder
     defaultFolder = 'Historical Immersion Project'
 
     # Note that we use the case-preserving form of promptUser for the target folder (also determines name in launcher)
@@ -451,7 +505,7 @@ def main():
         # trace data will have already had its __write() syscalls queued to the OS.
 
         global dbg
-        dbg = DebugTrace(open('HIP_debug.log', 'w', 0)) if dbgMode else VoidDebugTrace()
+        dbg = DebugTrace(open('HIP_debug.log', 'w', 0)) if dbgMode else NullDebugTrace()
 
         global platform
         platform = detectPlatform()
@@ -499,7 +553,6 @@ def main():
         getInstallOptions()
 
         # Determine module combination...
-
         PB = enableMod("Project Balance (%s)" % versions['PB'])
 
         SWMH = enableMod("SWMH (%s)" % versions['SWMH'])
@@ -527,11 +580,14 @@ def main():
         if SWMH:
             VIETimmersion = False
             if language == 'fr':
-                print( "VIET immersion n'est pas compatible avec SWMH et ne peut donc pas etre actif en meme temps qu'SWMH.")
+                print("VIET immersion n'est pas compatible avec SWMH et ne peut donc pas etre actif\n"
+                      "en meme temps qu'SWMH.")
             elif language == 'es':
-                print("VIET immersion no es todavia compatible con SWMH y no puede ser activado si has activado SWMH.")
+                print("VIET immersion no es todavia compatible con SWMH y no puede ser activado si\n"
+                      "has activado SWMH.")
             else:
-                print("VIET immersion is not yet compatible with SWMH, thus cannot be enabled as you've enabled SWMH.")
+                print("VIET immersion is not yet compatible with SWMH. Thus, it is disabled, as\n"
+                      "you've enabled SWMH.")
         else:
             VIETimmersion = enableMod("VIET immersion (%s)" % versions['VIET'])
 
@@ -544,69 +600,72 @@ def main():
         mkTree(targetFolder)
 
         # Install...
+        global targetSrc
+        targetSrc = {}
+        
         moduleOutput = ["Historical Immersion Project (%s)\nEnabled modules:\n" % versions['pkg']]
-        dbg.push('merging source files into target folder...')
+        dbg.push('[virtual] pushing source files into target...')
 
-        moveFolder("Converter/Common")
+        pushFolder("Converter/Common")
 
         if ARKOarmoiries:
             dbg.push("merging ARKO CoA...")
             moduleOutput.append("ARKO Armoiries (%s)\n" % versions['ARKO'])
-            moveFolder("ARKOpack_Armoiries")
+            pushFolder("ARKOpack_Armoiries")
             dbg.pop()
 
         if ARKOinterface:
             dbg.push("merging ARKO Interface...")
             moduleOutput.append("ARKO Interface (%s)\n" % versions['ARKO'])
-            moveFolder("ARKOpack_Interface")
+            pushFolder("ARKOpack_Interface")
             if VIET:
                 rmTree("%s/gfx/event_pictures" % targetFolder, 'removing ARKO event pictures')
             dbg.pop()
 
         if VIET:
-            moveFolder("VIET_Assets")
+            pushFolder("VIET_Assets")
 
         if PB:
             dbg.push("merging PB...")
             moduleOutput.append("Project Balance (%s)\n" % versions['PB'])
-            moveFolder("ProjectBalance")
-            moveFolder("Converter/PB")
+            pushFolder("ProjectBalance")
+            pushFolder("Converter/PB")
             dbg.pop()
 
         if SWMH:
             dbg.push("merging SWMH...")
-            moveFolder("SWMH")
+            pushFolder("SWMH")
             if SWMHnative:
                 moduleOutput.append("SWMH - Native localisation (%s)\n" % versions['SWMH'])
             else:
                 moduleOutput.append("SWMH - English localisation (%s)\n" % versions['SWMH'])
-                moveFolder("English SWMH")
+                pushFolder("English SWMH")
             if PB:
-                moveFolder("PB + SWMH")
+                pushFolder("PB + SWMH")
             dbg.pop()
 
         if NBRT:
             dbg.push("merging NBRT+...")
             moduleOutput.append("NBRT+ (%s)\n" % versions['NBRT'])
-            moveFolder("NBRT+")
+            pushFolder("NBRT+")
             if SWMH:
-                moveFolder("NBRT+SWMH")
+                pushFolder("NBRT+SWMH")
             if ARKOarmoiries:
-                moveFolder("NBRT+ARKO")
+                pushFolder("NBRT+ARKO")
             dbg.pop()
 
         if VIETtraits:
             dbg.push("merging VIET Traits...")
             moduleOutput.append("VIET Traits (%s)\n" % versions['VIET'])
-            moveFolder("VIET_Traits")
+            pushFolder("VIET_Traits")
             dbg.pop()
 
         if VIETevents:
             dbg.push("merging VIET Events...")
             moduleOutput.append("VIET Events (%s)\n" % versions['VIET'])
-            moveFolder("VIET_Events")
+            pushFolder("VIET_Events")
             if PB:
-                moveFolder("PB_VIET_Events")
+                pushFolder("PB_VIET_Events")
             dbg.pop()
 
         if VIETimmersion:
@@ -614,10 +673,10 @@ def main():
             moduleOutput.append("VIET Immersion (%s)\n" % versions['VIET'])
             if PB:  # This should be optimized in the future
                     # (Z: this entire process should be optimized to never copy/move a target file more than once)
-                moveFolder("PB_VIET_Immersion")
+                pushFolder("PB_VIET_Immersion")
             else:
-                moveFolder("VIET_Immersion")
-                moveFolder("Converter/VIET")
+                pushFolder("VIET_Immersion")
+                pushFolder("Converter/VIET")
 
             if language == 'fr':
                 answer = promptUser("VIET Immersion necessite tous les DLC de portraits. Les avez-vous\n"
@@ -643,13 +702,16 @@ def main():
                 rmFile("%s/interface/portraits_westernslavic.gfx" % targetFolder)
                 dbg.pop()
                 if not PB:
-                    moveFolder("VIET_portrait_fix/VIET")
+                    pushFolder("VIET_portrait_fix/VIET")
                 else:
-                    moveFolder("VIET_portrait_fix/PB")
+                    pushFolder("VIET_portrait_fix/PB")
                 dbg.pop()
             dbg.pop()
 
-        dbg.pop("merge complete")
+        dbg.pop("virtual merge complete")
+
+        # do all the actual compilation (file I/O)
+        compileTarget()
 
         if move:
             rmTree("modules")  # Cleanup
