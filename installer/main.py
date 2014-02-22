@@ -21,7 +21,8 @@ def initLocalisation():
                           "caso sera considerado un 'no'.\n",
                     'en': "This version of the Historical Immersion Project was released %s.\n"
                           "To confirm a prompt, respond with 'y' or 'yes' (sans quotes) or simply hit\n"
-                          "ENTER. Besides a blank line, anything else will be interpreted as 'no.'\n",
+                          "ENTER. Besides a blank line, anything else will be interpreted as 'no.'\n\n"
+                          "If at any time you wish to abort the installation, press Ctrl+C.\n",
                 },
             'ENABLE_MOD':
                 {
@@ -211,6 +212,18 @@ def pushFolder(folder, prunePaths=None, ignoreFiles=None):
     dbg.pop()
 
 
+def popFile(f):
+    p = os.path.join(targetFolder, f)
+    if p in targetSrc:
+        del targetSrc[p]
+
+
+def popTree(d):
+    t = os.path.join(targetFolder, d)
+    for p in [p for p in targetSrc.keys() if p.startswith(t)]:
+        del targetSrc[p]
+
+
 def stripPathHead(path):
     i = path.find('/')
     if i == -1:
@@ -263,7 +276,7 @@ def resetCaches():
         print('Clearing preexisting gfx/map cache')
         cleanUserDir('..')
     elif platform == 'win':
-        print('Clearing preexisting HIP gfx/map caches...')
+        print('Clearing preexisting HIP gfx/map caches ...')
 
         # Match *all* userdirs in CKII user directory which include 'HIP' in their
         # directory name, as this also covers all cases with external mods used with
@@ -297,7 +310,7 @@ def normalizeCwd():
 # noinspection PyDictCreation
 def initVersionEnvInfo():
     global version
-    version = {'major': 1, 'minor': 2, 'micro': 4}
+    version = {'major': 1, 'minor': 2, 'micro': 5}
 
     # Extended, dynamically-embedded versioning elements
 
@@ -314,7 +327,7 @@ def initVersionEnvInfo():
     # <*!EXTENDED_VERSION_INFO
     ## version['Commit-ID']   = '361fe74959ee65a5b6e7f9144097e1eb66fa33cd'
     ## version['Commit-Date'] = 'Tue Feb 18 16:56:33 2014 -0800'
-    version['Release-Date'] = '2014-02-22 01:19:20 UTC'
+    version['Release-Date'] = '2014-02-22 03:10:48 UTC'
     version['Released-By'] = 'zijistark <zijistark@gmail.com>'
     # !*>
 
@@ -604,7 +617,7 @@ def main():
         targetSrc = {}
         
         moduleOutput = ["Historical Immersion Project (%s)\nEnabled modules:\n" % versions['pkg']]
-        dbg.push('[virtual] pushing source files into target...')
+        dbg.push('performing virtual filesystem merge...')
 
         pushFolder("Converter/Common")
 
@@ -619,7 +632,7 @@ def main():
             moduleOutput.append("ARKO Interface (%s)\n" % versions['ARKO'])
             pushFolder("ARKOpack_Interface")
             if VIET:
-                rmTree("%s/gfx/event_pictures" % targetFolder, 'removing ARKO event pictures')
+                popTree("gfx/event_pictures")
             dbg.pop()
 
         if VIET:
@@ -671,8 +684,7 @@ def main():
         if VIETimmersion:
             dbg.push("merging VIET Immersion...")
             moduleOutput.append("VIET Immersion (%s)\n" % versions['VIET'])
-            if PB:  # This should be optimized in the future
-                    # (Z: this entire process should be optimized to never copy/move a target file more than once)
+            if PB:
                 pushFolder("PB_VIET_Immersion")
             else:
                 pushFolder("VIET_Immersion")
@@ -690,16 +702,16 @@ def main():
 
             if not isYes(answer):
                 dbg.push("user chose VIET Immersion but does not have all portrait DLCs. applying fix...")
-                rmTree("%s/common/cultures" % targetFolder, "removing merged cultures")
+                popTree("common/cultures")
                 dbg.push("removing portrait .gfx files...")
-                rmFile("%s/interface/portrait_sprites_DLC.gfx" % targetFolder)
-                rmFile("%s/interface/portraits_mediterranean.gfx" % targetFolder)
-                rmFile("%s/interface/portraits_norse.gfx" % targetFolder)
-                rmFile("%s/interface/portraits_persian.gfx" % targetFolder)
-                rmFile("%s/interface/portraits_saxon.gfx" % targetFolder)
-                rmFile("%s/interface/portraits_turkish.gfx" % targetFolder)
-                rmFile("%s/interface/portraits_ugric.gfx" % targetFolder)
-                rmFile("%s/interface/portraits_westernslavic.gfx" % targetFolder)
+                popFile("interface/portrait_sprites_DLC.gfx")
+                popFile("interface/portraits_mediterranean.gfx")
+                popFile("interface/portraits_norse.gfx")
+                popFile("interface/portraits_persian.gfx")
+                popFile("interface/portraits_saxon.gfx")
+                popFile("interface/portraits_turkish.gfx")
+                popFile("interface/portraits_ugric.gfx")
+                popFile("interface/portraits_westernslavic.gfx")
                 dbg.pop()
                 if not PB:
                     pushFolder("VIET_portrait_fix/VIET")
@@ -708,7 +720,7 @@ def main():
                 dbg.pop()
             dbg.pop()
 
-        dbg.pop("virtual merge complete")
+        dbg.pop("virtual filesystem merge complete")
 
         # do all the actual compilation (file I/O)
         compileTarget()
