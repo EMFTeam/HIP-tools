@@ -238,8 +238,11 @@ def compileTarget():
     print(localise('COMPILING') % targetFolder)
     mapFilename = os.path.join(targetFolder, 'file2mod_map.txt')
     dbg.push("compiling target with file->mod mapping dumped to '%s'..." % mapFilename)
+    x = len(targetSrc) // 20
     with open(mapFilename, "w") as mapFile:
-        for dstPath in sorted(targetSrc):
+        for n, dstPath in enumerate(sorted(targetSrc)):
+            if n % x == 0:
+                print("%s%%" % (n // x * 5))
             src = targetSrc[dstPath]
             mapFile.write('%s <= [%s]\n' % (stripPathHead(dstPath), src.folder))
             if src.isDir:
