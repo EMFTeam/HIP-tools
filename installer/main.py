@@ -6,6 +6,7 @@ import os
 import sys
 import shutil
 import traceback
+import time
 
 
 # noinspection PyPep8
@@ -513,6 +514,7 @@ def main():
 
         dbgMode = (len(sys.argv) > 1 and '-D' in sys.argv[1:])
         versionMode = (len(sys.argv) > 1 and '-V' in sys.argv[1:])
+        timerMode = (len(sys.argv) > 1 and '-T' in sys.argv[1:])
 
         # The debug tracer's file object is unbuffered (always flushes all writes
         # to disk/pipe immediately), and it lives until the end of the program, so
@@ -725,11 +727,18 @@ def main():
 
         dbg.pop("virtual filesystem merge complete")
 
+        startTime = time.clock()
+
         # do all the actual compilation (file I/O)
         compileTarget()
 
         if move:
             rmTree("modules")  # Cleanup
+
+        endTime = time.clock()
+
+        if timerMode:
+            print('Compilation took %0.1f seconds' % (endTime - startTime))
 
         # Generate a new .mod file, regardless of whether it's default
         if targetFolder != defaultFolder:
