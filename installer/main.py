@@ -574,15 +574,6 @@ def main():
         PB = enableMod("Project Balance (%s)" % versions['PB'])
 
         SWMH = enableMod("SWMH (%s)" % versions['SWMH'])
-        if SWMH:
-            if language == 'fr':
-                SWMHnative = enableMod("SWMH avec les noms culturels locaux, plutot qu'en anglais ou francises")
-            elif language == 'es':
-                SWMHnative = enableMod("SWMH con localizacion nativa para culturas y titulos, en lugar de ingles")
-            else:
-                SWMHnative = enableMod("SWMH with native localisation for cultures and titles, rather than English")
-        else:
-            SWMHnative = True
 
         ARKOarmoiries = enableMod("ARKOpack Armoiries (coats of arms) (%s)" % versions['ARKO'])
         ARKOinterface = enableMod("ARKOpack Interface (%s)" % versions['ARKO'])
@@ -653,11 +644,7 @@ def main():
         if SWMH:
             dbg.push("merging SWMH...")
             pushFolder("SWMH")
-            if SWMHnative:
-                moduleOutput.append("SWMH - Native localisation (%s)\n" % versions['SWMH'])
-            else:
-                moduleOutput.append("SWMH - English localisation (%s)\n" % versions['SWMH'])
-                pushFolder("English SWMH")
+            moduleOutput.append("SWMH (%s)\n" % versions['SWMH'])
             if PB:
                 pushFolder("PB + SWMH")
             dbg.pop()
