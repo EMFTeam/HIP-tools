@@ -46,9 +46,12 @@ def main():
 
         char_hist = history.CharHistory(sys.stdout, args.verbose)
         char_hist.parse_dir(args.history_dir)
-        print(str(char_hist.files['italian_tuscan.txt']))
+        #print(str(char_hist.files['italian_tuscan.txt']))
 
         return 0
+
+    except history.CHParseError as e:
+        sys.stderr.write('\nFatal character history parse error:\n' + str(e))
 
     except:
         sys.stderr.write('\nUnexpected fatal error occurred! Stack trace:\n\n')
