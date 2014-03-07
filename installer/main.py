@@ -9,6 +9,11 @@ import traceback
 import time
 
 
+version = {'major': 1, 'minor': 2, 'micro': 6,
+           'Release-Date': '2014-03-07 18:01:33 UTC',
+           'Released-By': 'Meneth <pb@meneth.com>'}
+
+
 # noinspection PyPep8
 def initLocalisation():
     global i18n
@@ -333,28 +338,6 @@ def normalizeCwd():
 
 # noinspection PyDictCreation
 def initVersionEnvInfo():
-    global version
-    version = {'major': 1, 'minor': 2, 'micro': 5}
-
-    # Extended, dynamically-embedded versioning elements
-
-    # May or may not be present. Don't mess with the text replacement anchors
-    # within the weird comment syntax, as the contents will be replaced by the
-    #  build script. Everything between the first comment line beginning with
-    # "<*!EXTENDED_VERSION_INFO" and the closing comment line composed only of
-    # "!*>" will be replaced at build time.
-
-    # Anything could be inserted here by the build script or nothing at all
-    # (special tags, commit author, git branch, checksum, pkg checksum,
-    # information about the building machine/toolchain, etc.). This is WIP.
-
-    # <*!EXTENDED_VERSION_INFO
-    ## version['Commit-ID']   = '361fe74959ee65a5b6e7f9144097e1eb66fa33cd'
-    ## version['Commit-Date'] = 'Tue Feb 18 16:56:33 2014 -0800'
-    version['Release-Date'] = '2014-02-22 03:10:48 UTC'
-    version['Released-By'] = 'zijistark <zijistark@gmail.com>'
-    # !*>
-
     global versionStr
     versionStr = '{}.{}.{}'.format(version['major'], version['minor'], version['micro'])
 
