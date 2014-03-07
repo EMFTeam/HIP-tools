@@ -31,6 +31,18 @@ def initLocalisation():
                     'es': "Deseas instalar %s? [si]",
                     'en': "Do you want to install %s? [yes]",
                 },
+            'ENABLE_MOD_XOR':
+                {
+                    'fr': "Voulez-vous installer %s (%s) ? [oui]",
+                    'es': "Deseas instalar %s (%s)? [si]",
+                    'en': "Do you want to install %s (%s)? [yes]",
+                },
+            'ENABLE_MOD_XOR_WARN':
+                {
+                    'fr': "\n%s and %s are incompatible. You may only select one:",
+                    'es': "\n%s and %s are incompatible. You may only select one:",
+                    'en': "\n%s and %s are incompatible. You may only select one:",
+                },
             'PUSH_FOLDER':
                 {
                     'fr': 'Préparation %s',
@@ -141,6 +153,14 @@ def isYes(answer):
 
 def enableMod(name):
     return isYes(promptUser(localise('ENABLE_MOD') % name))
+
+
+def enableModXOR(nameA, versionA, nameB, versionB):
+    print(localise('ENABLE_MOD_XOR_WARN') % (nameA, nameB))
+    for n, v in [(nameA, versionA), (nameB, versionB)]:
+        if isYes(promptUser(localise('ENABLE_MOD_XOR') % (n, v))):
+            return n
+    return None
 
 
 def quoteIfWS(s):
@@ -573,8 +593,6 @@ def main():
         # Determine module combination...
         PB = enableMod("Project Balance (%s)" % versions['PB'])
 
-        SWMH = enableMod("SWMH (%s)" % versions['SWMH'])
-
         ARKOarmoiries = enableMod("ARKOpack Armoiries (coats of arms) (%s)" % versions['ARKO'])
         ARKOinterface = enableMod("ARKOpack Interface (%s)" % versions['ARKO'])
         NBRT = enableMod("NBRT+ (%s)" % versions['NBRT'])
@@ -586,19 +604,15 @@ def main():
 
         VIETevents = enableMod("VIET events (%s)" % versions['VIET'])
 
-        if SWMH:
-            VIETimmersion = False
-            if language == 'fr':
-                print("VIET immersion n'est pas compatible avec SWMH et ne peut donc pas etre actif\n"
-                      "en meme temps qu'SWMH.")
-            elif language == 'es':
-                print("VIET immersion no es todavia compatible con SWMH y no puede ser activado si\n"
-                      "has activado SWMH.")
-            else:
-                print("VIET immersion is not yet compatible with SWMH. Thus, it is disabled, as\n"
-                      "you've enabled SWMH.")
-        else:
-            VIETimmersion = enableMod("VIET immersion (%s)" % versions['VIET'])
+        SWMH = False
+        VIETimmersion = False
+
+        swmhVIET = enableModXOR('SWMH', versions['SWMH'], 'VIET Immersion', versions['VIET'])
+
+        if swmhVIET == 'SWMH':
+            SWMH = True
+        elif swmhVIET == 'VIET Immersion':
+            VIETimmersion = True
 
         VIET = (VIETtraits or VIETevents or VIETimmersion)
 
