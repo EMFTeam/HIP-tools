@@ -9,6 +9,11 @@ import traceback
 import time
 
 
+version = {'major': 1, 'minor': 2, 'micro': 6,
+           'Release-Date': '2014-03-07 18:01:33 UTC',
+           'Released-By': 'Meneth <pb@meneth.com>'}
+
+
 # noinspection PyPep8
 def initLocalisation():
     global i18n
@@ -30,6 +35,18 @@ def initLocalisation():
                     'fr': "Voulez-vous installer %s ? [oui]",
                     'es': "Deseas instalar %s? [si]",
                     'en': "Do you want to install %s? [yes]",
+                },
+            'ENABLE_MOD_XOR':
+                {
+                    'fr': "Voulez-vous installer %s (%s) ? [oui]",
+                    'es': "Deseas instalar %s (%s)? [si]",
+                    'en': "Do you want to install %s (%s)? [yes]",
+                },
+            'ENABLE_MOD_XOR_WARN':
+                {
+                    'fr': "\n%s and %s are incompatible. You may only select one:",
+                    'es': "\n%s and %s are incompatible. You may only select one:",
+                    'en': "\n%s and %s are incompatible. You may only select one:",
                 },
             'PUSH_FOLDER':
                 {
@@ -141,6 +158,14 @@ def isYes(answer):
 
 def enableMod(name):
     return isYes(promptUser(localise('ENABLE_MOD') % name))
+
+
+def enableModXOR(nameA, versionA, nameB, versionB):
+    print(localise('ENABLE_MOD_XOR_WARN') % (nameA, nameB))
+    for n, v in [(nameA, versionA), (nameB, versionB)]:
+        if isYes(promptUser(localise('ENABLE_MOD_XOR') % (n, v))):
+            return n
+    return None
 
 
 def quoteIfWS(s):
@@ -313,28 +338,6 @@ def normalizeCwd():
 
 # noinspection PyDictCreation
 def initVersionEnvInfo():
-    global version
-    version = {'major': 1, 'minor': 2, 'micro': 5}
-
-    # Extended, dynamically-embedded versioning elements
-
-    # May or may not be present. Don't mess with the text replacement anchors
-    # within the weird comment syntax, as the contents will be replaced by the
-    #  build script. Everything between the first comment line beginning with
-    # "<*!EXTENDED_VERSION_INFO" and the closing comment line composed only of
-    # "!*>" will be replaced at build time.
-
-    # Anything could be inserted here by the build script or nothing at all
-    # (special tags, commit author, git branch, checksum, pkg checksum,
-    # information about the building machine/toolchain, etc.). This is WIP.
-
-    # <*!EXTENDED_VERSION_INFO
-    ## version['Commit-ID']   = '361fe74959ee65a5b6e7f9144097e1eb66fa33cd'
-    ## version['Commit-Date'] = 'Tue Feb 18 16:56:33 2014 -0800'
-    version['Release-Date'] = '2014-02-22 03:10:48 UTC'
-    version['Released-By'] = 'zijistark <zijistark@gmail.com>'
-    # !*>
-
     global versionStr
     versionStr = '{}.{}.{}'.format(version['major'], version['minor'], version['micro'])
 
@@ -572,18 +575,6 @@ def main():
 
         # Determine module combination...
         PB = enableMod("Project Balance (%s)" % versions['PB'])
-
-        SWMH = enableMod("SWMH (%s)" % versions['SWMH'])
-        if SWMH:
-            if language == 'fr':
-                SWMHnative = enableMod("SWMH avec les noms culturels locaux, plutot qu'en anglais ou francises")
-            elif language == 'es':
-                SWMHnative = enableMod("SWMH con localizacion nativa para culturas y titulos, en lugar de ingles")
-            else:
-                SWMHnative = enableMod("SWMH with native localisation for cultures and titles, rather than English")
-        else:
-            SWMHnative = True
-
         ARKOarmoiries = enableMod("ARKOpack Armoiries (coats of arms) (%s)" % versions['ARKO'])
         ARKOinterface = enableMod("ARKOpack Interface (%s)" % versions['ARKO'])
         NBRT = enableMod("NBRT+ (%s)" % versions['NBRT'])
@@ -595,21 +586,27 @@ def main():
 
         VIETevents = enableMod("VIET events (%s)" % versions['VIET'])
 
-        if SWMH:
-            VIETimmersion = False
-            if language == 'fr':
-                print("VIET immersion n'est pas compatible avec SWMH et ne peut donc pas etre actif\n"
-                      "en meme temps qu'SWMH.")
-            elif language == 'es':
-                print("VIET immersion no es todavia compatible con SWMH y no puede ser activado si\n"
-                      "has activado SWMH.")
-            else:
-                print("VIET immersion is not yet compatible with SWMH. Thus, it is disabled, as\n"
-                      "you've enabled SWMH.")
-        else:
-            VIETimmersion = enableMod("VIET immersion (%s)" % versions['VIET'])
+        SWMH = False
+        VIETimmersion = False
+
+        swmhVIET = enableModXOR('SWMH', versions['SWMH'], 'VIET Immersion', versions['VIET'])
+
+        if swmhVIET == 'SWMH':
+            SWMH = True
+        elif swmhVIET == 'VIET Immersion':
+            VIETimmersion = True
 
         VIET = (VIETtraits or VIETevents or VIETimmersion)
+
+        if SWMH:
+            if language == 'fr':
+                SWMHnative = enableMod("SWMH avec les noms culturels locaux, plutot qu'en anglais ou francises")
+            elif language == 'es':
+                SWMHnative = enableMod("SWMH con localizacion nativa para culturas y titulos, en lugar de ingles")
+            else:
+                SWMHnative = enableMod("SWMH with native localisation for cultures and titles, rather than English")
+        else:
+            SWMHnative = True
 
         # Prepare for installation
         if os.path.exists(targetFolder):
