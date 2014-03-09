@@ -731,6 +731,8 @@ def main():
 
         if move:
             rmTree("modules")  # Cleanup
+        if (platform == "mac" or platform == "lin") and SWMH and NBRT:
+            os.remove("%s/gfx/FX/pdxmap.lua" % targetFolder)  # This file breaks the game on OS X/Linux
 
         endTime = time.clock()
 
