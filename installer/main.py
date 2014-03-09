@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 2, 'micro': 6,
+version = {'major': 1, 'minor': 2, 'micro': 7,
            'Release-Date': '2014-03-07 18:01:33 UTC',
            'Released-By': 'Meneth <pb@meneth.com>'}
 
@@ -21,7 +21,8 @@ def initLocalisation():
                 {
                     'fr': "Cette version de Historical Immersion Project date du %s.\n"
                           "Taper 'o' ou 'oui' pour valider, ou laisser le champ vierge. Toute autre\n"
-                          "reponse sera interpretee comme un non.\n",
+                          "réponse sera interpretée comme négative.\n"
+                          "Pour abandonner à tout moment l'installation, appuyer sur Ctrl+C.\n",
                     'es': "Esta vercion de Historical Immersion Project fecha del %s.\n"
                           "Escribe 's' o 'si' para aceptar, o deja el campo en blanco. Cualquier otro\n"
                           "caso sera considerado un 'no'.\n",
@@ -44,14 +45,14 @@ def initLocalisation():
                 },
             'ENABLE_MOD_XOR_WARN':
                 {
-                    'fr': "\n%s and %s are incompatible. You may only select one:",
+                    'fr': "\n%s et %s sont incompatibles. Vous devez n'en choisir qu'un : ",
                     'es': "\n%s and %s are incompatible. You may only select one:",
                     'en': "\n%s and %s are incompatible. You may only select one:",
                 },
             'PUSH_FOLDER':
                 {
-                    'fr': 'PrÃ©paration %s',
-                    'es': 'PreparaciÃ³n %s',
+                    'fr': 'Préparation %s',
+                    'es': 'Preparaciòn %s',
                     'en': 'Preparing %s',
                 },
             'COMPILING':
@@ -166,6 +167,10 @@ def enableModXOR(nameA, versionA, nameB, versionB):
         if isYes(promptUser(localise('ENABLE_MOD_XOR') % (n, v))):
             return n
     return None
+
+
+def enableModNonDefault(name):
+    return isYes(promptUser(localise('ENABLE_MOD') % name))
 
 
 def quoteIfWS(s):
@@ -341,8 +346,8 @@ def initVersionEnvInfo():
     global versionStr
     versionStr = '{}.{}.{}'.format(version['major'], version['minor'], version['micro'])
 
-    ##    if 'Commit-ID' in version:
-    ##        versionStr += '.git~' + version['Commit-ID'][0:7]
+    ## if 'Commit-ID' in version:
+    ## versionStr += '.git~' + version['Commit-ID'][0:7]
 
     # Note that the above generates a version string that is lexicographically
     # ordered from semantic 'earlier' to 'later' in all cases, including variable
@@ -419,7 +424,7 @@ def getPkgVersions(modDirs):
 def getInstallOptions():
     # Determine user language for installation
     global language
-    language = promptUser("For English, hit ENTER. En francais, taper 'f'. Para espanol, presiona 'e'.")
+    language = promptUser("For English, hit ENTER. En français, taper 'f'. Para español, presiona 'e'.")
 
     if language == 'f':
         language = 'fr'
@@ -434,12 +439,15 @@ def getInstallOptions():
     global move
 
     if language == 'fr':
-        move = promptUser("Deplacer les fichiers plutot que les copier est bien plus rapide, mais\n"
-                          "rend l'installation de plusieurs copies du mod plus difficile.\n"
-                          "Voulez-vous que les fichiers soient deplaces plutot que copies? [oui]")
+        move = promptUser("L'installeur DEPLACE ou COPIE les fichiers d'installation. La\n"
+                          "COPIE permet l'installation ultérieure de differents combos de\n"
+                          "mods à partir de l'installeur de base. Notez que DEPLACER est\n"
+                          "plus rapide que COPIER.\n\n"
+                          "Voulez-vous donc que les fichiers soient DEPLACES plutôt que\n"
+                          "COPIES ? [oui]")
     elif language == 'es':
         move = promptUser("Mover los archivos en lugar de copiarlos es mucho mas rapido, pero hace\n"
-                          "que la instalacion de varias copias sea mas complicada.\n"
+                          "que la instalacion de varias copias sea mas complicada.\n\n"
                           "Quieres que los archivos de los modulos se muevan en lugar de copiarse? [si]")
     else:
         move = promptUser("The installer can either directly MOVE the module package's data files\n"
@@ -469,11 +477,11 @@ def getInstallOptions():
 
     if move:
         if language == 'fr':
-            move = promptUser("Etes-vous sï¿½r?\n"
-                              "Voulez-vous supprimer le paquet aprï¿½s l'installation? [oui]")
+            move = promptUser("Etes-vous sûr ?\n"
+                              "Voulez-vous supprimer les fichiers d'installation une fois l'opération terminée ? [oui]")
         elif language == 'es':
-            move = promptUser("ï¿½Estï¿½ seguro?\n"
-                              "ï¿½Quieres eliminar el paquete despuï¿½s de la instalaciï¿½n? [si]")
+            move = promptUser("?Esta seguro?\n"
+                              "?Quieres eliminar el paquete despuès de la instalaciòn? [si]")
         else:
             move = promptUser("Are you sure?\n"
                               "Do you want to delete the package after installation? [yes]")
@@ -490,9 +498,9 @@ def getInstallOptions():
     global targetFolder
 
     if language == 'fr':
-        targetFolder = promptUser("Installer le mod dans un repertoire existant supprimera ce repertoire.\n"
-                                  "Dans quel repertoire souhaitez-vous proceder a l'installation ?\n"
-                                  "Laissez le champ vierge pour '%s'." % defaultFolder, lc=False)
+        targetFolder = promptUser("Installer le mod dans un répertoire existant supprimera ce répertoire.\n"
+                                  "Dans quel répertoire souhaites-tu procéder à l'installation ?\n"
+                                  "Laisser le champ vierge pour '%s'." % defaultFolder, lc=False)
     elif language == 'es':
         targetFolder = promptUser("Instalar el mod en una carpeta existente eliminara dicha carpeta.\n"
                                   "En que carpeta deseas realizar la instalacion?\n"
@@ -600,7 +608,7 @@ def main():
 
         if SWMH:
             if language == 'fr':
-                SWMHnative = enableMod("SWMH avec les noms culturels locaux, plutot qu'en anglais ou francises")
+                SWMHnative = enableMod("SWMH avec les noms culturels locaux, plutôt qu'en anglais ou francisés")
             elif language == 'es':
                 SWMHnative = enableMod("SWMH con localizacion nativa para culturas y titulos, en lugar de ingles")
             else:
@@ -693,8 +701,8 @@ def main():
                 pushFolder("Converter/VIET")
 
             if language == 'fr':
-                answer = promptUser("VIET Immersion necessite tous les DLC de portraits. Les avez-vous\n"
-                                    "tous? [oui]")
+                answer = promptUser("VIET Immersion nécessite tous les DLC de portraits. Les avez-vous\n"
+                                    "tous ? [oui]")
             elif language == 'es':
                 answer = promptUser("VIET inmersion depende de los retratos DLC. Tiene todos los retratos\n"
                                     "DLC? [si]")
@@ -748,10 +756,10 @@ def main():
         print("Generating mod definition file: " + quoteIfWS(modFilename))
 
         with open(modFilename, "w") as modFile:
-            modFile.write('name = "HIP - %s"    #Name that shows in launcher\n' % targetFolder)
+            modFile.write('name = "HIP - %s" #Name that shows in launcher\n' % targetFolder)
             modFile.write('path = "mod/%s"\n' % targetFolder)
             if platform != 'mac':
-                modFile.write('user_dir = "%s"    #For saves, gfx cache, etc.\n' % modFileBase)
+                modFile.write('user_dir = "%s" #For saves, gfx cache, etc.\n' % modFileBase)
 
         # Dump modules selected and their respective versions to <mod>/version.txt
         versionFilename = "%s/version.txt" % targetFolder
@@ -769,9 +777,9 @@ def main():
         dbg.trace("installation complete")
 
         if language == 'fr':
-            promptUser("Installation terminee. Taper entree pour sortir.")
+            promptUser("Installation terminée. Taper ENTREE pour quitter.")
         elif language == 'es':
-            promptUser("Instalacion terminada. Presiona Enter para salir.")
+            promptUser("Instalacion terminada. Presiona ENTER para salir.")
         else:
             promptUser("Installation done. Hit ENTER to exit.")
 
