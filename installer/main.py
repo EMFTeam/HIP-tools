@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# -*- coding: cp1252 -*-
+# -*- coding: latin-1 -*-
 # -*- python-indent-offset: 4 -*-
 
 import os
@@ -42,6 +42,12 @@ def initLocalisation():
                     'fr': "Voulez-vous installer %s (%s) ? [oui]",
                     'es': "Deseas instalar %s (%s)? [si]",
                     'en': "Do you want to install %s (%s)? [yes]",
+                },
+            'ENABLE_MOD_NOT_DEFAULT_COMPAT':
+                {
+                    'fr': "\nNOTE: %s might be incompatible with your system.\nVoulez-vous installer %s ? [non]",
+                    'es': "\nNOTE: %s might be incompatible with your system.\nDeseas instalar %s? [no]",
+                    'en': "\nNOTE: %s might be incompatible with your system.\nDo you want to install %s? [no]",
                 },
             'ENABLE_MOD_XOR_WARN':
                 {
@@ -157,8 +163,19 @@ def isYes(answer):
     return answer in yesSet[language]
 
 
+def isYesDefaultNo(answer):
+    yesSet = {'fr': ('o', 'oui'),
+              'es': ('s', 'si'),
+              'en': ('y', 'yes')}
+    return answer in yesSet[language]
+
+
 def enableMod(name):
     return isYes(promptUser(localise('ENABLE_MOD') % name))
+
+
+def enableModDefaultNo(name):
+    return isYesDefaultNo(promptUser(localise('ENABLE_MOD_NOT_DEFAULT_COMPAT') % (name, name)))
 
 
 def enableModXOR(nameA, versionA, nameB, versionB):
@@ -167,10 +184,6 @@ def enableModXOR(nameA, versionA, nameB, versionB):
         if isYes(promptUser(localise('ENABLE_MOD_XOR') % (n, v))):
             return n
     return None
-
-
-def enableModNonDefault(name):
-    return isYes(promptUser(localise('ENABLE_MOD') % name))
 
 
 def quoteIfWS(s):
@@ -546,13 +559,6 @@ def main():
 
         # Normal operation from here on...
 
-        if platform == 'mac':
-            print('WARNING: Mac OS X support is currently in beta.\n'
-                  'While all mods and the installer should now work with OS X for all users, YMMV.\n'
-                  'Please report any problems you encounter or any feedback that you\'d like to\n'
-                  'share on the HIP forums or via an email to the owner of the OS X initiative:\n'
-                  'zijistark <zijistark@gmail.com>\n')
-
         # Ensure the runtime's current working directory corresponds exactly to the
         # location of this module itself. In other words, allow it to be run from
         # anywhere on the system but still be able to assume the relative path to,
@@ -585,7 +591,11 @@ def main():
         PB = enableMod("Project Balance (%s)" % versions['PB'])
         ARKOarmoiries = enableMod("ARKOpack Armoiries (coats of arms) (%s)" % versions['ARKO'])
         ARKOinterface = enableMod("ARKOpack Interface (%s)" % versions['ARKO'])
-        NBRT = enableMod("NBRT+ (%s)" % versions['NBRT'])
+
+        if platform == 'win':
+            NBRT = enableMod("NBRT+ (%s)" % versions['NBRT'])
+        else:
+            NBRT = enableModDefaultNo("NBRT+ (%s)" % versions['NBRT'])
 
         if PB:
             VIETtraits = False
