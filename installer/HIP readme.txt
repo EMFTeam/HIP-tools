@@ -1,4 +1,3 @@
-====================
 Windows Installation
 
 1. Unzip *everything* inside the downloaded .7z archive (normally
@@ -80,37 +79,6 @@ zijistark@gmail.com
 
 =====================
 NOTE:
-The following manual instructions are out of date!  Even if you're
-using Linux, simply adapt the Mac OS X instructions. You know how to
-open a terminal. The rest is the same, except for the location of
-your mod folder.
-
-DEPRECATED:
-
-Manual installation for those who cannot run .exe files:
-0. Ignore the install instructions above
-1. Unzip the modules folder and HIP.mod into your mod folder
-2. If on OS X edit HIP.mod and remove the "user_dir" line
-3. Create a folder named "Historical Immersion Project"
-4. Follow the following order for mod installation. "Copy" means copy/move the *contents* of the folder into the HIP folder, overwriting any conflicts:
-	0. If you want to convert to EU4 later, copy the "Converter/Common" folder. Note that conversion of SWMH does not work
-	1. If using ARKO armoiries, copy the "ARKOpack_Armoiries" folder
-	2. If using ARKO interface, copy the "ARKOpack_Interface folder". If using VIET, delete the gfx/event_pictures folder
-	3. If using *any* VIET module, copy the "VIET_Assets" folder
-	4. If using Project Balance, copy the "ProjectBalance" folder and the "Converter/PB" folder
-	5. If using SWMH, copy the "SWMH" folder
-		* If using English title names instead of native, copy the "English SWMH" folder
-		* If using Project Balance, copy the "PB + SWMH" folder
-	6. If using NBRT+ interface, copy the "NBRT+" folder
-		* If not using SWMH, delete Historical Immersion Project\map\terrain.bmp and trees.bmp
-		* If not using SWMH, delete Historical Immersion Project\map\terrain\colormap.dds and colormap_water.dds
-		* If using ARKO armoiries, also copy the "NBRT+ARKO" folder
-	7. If using VIET Traits, copy the "VIET_Traits" folder. Note that this cannot be done together with PB as it is included in PB
-	8. If using VIET Events, copy the "VIET_Events" folder
-		* If using Project Balance, copy the "PB_VIET_Events" folder
-	9. If using VIET Immersion:
-		* If you lack any of the portrait DLC, follow the instructions in the VIET_portrait_fix folder
-		* If NOT using Project Balance, copy the "VIET_Immersion" folder and the "Converter/VIET" folder. Note that Immersion does not work with SWMH
-		* If using Project Balance, copy the "PB_VIET_Immersion" folder. Note that Immersion does not work with SWMH
-5. (Optional) Delete the modules folder
-6. Enable HIP through the launcher and start the game
+If you're using Linux, simply adapt the Mac OS X instructions.
+You know how to open a terminal.
+The rest is the same, except for the location of your mod folder.
