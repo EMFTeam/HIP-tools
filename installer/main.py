@@ -704,10 +704,11 @@ def main():
         if VIETimmersion:
             dbg.push("merging VIET Immersion...")
             moduleOutput.append("VIET Immersion (%s)\n" % versions['VIET'])
+            pushFolder("VIET_Immersion/common")
             if PB:
-                pushFolder("PB_VIET_Immersion")
+                pushFolder("VIET_Immersion/PB")
             else:
-                pushFolder("VIET_Immersion")
+                pushFolder("VIET_Immersion/vanilla")
                 pushFolder("Converter/VIET")
 
             if language == 'fr':
