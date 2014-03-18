@@ -7,23 +7,43 @@
 #include "error.h"
 
 
-CHFile::CHFile(const char* filename)
-  : _p(0),
-    _f(0),
-    _n_line(0),
-    _filename(filename) {
+regex_t CHFile::pat_literal( R"(^(\s*#.*)|(\s*)$)" );
+regex_t CHFile::pat_char_start( R"(^\s*(\d+)\s*=\s*[{]\s*(#.*)?$)" );
 
-  if (( _f = fopen(filename, "rb") ) == NULL)
+
+CHFile::CHFile(const char* filename)
+  : p(0),
+    f(0),
+    n_line(0),
+    fname(filename) {
+
+  /* before doing anything, check that our statically-initialized
+     patterns didn't fail to compile. Google's C++ interface to
+     libpcre (pcrecpp) is a little weird in this respect (and others,
+     frankly-- makes me wonder if I wouldn't just find direct usage of
+     the C interface easier). */
+
+  if (pat_literal.error().length())
+    throw error("Internal error: could not compile RE 'literal': %s: %s",
+		pat_literal.error().c_str(),
+		pat_literal.pattern().c_str());
+
+  if (pat_char_start.error().length())
+    throw error("Internal error: could not compile RE 'char_start': %s: %s",
+		pat_char_start.error().c_str(),
+		pat_char_start.pattern().c_str());
+
+  if (( f = fopen(filename, "rb") ) == NULL)
     throw error("Failed to open file: %s: %s", strerror(errno), filename);
 
-  _p = &_cur_line[0]; // still working-out how to present partial line consumption  
+  p = &in_buf[0]; // still working-out how to present partial line consumption  
 
   parse();
 }
 
 CHFile::~CHFile() {
-  if (_f)
-    fclose(_f);
+  if (f)
+    fclose(f);
 }
 
 
@@ -33,14 +53,16 @@ void CHFile::parse() {
 
   while ( (line = read_line(false)) ) {
     /* read lines and do stuff with them until proper EOF */
+
+    
   }
 }
 
 
 
 void CHFile::write_buf(const char* buf, uint_t len) {
-  if ( fwrite(buf, 1, len, _f) < len )
-    throw error("Write failed: %s: %s", strerror(errno), _filename.c_str());
+  if ( fwrite(buf, 1, len, f) < len )
+    throw error("Write failed: %s: %s", strerror(errno), fname.c_str());
 
   // NOTE: we don't currently advance line number on (re)writes
 }
@@ -48,33 +70,31 @@ void CHFile::write_buf(const char* buf, uint_t len) {
 
 char* CHFile::read_line(bool eof_is_error = true) {
 
-  if ( fgets(_p, BUF_SZ, _f) == NULL && feof(_f) == 0)
-    throw error("Read failed: %s: %s: line %u", strerror(errno), _filename.c_str(), _n_line);
+  if ( fgets(p, BUF_SZ, f) == NULL && feof(f) == 0)
+    throw error("Read failed: %s: %s: line %u", strerror(errno), fname.c_str(), n_line);
 
   /* find end of input, check that it wasn't early (right away), and
      trim any trailing CR-LF or lone LF, if present */
 
-  char* p = _p;
-
-  if (feof(_f)) {
+  if (feof(f)) {
     if (eof_is_error)
-      throw error("File ended early: %s: line %u", _filename.c_str(), _n_line);
+      throw error("File ended early: %s: line %u", fname.c_str(), n_line);
     else
       return 0;
   }
 
   // definitely did get data of some kind
-  ++_n_line;
+  ++n_line;
 
-  while (*p) { ++p; }
+  char* q = p;
 
-  --p;
+  while (*q) { ++q; } // advance to end
 
-  if (*(p-1) == '\n')
-    *(--p) = '\0';
+  if (*(q-1) == '\n')
+    *(--q) = '\0';
 
-  if (p > _p && *(p-1) == '\r')
-    *(--p) = '\0';
+  if (q > p && *(q-1) == '\r')
+    *(--q) = '\0';
 
-  return _p;
+  return p;
 }
