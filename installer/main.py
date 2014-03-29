@@ -606,13 +606,15 @@ def main():
 
         SWMH = False
         VIETimmersion = False
+        promptUser("VIET Immersion does not yet work with Rajas of India, and thus cannot be enabled. Hit enter to continue.")
+        SWMH = enableMod("SWMH (%s" % versions['SWMH'])
 
-        swmhVIET = enableModXOR('SWMH', versions['SWMH'], 'VIET Immersion', versions['VIET'])
+        # swmhVIET = enableModXOR('SWMH', versions['SWMH'], 'VIET Immersion', versions['VIET'])
 
-        if swmhVIET == 'SWMH':
-            SWMH = True
-        elif swmhVIET == 'VIET Immersion':
-            VIETimmersion = True
+        #if swmhVIET == 'SWMH':
+        #    SWMH = True
+        #elif swmhVIET == 'VIET Immersion':
+        #    VIETimmersion = True
 
         VIET = (VIETtraits or VIETevents or VIETimmersion)
 
@@ -681,7 +683,7 @@ def main():
             dbg.push("merging NBRT+...")
             moduleOutput.append("NBRT+ (%s)\n" % versions['NBRT'])
             pushFolder("NBRT+")
-            if SWMH:
+            if SWMH and platform == "win":
                 pushFolder("NBRT+SWMH")
             if ARKOarmoiries:
                 pushFolder("NBRT+ARKO")
