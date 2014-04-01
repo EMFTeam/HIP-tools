@@ -6,8 +6,6 @@ import re
 
 INDENT_UNIT = '\t'
 
-
-
 p_opt_quoted = re.compile(r'^(?:"([^"]+)"|([^"\s]+))$')
 p_char_end = re.compile(r'^[}]\s*$')
 
@@ -16,7 +14,7 @@ p_char_start = re.compile(r'^\s*(\d+)\s*=\s*[{]\s*(#.*)?$')
 p_char_culture = re.compile(r'^\s*culture\s*=\s*(?:"([^"]+)"|([^"\s]+))\s*(#.*)?$')
 p_char_name = re.compile(r'^\s*name\s*=\s*(?:"([^"]+)"|([^"\s]+))\s*(#.*)?$')
 p_char_dynasty = re.compile(r'^\s*dynasty\s*=\s*(?:"(\d+)"|(\d+))\s*(#.*)?$')
-p_char_hist_entry_start = re.compile(r'^\s*(\d{1,4})\.(\d{1,2})\.(\d{1,2})\s*=\s*[{]$')
+p_char_hist_entry_start = re.compile(r'^\s*(\d{1,4})\.(\d{1,2})\.(\d{1,2})\s*=\s*[{]')  # NOTE: Captures no comment
 p_char_hist_entry_birth = re.compile(r'^\s*birth\s*=\s*(?:"(?:[^"]+)"|(?:[^"\s]+))')  # NOTE: Captures no comment
 p_open_brace = re.compile(r'^([^}]*)[{]')
 p_close_brace = re.compile(r'^([^{]*)[}]')
@@ -34,7 +32,8 @@ class CHFileLiteral:
         self.literal = literal
 
     def rewrite(self, f):
-        f.write(self.literal + '\n')
+        f.write(self.literal)
+        f.write('\n')
 
 
 class CHFileLiteralPart:  # Identical but without an implied EOL
@@ -66,6 +65,7 @@ def dequoteCommentableVal(m):
     return CommentableVal(m.group(2), m.group(3)) if m.group(2) is not None else CommentableVal(m.group(1), m.group(3))
 
 
+# TODO: Should be commentable (the start line)
 class CHFileCharHistEntry:
     def __init__(self, date):
         self.date = date
@@ -78,33 +78,37 @@ class CHFileCharHistEntry:
 
     def parse(self, ch, chfc, f, n_line):
         buf = ''
-        buf_idx = 0
-        nest_level = 1
-        birth = False
+        buf_idx = 0  # Index into buf for current parsing position
+        nest_level = 1  # Already started the history entry, so we're already nested by 1 level
+        birth = False  # Have we seen a birth history effect in this entry?
+
         while nest_level > 0:
-            if len(buf) == buf_idx:
+            if len(buf) == buf_idx:  # Parsing has reached the end of our useful buffered input
                 buf = f.readline()
                 if len(buf) == 0:  # EOF
                     raise CHParseError("Unexpected EOF while parsing character ID %d [%s: line %d]!" % (chfc.id,
                                                                                                         g_filename,
                                                                                                         n_line))
                 n_line += 1
-                buf_idx = 0  # Reset start pointer to beginning of new line
+                buf_idx = 0  # Reset index to beginning of new line
                 buf = buf.rstrip()
-                continue
 
-            # buf is nonempty, buf[buf_idx:] is also nonempty, and we still having matching/consumption to do.
+                chfc.literal_elems.append(CHFileLiteral(buf))  # Copy literally too for our dirty-marking mechanism
+
+                continue  # Hopefully that gave us something with which to work, try again.
+
+            # buf is nonempty, buf[buf_idx:] is also nonempty, so we still having matching/consumption to do.
 
             # Look for a birth statement at nest_level == 1 in case this history entry includes/is a birth date
             if nest_level == 1:
                 m = p_char_hist_entry_birth.match(buf[buf_idx:])
                 if m:
                     if birth:
-                        raise CHParseError("Multiple birth-date effects for character ID %d [%s: line %d]!"
-                                           % (chfc.id, g_filename, n_line))
+                        raise CHParseError("Multiple birth-date history effects for character ID %d [%s: line %d]!"
+                                           % (chfc.id, g_filename, n_line))  #Could still be multiple from diff entries.
                     birth = True
-                    self.elems.append(CHFileLiteral('\t\tbirth=yes'))
                     buf_idx += m.end()
+                    self.elems.append(CHFileLiteral('\t\tbirth=yes'))
                     continue
 
             # Look for a starting brace to increment the nest level, capture interim literal data
@@ -123,7 +127,7 @@ class CHFileCharHistEntry:
             if m:
                 nest_level -= 1
                 buf_idx += m.end()
-                if buf_idx < len(buf):  # Oh, but there's MORE!
+                if buf_idx < len(buf):  # Oh, but there's YET MORE!
                     self.elems.append(CHFileLiteralPart(m.group()))
                 else:
                     self.elems.append(CHFileLiteral(m.group()))
@@ -167,25 +171,28 @@ class CHFileChar:
 
     def rewrite(self, f):  # Must be called post object-finalization (which happens immediately after successful parse)
 
-        f.write('%d = {\n' % self.id)
+        if self.comment is None:
+            f.write('%d = {\n' % self.id)
+        else:
+            f.write('%d = {  %s\n' % (self.id, self.comment))
 
         if self.dirty:
 
-            if self.name.cmt is None or len(self.name.cmt) == 0:
+            if self.name.cmt is None:
                 f.write('\tname="{}"\n'.format(self.name.val))
             else:
-                f.write('\tname="{}" # {}\n'.format(self.name.val, self.name.cmt))
+                f.write('\tname="{}"  {}\n'.format(self.name.val, self.name.cmt))
 
             if self.dynasty.val != u'0':  # Don't print explicit dynasty info for lowborns
-                if self.dynasty.cmt is None or len(self.dynasty.cmt) == 0:
+                if self.dynasty.cmt is None:
                     f.write('\tdynasty={}\n'.format(self.dynasty.val))
                 else:
-                    f.write('\tdynasty={} # {}\n'.format(self.dynasty.val, self.dynasty.cmt))
+                    f.write('\tdynasty={}  {}\n'.format(self.dynasty.val, self.dynasty.cmt))
 
-            if self.culture.cmt is None or len(self.culture.cmt) == 0:
+            if self.culture.cmt is None:
                 f.write('\tculture="{}"\n'.format(self.culture.val))
             else:
-                f.write('\tculture="{}" # {}\n'.format(self.culture.val, self.culture.cmt))
+                f.write('\tculture="{}"  {}\n'.format(self.culture.val, self.culture.cmt))
 
             for e in self.elems:
                 e.rewrite(f)
