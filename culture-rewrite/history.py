@@ -36,6 +36,14 @@ class CHFileLiteral:
         f.write(self.literal + '\n')
 
 
+class CHFileLiteralPart:  # Identical without an implied line ending
+    def __init__(self, literal):
+        self.literal = literal
+
+    def rewrite(self, f):
+        f.write(self.literal)
+
+
 class DateVal:  # Assumes string values in constructor
     def __init__(self, y, m, d):
         self.y = int(y)
@@ -99,19 +107,25 @@ class CHFileCharHistEntry:
             # Look for a starting brace to increment the nest level, capture interim literal data
             m = p_open_brace.match(buf[buf_idx:])
             if m:
-                self.elems.append(CHFileLiteral(m.group()))
                 nest_level += 1
                 assert m.end() > 0
                 buf_idx += m.end()
+                if buf_idx < len(buf):  # Oh, but there's MORE!
+                    self.elems.append(CHFileLiteralPart(m.group()))
+                else:
+                    self.elems.append(CHFileLiteral(m.group()))
                 continue
 
             # Look for a closing brace to decrement the nest level, capture interim literal data
             m = p_close_brace.match(buf[buf_idx:])
             if m:
-                self.elems.append(CHFileLiteral(m.group()))
                 nest_level -= 1
                 assert m.end() > 0
                 buf_idx += m.end()
+                if buf_idx < len(buf):  # Oh, but there's MORE!
+                    self.elems.append(CHFileLiteralPart(m.group()))
+                else:
+                    self.elems.append(CHFileLiteral(m.group()))
                 continue
 
             # Else, it's just literal data/effects, so capture all the remainder (no change in brace nesting)
@@ -147,10 +161,11 @@ class CHFileChar:
     def rewrite(self, f):  # Must be called post object-finalization (which happens immediately after successful parse)
         f.write('%d = {\n' % self.id)
 
-        if self.dynasty.cmt is None or len(self.dynasty.cmt) == 0:
-            f.write('\tdynasty={}\n'.format(self.dynasty.val))
-        else:
-            f.write('\tdynasty={} # {}\n'.format(self.dynasty.val, self.dynasty.cmt))
+        if self.dynasty.val != u'0':  # Don't print explicit dynasty info for lowborns
+            if self.dynasty.cmt is None or len(self.dynasty.cmt) == 0:
+                f.write('\tdynasty={}\n'.format(self.dynasty.val))
+            else:
+                f.write('\tdynasty={} # {}\n'.format(self.dynasty.val, self.dynasty.cmt))
 
         if self.culture.cmt is None or len(self.culture.cmt) == 0:
             f.write('\tculture={}\n'.format(self.culture.val))
