@@ -32,6 +32,9 @@ class CHFileLiteral:
     def __init__(self, literal):
         self.literal = literal
 
+    def rewrite(self, f):
+        f.write(self.literal + '\n')
+
 
 class DateVal:  # Assumes string values in constructor
     def __init__(self, y, m, d):
@@ -59,6 +62,11 @@ class CHFileCharHistEntry:
         self.date = date
         self.elems = []
 
+    def rewrite(self, f):
+        f.write('\t%s = {\n' % str(self.date))
+        for e in self.elems:
+            e.rewrite(f)
+
     def parse(self, ch, chfc, f, n_line):
         buf = ''
         buf_idx = 0
@@ -79,10 +87,11 @@ class CHFileCharHistEntry:
             # buf is nonempty, buf[buf_idx:] is also nonempty, and we still having matching/consumption to do.
 
             # Look for a birth statement at nest_level == 1 in case this history entry includes/is a birth date
-            if not birth and nest_level == 1:
+            if nest_level == 1:
                 m = p_char_hist_entry_birth.match(buf[buf_idx:])
                 if m:
                     birth = True
+                    self.elems.append(CHFileLiteral('\t\tbirth=yes'))
                     assert m.end() > 0
                     buf_idx += m.end()
                     continue
@@ -105,8 +114,8 @@ class CHFileCharHistEntry:
                 buf_idx += m.end()
                 continue
 
-            # Else, it's just literal data/effects, so capture all the remainder
-            self.elems.append(buf[buf_idx:])
+            # Else, it's just literal data/effects, so capture all the remainder (no change in brace nesting)
+            self.elems.append(CHFileLiteral(buf[buf_idx:]))
             buf_idx = len(buf)  # One past end, fully consumed
 
         # nest_level == 0, return input file line number and whether we included a birth date/effect in this entry
@@ -126,13 +135,35 @@ class CHFileChar:
 
 
     def _finalize(self):
-        self.dynasty = getattr(self, 'dynasty', CommentableVal(0))  # Default to lowborn dynasty = 0
+        self.dynasty = getattr(self, 'dynasty', CommentableVal(u'0'))  # Default to lowborn dynasty = 0
         if not hasattr(self, 'culture'):
             raise CHParseError('Character ID %d [%s: line %d] has no culture defined!'
                                % (self.id, g_filename, self.start_line))
         if not hasattr(self, 'bdate'):
             raise CHParseError('Character ID %d [%s: line %d] has no birth date defined!'
                                % (self.id, g_filename, self.start_line))
+
+
+    def rewrite(self, f):  # Must be called post object-finalization (which happens immediately after successful parse)
+        f.write('%d = {\n' % self.id)
+
+        if self.dynasty.cmt is None or len(self.dynasty.cmt) == 0:
+            f.write('\tdynasty={}\n'.format(self.dynasty.val))
+        else:
+            f.write('\tdynasty={} # {}\n'.format(self.dynasty.val, self.dynasty.cmt))
+
+        if self.culture.cmt is None or len(self.culture.cmt) == 0:
+            f.write('\tculture={}\n'.format(self.culture.val))
+        else:
+            f.write('\tculture={} # {}\n'.format(self.culture.val, self.culture.cmt))
+
+        for e in self.elems:
+            e.rewrite(f)
+
+        for h in self.hist_entries:
+            h.rewrite(f)
+
+        f.write('}\n')
 
 
     def parse(self, ch, f, n_line):
@@ -170,9 +201,18 @@ class CHFileChar:
             m = p_char_end.match(line)
             if m:
                 self._finalize()
+
+                # Index
+                ch.chars[self.id] = self
+
+                if self.dynasty.val in ch.chars_by_dynasty:
+                    ch.chars_by_dynasty[self.dynasty.val].append(self)
+                else:
+                    ch.chars_by_dynasty[self.dynasty.val] = [ self ]
+
                 ch.log_dbg(str(self.id) + " {\n"
                            + ' dynasty  => ' + str(self.dynasty.val) + "\n"
-                           + ' culture  => ' + self.culture.val + "\n"
+                           + ' culture  => ' + str(self.culture.val) + "\n"
                            + ' birthday => ' + str(self.bdate) + "\n"
                            + "}\n")
                 return n_line
@@ -190,6 +230,12 @@ class CHFile:
         self.filename = filename
         self.path = path
         self.elems = []
+
+    def rewrite(self, basedir):
+        path = os.path.join(basedir, self.filename)
+        with codecs.open(path, mode='w', encoding='cp1252') as f:
+            for e in self.elems:
+                e.rewrite(f)
 
     def parse(self):
         global g_filename
@@ -212,7 +258,10 @@ class CHFile:
                         comment = None
 
                     id = int(m.group(1))
-                    # TODO: check for duplicate ID
+
+                    if id in self.ch.chars:
+                        raise CHParseError("Duplicate character ID found at %s:L%d!" % (g_filename, n_line))
+
                     c = CHFileChar(id, comment)
                     n_line = c.parse(self.ch, f, n_line)
                     self.elems.append(c)
@@ -223,14 +272,17 @@ class CHFile:
                     self.elems.append(CHFileLiteral(m.group()))
                     continue
 
-                raise CHParseError("Unexpected token at %s:%d!" % (self.filename, n_line))
+                raise CHParseError("Unexpected token at %s:L%d!" % (g_filename, n_line))
+
 
 class CharHistory:
     def __init__(self, log_file=None, log_verbosity=0):
         assert(log_verbosity == 0 or log_file is not None)
         self.log_file = log_file
         self.log_verbosity = log_verbosity
-        self.files = {}
+        self.files = []
+        self.chars = {}  # Objects indexed by ID
+        self.chars_by_dynasty = {}  # Object list indexed by dynasty ID
 
     def log_print(self, msg, level):
         if self.log_verbosity >= level:
@@ -249,17 +301,21 @@ class CharHistory:
     def parse_file(self, filename, path):
         chf = CHFile(self, filename, path)
         chf.parse()
+        self.files.append(chf)
 
     def parse_dir(self, path):
         assert os.path.isdir(path)
         self.parse_file("test.txt", "./test.txt")
+
+        self.log_dbg('chars = ' + repr(self.chars) + '\n')
+        self.log_dbg('chars_by_dynasty = ' + repr(self.chars_by_dynasty))
+
+        self.files[0].rewrite('./out')
+
         return
+
         filenames = os.listdir(path)  # TODO: filter on .txt extension
         for filename in filenames:
             self.parse_file(filename, os.path.join(path, filename))
 
-
-class Char:
-    def __init__(self, id, name, traits, attrs, ):
-        self.traits = {}
 
