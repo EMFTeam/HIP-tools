@@ -14,6 +14,7 @@ p_char_end = re.compile(r'^[}]\s*$')
 p_bare_comment_or_blank = re.compile(r'^(\s*#.*)|(\s*)$')
 p_char_start = re.compile(r'^\s*(\d+)\s*=\s*[{]\s*(#.*)?$')
 p_char_culture = re.compile(r'^\s*culture\s*=\s*(?:"([^"]+)"|([^"\s]+))\s*(#.*)?$')
+p_char_name = re.compile(r'^\s*name\s*=\s*(?:"([^"]+)"|([^"\s]+))\s*(#.*)?$')
 p_char_dynasty = re.compile(r'^\s*dynasty\s*=\s*(?:"(\d+)"|(\d+))\s*(#.*)?$')
 p_char_hist_entry_start = re.compile(r'^\s*(\d{1,4})\.(\d{1,2})\.(\d{1,2})\s*=\s*[{]$')
 p_char_hist_entry_birth = re.compile(r'^\s*birth\s*=\s*(?:"(?:[^"]+)"|(?:[^"\s]+))')
@@ -132,10 +133,11 @@ class CHFileCharHistEntry:
             self.elems.append(CHFileLiteral(buf[buf_idx:]))
             buf_idx = len(buf)  # One past end, fully consumed
 
+#        if buf_idx < len(buf):
+#            raise CHParseError("Out-of-place trailing characters after character history entry closing brace ["
+#                               "%s:L%d]!" % (g_filename, n_line))
+
         # nest_level == 0, return input file line number and whether we included a birth date/effect in this entry
-        if buf_idx < len(buf):
-            raise CHParseError("Out-of-place trailing characters after character history entry closing brace ["
-                               "%s:L%d]!" % (g_filename, n_line))
         return (n_line, birth)
 
 
@@ -153,6 +155,9 @@ class CHFileChar:
         if not hasattr(self, 'culture'):
             raise CHParseError('Character ID %d [%s: line %d] has no culture defined!'
                                % (self.id, g_filename, self.start_line))
+        if not hasattr(self, 'name'):
+            raise CHParseError('Character ID %d [%s: line %d] has no given name defined!'
+                               % (self.id, g_filename, self.start_line))
         if not hasattr(self, 'bdate'):
             raise CHParseError('Character ID %d [%s: line %d] has no birth date defined!'
                                % (self.id, g_filename, self.start_line))
@@ -161,6 +166,12 @@ class CHFileChar:
     def rewrite(self, f):  # Must be called post object-finalization (which happens immediately after successful parse)
         f.write('%d = {\n' % self.id)
 
+
+        if self.name.cmt is None or len(self.name.cmt) == 0:
+            f.write('\tname="{}"\n'.format(self.name.val))
+        else:
+            f.write('\tname="{}" # {}\n'.format(self.name.val, self.name.cmt))
+
         if self.dynasty.val != u'0':  # Don't print explicit dynasty info for lowborns
             if self.dynasty.cmt is None or len(self.dynasty.cmt) == 0:
                 f.write('\tdynasty={}\n'.format(self.dynasty.val))
@@ -168,9 +179,9 @@ class CHFileChar:
                 f.write('\tdynasty={} # {}\n'.format(self.dynasty.val, self.dynasty.cmt))
 
         if self.culture.cmt is None or len(self.culture.cmt) == 0:
-            f.write('\tculture={}\n'.format(self.culture.val))
+            f.write('\tculture="{}"\n'.format(self.culture.val))
         else:
-            f.write('\tculture={} # {}\n'.format(self.culture.val, self.culture.cmt))
+            f.write('\tculture="{}" # {}\n'.format(self.culture.val, self.culture.cmt))
 
         for e in self.elems:
             e.rewrite(f)
@@ -201,6 +212,11 @@ class CHFileChar:
             m = p_char_culture.match(line)
             if m:
                 self.culture = dequoteCommentableVal(m)
+                continue
+
+            m = p_char_name.match(line)
+            if m:
+                self.name = dequoteCommentableVal(m)
                 continue
 
             m = p_char_hist_entry_start.match(line)
@@ -320,7 +336,7 @@ class CharHistory:
 
     def parse_dir(self, path):
         assert os.path.isdir(path)
-        self.parse_file("test.txt", "./test.txt")
+        self.parse_file("norman.txt", "./norman.txt")
 
         self.log_dbg('chars = ' + repr(self.chars) + '\n')
         self.log_dbg('chars_by_dynasty = ' + repr(self.chars_by_dynasty))
