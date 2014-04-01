@@ -17,7 +17,7 @@ p_char_culture = re.compile(r'^\s*culture\s*=\s*(?:"([^"]+)"|([^"\s]+))\s*(#.*)?
 p_char_name = re.compile(r'^\s*name\s*=\s*(?:"([^"]+)"|([^"\s]+))\s*(#.*)?$')
 p_char_dynasty = re.compile(r'^\s*dynasty\s*=\s*(?:"(\d+)"|(\d+))\s*(#.*)?$')
 p_char_hist_entry_start = re.compile(r'^\s*(\d{1,4})\.(\d{1,2})\.(\d{1,2})\s*=\s*[{]$')
-p_char_hist_entry_birth = re.compile(r'^\s*birth\s*=\s*(?:"(?:[^"]+)"|(?:[^"\s]+))')
+p_char_hist_entry_birth = re.compile(r'^\s*birth\s*=\s*(?:"(?:[^"]+)"|(?:[^"\s]+))')  # NOTE: Captures no comment
 p_open_brace = re.compile(r'^([^}]*)[{]')
 p_close_brace = re.compile(r'^([^{]*)[}]')
 
@@ -37,7 +37,7 @@ class CHFileLiteral:
         f.write(self.literal + '\n')
 
 
-class CHFileLiteralPart:  # Identical without an implied line ending
+class CHFileLiteralPart:  # Identical but without an implied EOL
     def __init__(self, literal):
         self.literal = literal
 
@@ -52,7 +52,7 @@ class DateVal:  # Assumes string values in constructor
         self.d = int(d)
         self.c = '{}.{}.{}'.format(self.y, self.m, self.d)  # Lexicographic-comparable canonical date value
 
-    def __str__(self):
+    def __str__(self):  # sorted(dates) should work as well as <, >, etc.
         return self.c
 
 
@@ -99,9 +99,11 @@ class CHFileCharHistEntry:
             if nest_level == 1:
                 m = p_char_hist_entry_birth.match(buf[buf_idx:])
                 if m:
+                    if birth:
+                        raise CHParseError("Multiple birth-date effects for character ID %d [%s: line %d]!"
+                                           % (chfc.id, g_filename, n_line))
                     birth = True
                     self.elems.append(CHFileLiteral('\t\tbirth=yes'))
-                    assert m.end() > 0
                     buf_idx += m.end()
                     continue
 
@@ -109,7 +111,6 @@ class CHFileCharHistEntry:
             m = p_open_brace.match(buf[buf_idx:])
             if m:
                 nest_level += 1
-                assert m.end() > 0
                 buf_idx += m.end()
                 if buf_idx < len(buf):  # Oh, but there's MORE!
                     self.elems.append(CHFileLiteralPart(m.group()))
@@ -121,7 +122,6 @@ class CHFileCharHistEntry:
             m = p_close_brace.match(buf[buf_idx:])
             if m:
                 nest_level -= 1
-                assert m.end() > 0
                 buf_idx += m.end()
                 if buf_idx < len(buf):  # Oh, but there's MORE!
                     self.elems.append(CHFileLiteralPart(m.group()))
@@ -148,6 +148,8 @@ class CHFileChar:
         self.start_line = -1
         self.hist_entries = []
         self.elems = []
+        self.literal_elems = []  # Original string rep. of each line of the character, used for output when !self.dirty
+        self.dirty = False  # Has the object been modified by a transform rule? Used to minimize text diff on rewrite.
 
 
     def _finalize(self):
@@ -164,32 +166,40 @@ class CHFileChar:
 
 
     def rewrite(self, f):  # Must be called post object-finalization (which happens immediately after successful parse)
+
         f.write('%d = {\n' % self.id)
 
+        if self.dirty:
 
-        if self.name.cmt is None or len(self.name.cmt) == 0:
-            f.write('\tname="{}"\n'.format(self.name.val))
-        else:
-            f.write('\tname="{}" # {}\n'.format(self.name.val, self.name.cmt))
-
-        if self.dynasty.val != u'0':  # Don't print explicit dynasty info for lowborns
-            if self.dynasty.cmt is None or len(self.dynasty.cmt) == 0:
-                f.write('\tdynasty={}\n'.format(self.dynasty.val))
+            if self.name.cmt is None or len(self.name.cmt) == 0:
+                f.write('\tname="{}"\n'.format(self.name.val))
             else:
-                f.write('\tdynasty={} # {}\n'.format(self.dynasty.val, self.dynasty.cmt))
+                f.write('\tname="{}" # {}\n'.format(self.name.val, self.name.cmt))
 
-        if self.culture.cmt is None or len(self.culture.cmt) == 0:
-            f.write('\tculture="{}"\n'.format(self.culture.val))
+            if self.dynasty.val != u'0':  # Don't print explicit dynasty info for lowborns
+                if self.dynasty.cmt is None or len(self.dynasty.cmt) == 0:
+                    f.write('\tdynasty={}\n'.format(self.dynasty.val))
+                else:
+                    f.write('\tdynasty={} # {}\n'.format(self.dynasty.val, self.dynasty.cmt))
+
+            if self.culture.cmt is None or len(self.culture.cmt) == 0:
+                f.write('\tculture="{}"\n'.format(self.culture.val))
+            else:
+                f.write('\tculture="{}" # {}\n'.format(self.culture.val, self.culture.cmt))
+
+            for e in self.elems:
+                e.rewrite(f)
+
+            for h in self.hist_entries:
+                h.rewrite(f)
+
+            f.write('}\n')
+
         else:
-            f.write('\tculture="{}" # {}\n'.format(self.culture.val, self.culture.cmt))
-
-        for e in self.elems:
-            e.rewrite(f)
-
-        for h in self.hist_entries:
-            h.rewrite(f)
-
-        f.write('}\n')
+            # Straight-up copy of the character definition block, only possible difference being CRLF->LF conversion
+            # and [currently-- I might disable it] stripping of any unnecessary trailing whitespace on lines.
+            for e in self.literal_elems:
+                e.rewrite(f)
 
 
     def parse(self, ch, f, n_line):
@@ -203,6 +213,11 @@ class CHFileChar:
                                                                                                     n_line))
             n_line += 1
             line = line.rstrip()
+
+            # Always make an exact copy of the original line (minus the whitespace/EOL normalization above) of the
+            # line in the likely case that we never modify this character object and thus can trivially do its rewrite
+            # with a zero text diff.
+            self.literal_elems.append(CHFileLiteral(line))
 
             m = p_char_dynasty.match(line)
             if m:
