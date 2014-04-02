@@ -310,16 +310,20 @@ class CHFile:
 
     def rewrite(self, basedir):
         path = os.path.join(basedir, self.filename)
-        with codecs.open(path, mode='w', encoding='cp1252') as f:
+        assert not os.path.exists(path)
+
+        self.ch.log_info("Rewriting '%s' ..." % self.filename)
+        with codecs.open(path, mode='wb', encoding='cp1252') as f:
             for e in self.elems:
                 e.rewrite(f)
 
     def parse(self):
         global g_filename
         g_filename = self.filename
-        self.ch.log_info("Parsing file '%s' ..." % g_filename)
         n_line = 0
-        with codecs.open(self.path, encoding='cp1252') as f:
+
+        self.ch.log_info("Parsing '%s' ..." % self.filename)
+        with codecs.open(self.path, mode='rb', encoding='cp1252') as f:
             while True:
                 line = f.readline()
                 if len(line) == 0:  # EOF
@@ -392,5 +396,9 @@ class CharHistory:
                 self.parse_file(filename, os.path.join(path, filename))
             else:
                 self.log_notice("Skipping possible history file '%s' due to lack of a '.txt' extension" % filename)
+
+    def rewrite(self, out_dir):
+        for chf in self.files.itervalues():
+            chf.rewrite(out_dir)
 
 

@@ -41,8 +41,7 @@ def get_args():
 def main():
     args = get_args()
     try:
-        # TODO: check input file exists and open cleanly
-
+        # TODO: check input spreadsheet exists, opens cleanly with recognizable CSV dialect
 
         # Handle output directory preexistence
         if os.path.exists(args.output_history_dir):
@@ -60,7 +59,11 @@ def main():
         os.makedirs(args.output_history_dir)
 
         char_hist = history.CharHistory(sys.stdout, args.verbose)
-        char_hist.parse_dir(args.history_dir)
+        char_hist.parse_dir(args.history_dir)  # Parse entire character history folder
+
+        # TODO: apply transformation rules from spreadsheet to in-memory database
+
+        char_hist.rewrite(args.output_history_dir)  # Fully rewrite the history folder from parse trace in RAM
 
         return 0
 
