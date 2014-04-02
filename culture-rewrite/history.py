@@ -16,10 +16,13 @@ p_char_culture = re.compile(r'^\s*culture\s*=\s*(?:"([^"]+)"|([^"\s]+))\s*(#.*)?
 p_char_name = re.compile(r'^\s*name\s*=\s*(?:"([^"]+)"|([^"\s]+))\s*(#.*)?$')
 p_char_dynasty = re.compile(r'^\s*dynasty\s*=\s*(?:"(\d+)"|(\d+))\s*(#.*)?$')
 p_char_hist_entry_start = re.compile(r'^\s*(\d{1,4})\.(\d{1,2})\.(\d{1,2})\s*=\s*\{')  # NOTE: Captures no comment
+p_char_hist_entry_multi_start = re.compile(r'^\s*(\d{1,4})\.(\d{1,2})\.(\d{1,2})\s*=\s*$')
+p_char_hist_entry_multi_finish = re.compile(r'^\s*\{\s*$')
 p_char_hist_entry_birth = re.compile(r'^\s*birth\s*=\s*(?:"(?:[^"]+)"|(?:[^"\s]+))')  # NOTE: Captures no comment
 p_open_brace = re.compile(r'^([^}]*)\{')
 p_close_brace = re.compile(r'^([^{]*)\}')
-p_single_line_one_block = re.compile(r'.*\{.*\}')  # Used to detect an unsupported parse case for top-level char blocks
+p_one_line_one_block = re.compile(r'^\s*[^#]*\{.*\}')  # Used to detect an unsupported parse case for top-level char
+#  blocks
 
 class CHParseError(Exception):
     def __init__(self, msg):
@@ -157,7 +160,6 @@ class CHFileChar:
         self.literal_elems = []  # Original string rep. of each line of the character, used for output when !self.dirty
         self.dirty = False  # Has the object been modified by a transform rule? Used to minimize text diff on rewrite.
 
-
     def _finalize(self):
         self.dynasty = getattr(self, 'dynasty', CommentableVal(u'0'))  # Default to lowborn dynasty = 0
         if not hasattr(self, 'culture'):
@@ -170,7 +172,6 @@ class CHFileChar:
             raise CHParseError('Character ID %d [%s: line %d] has no birth date defined!'
                                % (self.id, g_filename, self.start_line))
 
-
     def rewrite(self, f):  # Must be called post object-finalization (which happens immediately after successful parse)
 
         if self.comment is None:
@@ -179,40 +180,34 @@ class CHFileChar:
             f.write('%d = {  %s\n' % (self.id, self.comment))
 
         if self.dirty:
-
             if self.name.cmt is None:
                 f.write('\tname="{}"\n'.format(self.name.val))
             else:
                 f.write('\tname="{}"  {}\n'.format(self.name.val, self.name.cmt))
-
             if self.dynasty.val != u'0':  # Don't print explicit dynasty info for lowborns
                 if self.dynasty.cmt is None:
                     f.write('\tdynasty={}\n'.format(self.dynasty.val))
                 else:
                     f.write('\tdynasty={}  {}\n'.format(self.dynasty.val, self.dynasty.cmt))
-
             if self.culture.cmt is None:
                 f.write('\tculture="{}"\n'.format(self.culture.val))
             else:
                 f.write('\tculture="{}"  {}\n'.format(self.culture.val, self.culture.cmt))
-
             for e in self.elems:
                 e.rewrite(f)
-
             for h in self.hist_entries:
                 h.rewrite(f)
-
             f.write('}\n')
-
         else:
             # Straight-up copy of the character definition block, only possible difference being CRLF->LF conversion
             # and [currently-- I might disable it] stripping of any unnecessary trailing whitespace on lines.
             for e in self.literal_elems:
                 e.rewrite(f)
 
-
     def parse(self, ch, f, n_line):
         self.start_line = n_line
+        histent_brace_wait = False
+
         ch.log_dbg("Parsing character ID %d [%s:L%d] ..." % (self.id, g_filename, n_line))
         while True:
             line = f.readline()
@@ -227,6 +222,27 @@ class CHFileChar:
             # line in the likely case that we never modify this character object and thus can trivially do its rewrite
             # with a zero text diff.
             self.literal_elems.append(CHFileLiteral(line))
+
+            # Proactively catch this rare unsupported syntax case (only applies to top-level of character history
+            # definitions, obviously not the arbitrarily-complex brace matching in history entries).
+            m = p_one_line_one_block.match(line)
+            if m:
+                raise CHParseError("Oops! Call ziji! You've hit upon a rare syntax style unsupported in the history "
+                                   "parser in %s: line %d" % (g_filename, n_line))
+
+            if histent_brace_wait:  # Completion state for multi-line hist. entry block-opener cases (so rare)
+                m = p_char_hist_entry_multi_finish.match(line)
+                if not m:
+                    raise CHParseError('Unexpected token after multi-line history entry start upon previous line while'
+                                       'parsing character ID %d [%s: line %d]!' % (self.id, g_filename, n_line))
+                # Haaaackin' away...
+                h_ent = CHFileCharHistEntry(d)
+                self.hist_entries.append(h_ent)
+                (n_line, is_birth) = h_ent.parse(ch, self, f, n_line)
+                if is_birth:
+                    self.bdate = d
+                del d  # (Want Python to throw a NameError if state mismatch)
+                histent_brace_wait = False
 
             m = p_char_dynasty.match(line)
             if m:
@@ -251,6 +267,12 @@ class CHFileChar:
                 (n_line, is_birth) = h_ent.parse(ch, self, f, n_line)
                 if is_birth:
                     self.bdate = d
+                continue
+
+            m = p_char_hist_entry_multi_start.match(line)
+            if m:
+                d = DateVal(m.group(1), m.group(2), m.group(3))  # Save in function scope for completion state
+                histent_brace_wait = True
                 continue
 
             m = p_char_end.match(line)
