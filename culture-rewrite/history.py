@@ -96,7 +96,7 @@ class CHFileCharHistEntry:
                                                                                                         n_line))
                 n_line += 1
                 buf_idx = 0  # Reset index to beginning of new line
-                buf = buf.rstrip()
+                buf = buf.rstrip('\r\n')
 
                 chfc.literal_elems.append(CHFileLiteral(buf))  # Make a literal copy for our dirty-marking mechanism
 
@@ -216,7 +216,7 @@ class CHFileChar:
                                                                                                     g_filename,
                                                                                                     n_line))
             n_line += 1
-            line = line.rstrip()
+            line = line.rstrip('\r\n')
 
             # Always make an exact copy of the original line (minus the whitespace/EOL normalization above) of the
             # line in the likely case that we never modify this character object and thus can trivially do its rewrite
@@ -329,7 +329,7 @@ class CHFile:
                 if len(line) == 0:  # EOF
                     break
                 n_line += 1
-                line = line.rstrip()
+                line = line.rstrip('\r\n')
 
                 m = p_char_start.match(line)
                 if m:  # Matched the start of a character definition
