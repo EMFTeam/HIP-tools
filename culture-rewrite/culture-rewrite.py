@@ -6,14 +6,18 @@ VERSION = '0.9.0~alpha1'
 import os
 import sys
 import shutil
+import re
 import traceback
 import argparse
 import history
 
 
+p_date = re.compile(r'^(\d{1,4})\.(\d{1,2})\.(\d{1,2})$')
+
+
 def get_args():
     parser = argparse.ArgumentParser(
-        description="Split or merge cultures throughout CKII character history files automatically.",
+        description="Split, merge, & melt cultures in a CKII character history database [SWMH German target].",
     )
     parser.add_argument('input-file', metavar='FILENAME',
                         help='name of CSV file containing dynasty and early -> later culture melt rules')

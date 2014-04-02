@@ -6,7 +6,6 @@ import re
 
 INDENT_UNIT = '\t'
 
-p_date = re.compile(r'^(\d{1,4})\.(\d{1,2})\.(\d{1,2})$')
 p_txt_file = re.compile(r'^.*?\.txt$')
 p_opt_quoted = re.compile(r'^(?:"([^"]+)"|([^"\s]+))$')
 p_bare_comment_or_blank = re.compile(r'^(\s*#.*)|(\s*)$')
