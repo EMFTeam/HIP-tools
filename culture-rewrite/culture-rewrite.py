@@ -40,18 +40,17 @@ def get_args():
 def main():
     args = get_args()
     try:
-        print(str(args)+'\n')
-
         # TODO: check input file exists and open cleanly
 
         char_hist = history.CharHistory(sys.stdout, args.verbose)
         char_hist.parse_dir(args.history_dir)
-        #print(str(char_hist.files['italian_tuscan.txt']))
+        char_hist.rewrite()
 
         return 0
 
     except history.CHParseError as e:
         sys.stderr.write('\nFatal character history parse error:\n' + str(e))
+        return 1
 
     except:
         sys.stderr.write('\nUnexpected fatal error occurred! Stack trace:\n\n')

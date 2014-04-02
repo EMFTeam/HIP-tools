@@ -6,18 +6,20 @@ import re
 
 INDENT_UNIT = '\t'
 
+p_date = re.compile(r'^(\d{1,4})\.(\d{1,2})\.(\d{1,2})$')
+p_txt_file = re.compile(r'^.*?\.txt$')
 p_opt_quoted = re.compile(r'^(?:"([^"]+)"|([^"\s]+))$')
-p_char_end = re.compile(r'^[}]\s*$')
-
 p_bare_comment_or_blank = re.compile(r'^(\s*#.*)|(\s*)$')
-p_char_start = re.compile(r'^\s*(\d+)\s*=\s*[{]\s*(#.*)?$')
+p_char_start = re.compile(r'^\s*(\d+)\s*=\s*\{\s*(#.*)?$')
+p_char_end = re.compile(r'^\}\s*$')
 p_char_culture = re.compile(r'^\s*culture\s*=\s*(?:"([^"]+)"|([^"\s]+))\s*(#.*)?$')
 p_char_name = re.compile(r'^\s*name\s*=\s*(?:"([^"]+)"|([^"\s]+))\s*(#.*)?$')
 p_char_dynasty = re.compile(r'^\s*dynasty\s*=\s*(?:"(\d+)"|(\d+))\s*(#.*)?$')
-p_char_hist_entry_start = re.compile(r'^\s*(\d{1,4})\.(\d{1,2})\.(\d{1,2})\s*=\s*[{]')  # NOTE: Captures no comment
+p_char_hist_entry_start = re.compile(r'^\s*(\d{1,4})\.(\d{1,2})\.(\d{1,2})\s*=\s*\{')  # NOTE: Captures no comment
 p_char_hist_entry_birth = re.compile(r'^\s*birth\s*=\s*(?:"(?:[^"]+)"|(?:[^"\s]+))')  # NOTE: Captures no comment
-p_open_brace = re.compile(r'^([^}]*)[{]')
-p_close_brace = re.compile(r'^([^{]*)[}]')
+p_open_brace = re.compile(r'^([^}]*)\{')
+p_close_brace = re.compile(r'^([^{]*)\}')
+p_single_line_one_block = re.compile(r'.*\{.*\}')  # Used to detect an unsupported parse case for top-level char blocks
 
 class CHParseError(Exception):
     def __init__(self, msg):
@@ -65,7 +67,7 @@ def dequoteCommentableVal(m):
     return CommentableVal(m.group(2), m.group(3)) if m.group(2) is not None else CommentableVal(m.group(1), m.group(3))
 
 
-# TODO: Should be commentable (the start line)
+# TODO: Ought be commentable (the start line; the contents are already comment-preserved, of course)
 class CHFileCharHistEntry:
     def __init__(self, date):
         self.date = date
@@ -93,7 +95,7 @@ class CHFileCharHistEntry:
                 buf_idx = 0  # Reset index to beginning of new line
                 buf = buf.rstrip()
 
-                chfc.literal_elems.append(CHFileLiteral(buf))  # Copy literally too for our dirty-marking mechanism
+                chfc.literal_elems.append(CHFileLiteral(buf))  # Make a literal copy for our dirty-marking mechanism
 
                 continue  # Hopefully that gave us something with which to work, try again.
 
@@ -313,7 +315,7 @@ class CHFile:
                     id = int(m.group(1))
 
                     if id in self.ch.chars:
-                        raise CHParseError("Duplicate character ID found at %s:L%d!" % (g_filename, n_line))
+                        raise CHParseError("Duplicate character ID found at %s: line %d!" % (g_filename, n_line))
 
                     c = CHFileChar(id, comment)
                     n_line = c.parse(self.ch, f, n_line)
@@ -325,7 +327,8 @@ class CHFile:
                     self.elems.append(CHFileLiteral(m.group()))
                     continue
 
-                raise CHParseError("Unexpected token at %s:L%d!" % (g_filename, n_line))
+                # Or else...
+                raise CHParseError("Unexpected token at %s: line %d!" % (g_filename, n_line))
 
 
 class CharHistory:
@@ -333,7 +336,7 @@ class CharHistory:
         assert(log_verbosity == 0 or log_file is not None)
         self.log_file = log_file
         self.log_verbosity = log_verbosity
-        self.files = []
+        self.files = {}  # Parsed character history files, indexed by base filename
         self.chars = {}  # Objects indexed by ID
         self.chars_by_dynasty = {}  # Object list indexed by dynasty ID
 
@@ -352,23 +355,20 @@ class CharHistory:
         self.log_print(msg, 1)
 
     def parse_file(self, filename, path):
+        if filename in self.files:
+            raise CHParseError("Conflicting filenames '%s' added to single character history database" % filename)
         chf = CHFile(self, filename, path)
         chf.parse()
-        self.files.append(chf)
+        self.files[filename] = chf
 
     def parse_dir(self, path):
         assert os.path.isdir(path)
-        self.parse_file("norman.txt", "./norman.txt")
-
-        self.log_dbg('chars = ' + repr(self.chars) + '\n')
-        self.log_dbg('chars_by_dynasty = ' + repr(self.chars_by_dynasty))
-
-        self.files[0].rewrite('./out')
-
-        return
-
-        filenames = os.listdir(path)  # TODO: filter on .txt extension
+        filenames = os.listdir(path)
         for filename in filenames:
-            self.parse_file(filename, os.path.join(path, filename))
+            m = p_txt_file.match(filename)
+            if m:
+                self.parse_file(filename, os.path.join(path, filename))
+            else:
+                self.log_notice("Skipping possible history file '%s' due to lack of a '.txt' extension" % filename)
 
 
