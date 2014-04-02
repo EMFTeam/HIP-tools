@@ -1,6 +1,6 @@
 #!/usr/bin/python
 __author__ = 'zijistark'
-VERSION = '0.1.0'
+VERSION = '0.9.0~alpha1'
 
 
 import os
@@ -16,7 +16,7 @@ def get_args():
         description="Split or merge cultures throughout CKII character history files automatically.",
     )
     parser.add_argument('input-file', metavar='FILENAME',
-                        help='name of CSV file containing dynasty and early -> later culture mappings')
+                        help='name of CSV file containing dynasty and early -> later culture melt rules')
     parser.add_argument('--date', required=True,
                         help='date at which the early -> later cultural transition occurs for characters, '
                              'based upon their birth date (e.g., 1120.1.1)')
@@ -30,18 +30,26 @@ def get_args():
                              'delete it, and recreate it with the new character history')
     parser.add_argument('--verbose', '-v', action='count', default=0,
                         help='show verbose information about what the script is doing;'
-                             'repeat this option multiple times for increasing amounts of information')
+                             'repeat this option multiple times for more details')
     parser.add_argument('--version', '-V', action='version', version='%(prog)s '+VERSION,
                         help='show program version and quit')
-    parser.add_argument('--debug', '-D', action='store_true',
-                        help='show program debugging information')
     return parser.parse_args()
 
 
 def main():
     args = get_args()
     try:
-        # TODO: check input spreadsheet exists, opens cleanly with recognizable CSV dialect
+        # Validate the split date
+        m = p_date.match(args.date)
+        if not m:
+            sys.stderr.write("The given cultural split date '%s' is not a valid CKII-format date or pseudo-date.\n"
+                             % args.date)
+            return 1
+
+        # Ensure that we can open the input spreadsheet and auto-recognize its CSV dialect
+        if not os.path.isfile(args.input_file):
+            sys.stderr.write("The given culture melt input spreadsheet '%s' is not a valid file.\n" % args.input_file)
+            return 1
 
         # Handle output directory preexistence
         if os.path.exists(args.output_history_dir):
