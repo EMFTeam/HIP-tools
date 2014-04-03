@@ -10,6 +10,7 @@ import re
 import traceback
 import argparse
 import csv
+import codecs
 import history
 
 
@@ -48,7 +49,7 @@ def row_warn(n_row, msg, error=False):
     print("{}: Row #{}: {}".format(msg_type, n_row, msg))
 
 
-def transform(ch, row_input):
+def transform(row_input, ch, melt_date):
     # Spreadsheet field indices of interest
     DYN = 0
     CUL_EARLY = 3
@@ -86,7 +87,22 @@ def transform(ch, row_input):
             row_warn(n_row, 'Placeholder / TODO mark (?)')
             continue
 
-        dyn_id = unicode(row[DYN])  # Dynasty keys in the history DB are unicode strings, not numerics (odd, I know)
+        # Finally apply the implied transform rules
+        dyn_id = int(row[DYN])  # Dynasty keys in the history index are unicode strings, not numerics (odd,
+        # I know)
+
+        if dyn_id not in ch.chars_by_dynasty:
+#           row_warn(n_row, 'Dynasty %s was not found in the character history database (unused)' % dyn_id)
+            continue
+
+        cul_early = u'{}'.format(row[CUL_EARLY])
+        cul_later = u'{}'.format(row[CUL_LATER])
+
+        # Actual transform rule implied by row in action...
+        for c in ch.chars_by_dynasty[dyn_id]:
+            c.dirty = True
+            c.culture = history.CommentableVal(cul_early if str(c.bdate) < melt_date else cul_later,
+                                               '# was ' + c.culture.val)
 
 
 def main():
@@ -104,7 +120,7 @@ def main():
             sys.stderr.write("The given culture melt input spreadsheet '%s' is not a valid file.\n" % args.rule_file)
             return 1
 
-        f = open(args.rule_file, 'rb')
+        f = open(args.rule_file, mode='rb')
 
         # Sample file data, auto-detect CSV dialect, reset file pointer to beginning
         csv_dialect = csv.Sniffer().sniff(f.read(2048), ';,')
@@ -137,7 +153,8 @@ def main():
         char_hist = history.CharHistory(sys.stdout, args.verbose)
         char_hist.parse_dir(args.history_dir)  # Parse entire character history folder
 
-        transform(char_hist, csv_reader)
+        transform(csv_reader, char_hist, args.date)
+        f.close()
 
         char_hist.rewrite(args.output_history_dir)  # Fully rewrite the history folder from parse trace in RAM
 

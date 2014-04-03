@@ -76,7 +76,7 @@ class CHFileCharHistEntry:
         self.elems = []
 
     def rewrite(self, f):
-        f.write('\t%s = {\n' % str(self.date))
+        f.write('\t' + str(self.date) + ' = {\n')
         for e in self.elems:
             e.rewrite(f)
 
@@ -160,7 +160,7 @@ class CHFileChar:
         self.dirty = False  # Has the object been modified by a transform rule? Used to minimize text diff on rewrite.
 
     def _finalize(self):
-        self.dynasty = getattr(self, 'dynasty', CommentableVal(u'0'))  # Default to lowborn dynasty = 0
+        self.dynasty = getattr(self, 'dynasty', CommentableVal(0))  # Default to lowborn dynasty = 0
         if not hasattr(self, 'culture'):
             raise CHParseError('Character ID %d [%s: line %d] has no culture defined!'
                                % (self.id, g_filename, self.start_line))
@@ -174,29 +174,29 @@ class CHFileChar:
     def rewrite(self, f):  # Must be called post object-finalization (which happens immediately after successful parse)
 
         if self.comment is None:
-            f.write('%d = {\n' % self.id)
+            f.write(str(self.id) + ' = {\n')
         else:
-            f.write('%d = {  %s\n' % (self.id, self.comment))
+            f.write(str(self.id) + ' = {  ' + self.comment + '\n')
 
         if self.dirty:
             if self.name.cmt is None:
-                f.write('\tname="{}"\n'.format(self.name.val))
+                f.write(u'\tname="{}"\n'.format(self.name.val))
             else:
-                f.write('\tname="{}"  {}\n'.format(self.name.val, self.name.cmt))
+                f.write(u'\tname="{}"  {}\n'.format(self.name.val, self.name.cmt))
             if self.dynasty.val != u'0':  # Don't print explicit dynasty info for lowborns
                 if self.dynasty.cmt is None:
-                    f.write('\tdynasty={}\n'.format(self.dynasty.val))
+                    f.write(u'\tdynasty={}\n'.format(self.dynasty.val))
                 else:
-                    f.write('\tdynasty={}  {}\n'.format(self.dynasty.val, self.dynasty.cmt))
+                    f.write(u'\tdynasty={}  {}\n'.format(self.dynasty.val, self.dynasty.cmt))
             if self.culture.cmt is None:
-                f.write('\tculture="{}"\n'.format(self.culture.val))
+                f.write(u'\tculture="{}"\n'.format(self.culture.val))
             else:
-                f.write('\tculture="{}"  {}\n'.format(self.culture.val, self.culture.cmt))
+                f.write(u'\tculture="{}"  {}\n'.format(self.culture.val, self.culture.cmt))
             for e in self.elems:
                 e.rewrite(f)
             for h in self.hist_entries:
                 h.rewrite(f)
-            f.write('}\n')
+            f.write(u'}\n')
         else:
             # Straight-up copy of the character definition block, only possible difference being CRLF->LF conversion
             # and [currently-- I might disable it] stripping of any unnecessary trailing whitespace on lines.
@@ -246,6 +246,7 @@ class CHFileChar:
             m = p_char_dynasty.match(line)
             if m:
                 self.dynasty = dequoteCommentableVal(m)
+                self.dynasty.val = int(self.dynasty.val)
                 continue
 
             m = p_char_culture.match(line)
