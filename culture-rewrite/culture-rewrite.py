@@ -1,6 +1,6 @@
 #!/usr/bin/python
 __author__ = 'zijistark'
-VERSION = '0.9.0~alpha1'
+VERSION = '1.0.0~rc1'
 
 
 import os
@@ -14,7 +14,9 @@ import history
 
 
 p_date = re.compile(r'^(\d{1,4})\.(\d{1,2})\.(\d{1,2})$')
-
+p_dyn_col_comment = re.compile(r'^#.*$')
+p_dyn_col_real = re.compile(r'^\d+$')
+p_col_placeholder = re.compile(r'^.*\?+.*$')
 
 def get_args():
     parser = argparse.ArgumentParser(
@@ -41,6 +43,52 @@ def get_args():
     return parser.parse_args()
 
 
+def row_warn(n_row, msg, error=False):
+    msg_type = "ERROR" if error else "WARN"
+    print("{}: Row #{}: {}".format(msg_type, n_row, msg))
+
+
+def transform(ch, row_input):
+    # Spreadsheet field indices of interest
+    DYN = 0
+    CUL_EARLY = 3
+    CUL_LATER = 4
+
+    n_row = 1  # Already consumed header row, so not 0
+
+    for row in row_input:
+        n_row += 1
+        row[DYN].strip()
+        row[CUL_EARLY].strip()
+        row[CUL_LATER].strip()
+
+        if len(row[DYN]) == 0 and len(row[CUL_EARLY]) == 0 and len(row[CUL_LATER]) == 0:
+            continue  # Blank row
+
+        if len(row[DYN]) == 0 and (len(row[CUL_EARLY]) > 0 or len(row[CUL_LATER]) > 0):
+            row_warn(n_row, "Dynasty column blank while culture(s) aren't", error=True)
+            continue
+
+        if p_dyn_col_comment.match(row[DYN]):
+            continue  # Commented-out row
+
+        if not p_dyn_col_real.match(row[DYN]):
+            row_warn(n_row, 'Malformatted dynasty ID (typo? forget to insert a comment character?)', error=True)
+            continue
+
+        # We do know we have a valid dynasty ID field now, at least.
+
+        if len(row[CUL_EARLY]) == 0 or len(row[CUL_LATER]) == 0:
+            row_warn(n_row, 'Dynasty ID defined but one or more of the culture columns is blank', error=True)
+            continue
+
+        if p_col_placeholder.match(row[CUL_EARLY]) or p_col_placeholder.match(row[CUL_EARLY]):
+            row_warn(n_row, 'Placeholder / TODO mark (?)')
+            continue
+
+        dyn_id = unicode(row[DYN])  # Dynasty keys in the history DB are unicode strings, not numerics (odd, I know)
+
+
 def main():
     args = get_args()
     try:
@@ -56,45 +104,40 @@ def main():
             sys.stderr.write("The given culture melt input spreadsheet '%s' is not a valid file.\n" % args.rule_file)
             return 1
 
-        with open(args.rule_file, 'rb') as f:
-            # Sample file data, auto-detect CSV dialect, reset file pointer to beginning
-            csv_dialect = csv.Sniffer().sniff(f.read(2048), ';,')
-            f.seek(0)
+        f = open(args.rule_file, 'rb')
 
-            # Wrap a CSV reader for the detected dialect around the input file
-            csv_reader = csv.reader(f, dialect=csv_dialect)
+        # Sample file data, auto-detect CSV dialect, reset file pointer to beginning
+        csv_dialect = csv.Sniffer().sniff(f.read(2048), ';,')
+        f.seek(0)
 
-            csv_header = csv_reader.next()  # Advance past header row
+        # Wrap a CSV reader for the detected dialect around the input file
+        csv_reader = csv.reader(f, dialect=csv_dialect)
 
-            if csv_header is None:
-                sys.stderr.write("Failed to read CSV spreadsheet header row (corrupt/invalid file?)\n")
-                return 3
+        csv_header = csv_reader.next()  # Advance past header row
 
-            # Handle output directory preexistence
-            if os.path.exists(args.output_history_dir):
-                if args.force:
-                    if os.path.isdir(args.output_history_dir):
-                        shutil.rmtree(args.output_history_dir)
-                    else:
-                        os.remove(args.output_history_dir)
+        if csv_header is None:
+            sys.stderr.write("Failed to read CSV spreadsheet header row (corrupt/invalid file?)\n")
+            return 1
+
+        # Handle output directory preexistence
+        if os.path.exists(args.output_history_dir):
+            if args.force:
+                if os.path.isdir(args.output_history_dir):
+                    shutil.rmtree(args.output_history_dir)
                 else:
-                    sys.stderr.write("The output directory already exists (use -f / --force to overwrite by default): " +
-                                     args.output_history_dir + "\n")
-                    return 1
+                    os.remove(args.output_history_dir)
+            else:
+                sys.stderr.write("The output directory already exists (use -f / --force to overwrite by default): " +
+                                 args.output_history_dir + "\n")
+                return 1
 
-            # Create a new output directory
-            os.makedirs(args.output_history_dir)
+        # Create a new output directory
+        os.makedirs(args.output_history_dir)
 
-            char_hist = history.CharHistory(sys.stdout, args.verbose)
-            char_hist.parse_dir(args.history_dir)  # Parse entire character history folder
+        char_hist = history.CharHistory(sys.stdout, args.verbose)
+        char_hist.parse_dir(args.history_dir)  # Parse entire character history folder
 
-            # Spreadsheet field indices of interest
-            DYN = 0
-            CUL_EARLY = 3
-            CUL_LATER = 4
-
-            for row in csv_reader:
-                print('for dynasty {}, {} => {}'.format(row[DYN], row[CUL_EARLY], row[CUL_LATER]))
+        transform(char_hist, csv_reader)
 
         char_hist.rewrite(args.output_history_dir)  # Fully rewrite the history folder from parse trace in RAM
 
