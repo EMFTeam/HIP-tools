@@ -53,10 +53,13 @@ class DateVal:  # Assumes string values in constructor
         self.y = int(y)
         self.m = int(m)
         self.d = int(d)
-        self.c = '{}.{}.{}'.format(self.y, self.m, self.d)  # Lexicographic-comparable canonical date value
+        self.c = '%04d.%02d.%02d' % (self.y, self.m, self.d)  # Lexicographic-comparable canonical date value
+
+    def __cmp__(self, rhs):
+        return cmp(self.c, rhs.c)
 
     def __str__(self):  # sorted(dates) should work as well as <, >, etc.
-        return self.c
+        return '{}.{}.{}'.format(self.y, self.m, self.d)
 
 
 class CommentableVal:

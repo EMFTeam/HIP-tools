@@ -1,23 +1,22 @@
 #!/usr/bin/python
 __author__ = 'zijistark'
-VERSION = '1.0.0~rc1'
+VERSION = '1.0.0~rc2'
 
 
 import os
 import sys
 import shutil
 import re
+import codecs
 import traceback
 import argparse
-import csv
-import codecs
+import meltcsv
 import history
+import pprint
 
 
 p_date = re.compile(r'^(\d{1,4})\.(\d{1,2})\.(\d{1,2})$')
-p_dyn_col_comment = re.compile(r'^#.*$')
-p_dyn_col_real = re.compile(r'^\d+$')
-p_col_placeholder = re.compile(r'^.*\?+.*$')
+
 
 def get_args():
     parser = argparse.ArgumentParser(
@@ -44,65 +43,41 @@ def get_args():
     return parser.parse_args()
 
 
-def row_warn(n_row, msg, error=False):
-    msg_type = "ERROR" if error else "WARN"
-    print("{}: Row #{}: {}".format(msg_type, n_row, msg))
+def transform(rules, ch, melt_date):
+    cultures_melted = {}
 
+    cbd = ch.chars_by_dynasty
 
-def transform(row_input, ch, melt_date):
-    # Spreadsheet field indices of interest
-    DYN = 0
-    CUL_EARLY = 3
-    CUL_LATER = 4
-
-    n_row = 1  # Already consumed header row, so not 0
-
-    for row in row_input:
-        n_row += 1
-        row[DYN].strip()
-        row[CUL_EARLY].strip()
-        row[CUL_LATER].strip()
-
-        if len(row[DYN]) == 0 and len(row[CUL_EARLY]) == 0 and len(row[CUL_LATER]) == 0:
-            continue  # Blank row
-
-        if len(row[DYN]) == 0 and (len(row[CUL_EARLY]) > 0 or len(row[CUL_LATER]) > 0):
-            row_warn(n_row, "Dynasty column blank while culture(s) aren't", error=True)
+    for r in rules:
+        if r.dyn_id not in cbd:  # Unused dynasty (dynasty exists, but no characters use it)
             continue
 
-        if p_dyn_col_comment.match(row[DYN]):
-            continue  # Commented-out row
+        # Track actual cultures melted in practice (and how many rules had an effect upon each, while at it)
 
-        if not p_dyn_col_real.match(row[DYN]):
-            row_warn(n_row, 'Malformatted dynasty ID (typo? forget to insert a comment character?)', error=True)
-            continue
+        if r.cul_early in cultures_melted:
+            cultures_melted[r.cul_early] += 1
+        else:
+            cultures_melted[r.cul_early] = 1
 
-        # We do know we have a valid dynasty ID field now, at least.
+        if r.cul_later in cultures_melted:
+            cultures_melted[r.cul_later] += 1
+        else:
+            cultures_melted[r.cul_later] = 1
 
-        if len(row[CUL_EARLY]) == 0 or len(row[CUL_LATER]) == 0:
-            row_warn(n_row, 'Dynasty ID defined but one or more of the culture columns is blank', error=True)
-            continue
+        global stats_n_chars_melted
 
-        if p_col_placeholder.match(row[CUL_EARLY]) or p_col_placeholder.match(row[CUL_EARLY]):
-            row_warn(n_row, 'Placeholder / TODO mark (?)')
-            continue
+        #print('\nDynasty: ' + str(r.dyn_id))
 
-        # Finally apply the implied transform rules
-        dyn_id = int(row[DYN])  # Dynasty keys in the history index are unicode strings, not numerics (odd,
-        # I know)
+        # Actual transform rule implied by original spreadsheet row finally gets executed...
+        for c in ch.chars_by_dynasty[r.dyn_id]:
+            new_cul = r.cul_early if c.bdate < melt_date else r.cul_later
+            if new_cul != c.culture.val:
+                #print('  Character{{ Name: "{}" / ID: {} }}'.format(c.name.val, c.id))
+                c.dirty = True
+                stats_n_chars_melted += 1
+                c.culture = history.CommentableVal(new_cul, '# was ' + c.culture.val)
 
-        if dyn_id not in ch.chars_by_dynasty:
-#           row_warn(n_row, 'Dynasty %s was not found in the character history database (unused)' % dyn_id)
-            continue
-
-        cul_early = u'{}'.format(row[CUL_EARLY])
-        cul_later = u'{}'.format(row[CUL_LATER])
-
-        # Actual transform rule implied by row in action...
-        for c in ch.chars_by_dynasty[dyn_id]:
-            c.dirty = True
-            c.culture = history.CommentableVal(cul_early if str(c.bdate) < melt_date else cul_later,
-                                               '# was ' + c.culture.val)
+    return cultures_melted
 
 
 def main():
@@ -115,25 +90,22 @@ def main():
                              % args.date)
             return 1
 
-        # Ensure that we can open the input spreadsheet and auto-recognize its CSV dialect
+        # Canonicalize date for later lexicographic comparisons in rules
+        args.date = history.DateVal(m.group(1), m.group(2), m.group(3))
+
+        # Ensure that we can open the input spreadsheet and parse its rules sufficiently
         if not os.path.isfile(args.rule_file):
             sys.stderr.write("The given culture melt input spreadsheet '%s' is not a valid file.\n" % args.rule_file)
             return 1
 
-        f = open(args.rule_file, mode='rb')
+        global stats_n_chars_melted
+        stats_n_chars_melted = 0
 
-        # Sample file data, auto-detect CSV dialect, reset file pointer to beginning
-        csv_dialect = csv.Sniffer().sniff(f.read(2048), ';,')
-        f.seek(0)
+        with codecs.open(args.rule_file, mode='rb', encoding='cp1252') as f:
+            melt_rules = meltcsv.parse_melt_rules(f)
 
-        # Wrap a CSV reader for the detected dialect around the input file
-        csv_reader = csv.reader(f, dialect=csv_dialect)
-
-        csv_header = csv_reader.next()  # Advance past header row
-
-        if csv_header is None:
-            sys.stderr.write("Failed to read CSV spreadsheet header row (corrupt/invalid file?)\n")
-            return 1
+        #for r in melt_rules:
+        #    print(str(r))
 
         # Handle output directory preexistence
         if os.path.exists(args.output_history_dir):
@@ -153,10 +125,39 @@ def main():
         char_hist = history.CharHistory(sys.stdout, args.verbose)
         char_hist.parse_dir(args.history_dir)  # Parse entire character history folder
 
-        transform(csv_reader, char_hist, args.date)
-        f.close()
+        # with open('1170_vanilla_survey.csv', 'wb') as o:
+        #     o.write('DYNASTY;ID;DEMESNE;COMMENT;CHARACTER ID\r\n')
+        #     with open('raw_1170_survey.txt', 'r') as i:
+        #         for line in i:
+        #             line.rstrip('\r\n')
+        #             s = line.split(' ', 1)
+        #
+        #             m = re.match(r'^([^\|]+)\|([^\|]+)\|\s*(\[[^\]]+\])?\s*$', s[1])
+        #             if not m:
+        #                 print('failed match: ' + line)
+        #                 continue
+        #             s = {'dynID': int(char_hist.chars[int(s[0])].dynasty.val),
+        #                  'dynasty': m.group(1),
+        #                  'charID': s[0],
+        #                  'comment': m.group(3),
+        #                  'demesne': m.group(2)}
+        #             o.write('{dynasty};{dynID};{demesne};{comment};{charID}\r\n'.format(**s))
+
+
+
+        cul_melted = transform(melt_rules, char_hist, args.date)
 
         char_hist.rewrite(args.output_history_dir)  # Fully rewrite the history folder from parse trace in RAM
+
+        if len(cul_melted) > 0:
+            print('Cultures melted:')
+
+            for cul in sorted(cul_melted):
+                print('  {} [{} dynasty rules effectively contributed to melt]'.format(cul, cul_melted[cul]))
+        else:
+            print('No cultures were melted.')
+
+        print('Characters actually melted: {}'.format(stats_n_chars_melted))
 
         return 0
 
@@ -164,8 +165,8 @@ def main():
         sys.stderr.write('\nFatal character history parse error:\n' + str(e))
         return 2
 
-    except csv.Error:
-        sys.stderr.write('\nFatal error while reading input CSV spreadsheet\n')
+    except meltcsv.MeltCSVError as e:
+        sys.stderr.write('\n' + str(e) + '\n')
         return 3
 
     except:
