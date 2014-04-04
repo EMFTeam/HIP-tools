@@ -153,9 +153,10 @@ class CHFileCharHistEntry:
 
 
 class CHFileChar:
-    def __init__(self, id, comment=None):
+    def __init__(self, id, start_line_literal, comment=None):
         self.id = id
         self.comment = comment
+        self.start_line_literal = CHFileLiteral(start_line_literal)
         self.start_line = -1
         self.hist_entries = []
         self.elems = []
@@ -176,10 +177,7 @@ class CHFileChar:
 
     def rewrite(self, f):  # Must be called post object-finalization (which happens immediately after successful parse)
 
-        if self.comment is None:
-            f.write(str(self.id) + ' = {\n')
-        else:
-            f.write(str(self.id) + ' = {  ' + self.comment + '\n')
+        self.start_line_literal.rewrite(f) # Don't fuzzy up the diff with simple whitespace changes and the like
 
         if self.dirty:
             if self.name.cmt is None:
@@ -346,7 +344,7 @@ class CHFile:
                     if id in self.ch.chars:
                         raise CHParseError("Duplicate character ID found at %s: line %d!" % (g_filename, n_line))
 
-                    c = CHFileChar(id, comment)
+                    c = CHFileChar(id, line, comment)
                     n_line = c.parse(self.ch, f, n_line)
                     self.elems.append(c)
                     continue
