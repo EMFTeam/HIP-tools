@@ -8,16 +8,19 @@ INDENT_UNIT = '\t'
 
 p_txt_file = re.compile(r'^.*?\.txt$')
 p_opt_quoted = re.compile(r'^(?:"([^"]+)"|([^"\s]+))$')
+p_blank = re.compile(r'^\s+$')
 p_bare_comment_or_blank = re.compile(r'^(\s*#.*)|(\s*)$')
 p_char_start = re.compile(r'^\s*(\d+)\s*=\s*\{\s*(#.*)?$')
 p_char_end = re.compile(r'^\}\s*$')
+p_char_female = re.compile(r'^\s*female\s*=\s*(yes|no)\s*$')
+p_char_religion = re.compile(r'^\s*religion\s*=\s*(?:"([^"]+)"|([^"\s]+))\s*(#.*)?$')
 p_char_culture = re.compile(r'^\s*culture\s*=\s*(?:"([^"]+)"|([^"\s]+))\s*(#.*)?$')
 p_char_name = re.compile(r'^\s*name\s*=\s*(?:"([^"]+)"|([^"\s]+))\s*(#.*)?$')
 p_char_dynasty = re.compile(r'^\s*dynasty\s*=\s*(?:"(\d+)"|(\d+))\s*(#.*)?$')
 p_char_hist_entry_start = re.compile(r'^\s*(\d{1,4})\.(\d{1,2})\.(\d{1,2})\s*=\s*\{')  # NOTE: Captures no comment
 p_char_hist_entry_multi_start = re.compile(r'^\s*(\d{1,4})\.(\d{1,2})\.(\d{1,2})\s*=\s*$')
 p_char_hist_entry_multi_finish = re.compile(r'^\s*\{\s*$')
-p_char_hist_entry_birth = re.compile(r'^\s*birth\s*=\s*(?:"(?:[^"]+)"|(?:[^"\s]+))')  # NOTE: Captures no comment
+p_char_hist_entry_birth = re.compile(r'^\s*birth\s*=\s*(?:"(?:[^"]+)"|([^"\s]+))')  # NOTE: Captures no comment
 p_open_brace = re.compile(r'^([^}]*)\{')
 p_close_brace = re.compile(r'^([^{]*)\}')
 p_one_line_one_block = re.compile(r'^\s*[^#]*\{.*\}')  # Used to detect an unsupported parse case for top-level char
@@ -36,7 +39,8 @@ class CHFileLiteral:
         self.literal = literal
 
     def rewrite(self, f):
-        f.write(self.literal)
+        if len(self.literal) > 0:
+            f.write(self.literal)
         f.write('\n')
 
 
@@ -45,7 +49,8 @@ class CHFileLiteralPart:  # Identical but without an implied EOL
         self.literal = literal
 
     def rewrite(self, f):
-        f.write(self.literal)
+        if len(self.literal) > 0:
+            f.write(self.literal)
 
 
 class DateVal:  # Assumes string values in constructor
@@ -79,7 +84,7 @@ class CHFileCharHistEntry:
         self.elems = []
 
     def rewrite(self, f):
-        f.write('\t' + str(self.date) + ' = {\n')
+        f.write(u'\t{} = {{\n'.format(self.date))
         for e in self.elems:
             e.rewrite(f)
 
@@ -98,7 +103,7 @@ class CHFileCharHistEntry:
                                                                                                         n_line))
                 n_line += 1
                 buf_idx = 0  # Reset index to beginning of new line
-                buf = buf.rstrip('\r\n')
+                buf = buf.rstrip(u'\r\n')
 
                 chfc.literal_elems.append(CHFileLiteral(buf))  # Make a literal copy for our dirty-marking mechanism
 
@@ -114,8 +119,11 @@ class CHFileCharHistEntry:
                         raise CHParseError("Multiple birth-date history effects for character ID %d [%s: line %d]!"
                                            % (chfc.id, g_filename, n_line))  #Could still be multiple from diff entries.
                     birth = True
-                    buf_idx += m.end()
-                    self.elems.append(CHFileLiteral('\t\tbirth=yes'))
+                    #buf_idx += m.end()
+                    buf_idx = len(buf)  # Discard all else on the line (it can only be a comment due to other checks)
+                    self.elems.append(CHFileLiteral(u'\t\tbirth="{}"'.format(self.date)
+                                                    if m.group(1) != u'yes' else
+                                                    u'\t\tbirth=yes'.format(self.date)))
                     continue
 
             # Look for a starting brace to increment the nest level, capture interim literal data
@@ -123,7 +131,7 @@ class CHFileCharHistEntry:
             if m:
                 nest_level += 1
                 buf_idx += m.end()
-                if buf_idx < len(buf):  # Oh, but there's MORE!
+                if buf_idx < len(buf) and not p_blank.match(buf[buf_idx:]):  # Oh, but there's MORE!
                     self.elems.append(CHFileLiteralPart(m.group()))
                 else:
                     self.elems.append(CHFileLiteral(m.group()))
@@ -134,19 +142,21 @@ class CHFileCharHistEntry:
             if m:
                 nest_level -= 1
                 buf_idx += m.end()
-                if buf_idx < len(buf):  # Oh, but there's YET MORE!
+                if buf_idx < len(buf) and not p_blank.match(buf[buf_idx:]):  # Oh, but there's YET MORE!
                     self.elems.append(CHFileLiteralPart(m.group()))
                 else:
                     self.elems.append(CHFileLiteral(m.group()))
                 continue
 
             # Else, it's just literal data/effects, so capture all the remainder (no change in brace nesting)
-            self.elems.append(CHFileLiteral(buf[buf_idx:]))
+            if not p_blank.match(buf[buf_idx:]):
+                self.elems.append(CHFileLiteral(buf[buf_idx:]))
             buf_idx = len(buf)  # One past end, fully consumed
 
-#        if buf_idx < len(buf):
-#            raise CHParseError("Out-of-place trailing characters after character history entry closing brace ["
-#                               "%s:L%d]!" % (g_filename, n_line))
+
+        if buf_idx < len(buf) and not p_bare_comment_or_blank.match(buf[buf_idx:]):
+            raise CHParseError("Out-of-place trailing tokens after character history entry closing brace [%s:L%d]!"
+                               % (g_filename, n_line))
 
         # nest_level == 0, return input file line number and whether we included a birth date/effect in this entry
         return (n_line, birth)
@@ -162,6 +172,8 @@ class CHFileChar:
         self.elems = []
         self.literal_elems = []  # Original string rep. of each line of the character, used for output when !self.dirty
         self.dirty = False  # Has the object been modified by a transform rule? Used to minimize text diff on rewrite.
+        self.is_last_in_file = False
+        self.female = None
 
     def _finalize(self):
         self.dynasty = getattr(self, 'dynasty', CommentableVal(0))  # Default to lowborn dynasty = 0
@@ -184,11 +196,17 @@ class CHFileChar:
                 f.write(u'\tname="{}"\n'.format(self.name.val))
             else:
                 f.write(u'\tname="{}"  {}\n'.format(self.name.val, self.name.cmt))
+            if self.female:
+                f.write(u'\tfemale=yes\n')
             if self.dynasty.val != u'0':  # Don't print explicit dynasty info for lowborns
                 if self.dynasty.cmt is None:
                     f.write(u'\tdynasty={}\n'.format(self.dynasty.val))
                 else:
                     f.write(u'\tdynasty={}  {}\n'.format(self.dynasty.val, self.dynasty.cmt))
+            if self.religion.cmt is None:
+                f.write(u'\treligion="{}"\n'.format(self.religion.val))
+            else:
+                f.write(u'\treligion="{}"  {}\n'.format(self.religion.val, self.religion.cmt))
             if self.culture.cmt is None:
                 f.write(u'\tculture="{}"\n'.format(self.culture.val))
             else:
@@ -197,7 +215,10 @@ class CHFileChar:
                 e.rewrite(f)
             for h in self.hist_entries:
                 h.rewrite(f)
-            f.write(u'}\n')
+            if self.is_last_in_file:
+                f.write(u'}')
+            else:
+                f.write(u'}\n')
         else:
             # Straight-up copy of the character definition block, only possible difference being CRLF->LF conversion
             # and [currently-- I might disable it] stripping of any unnecessary trailing whitespace on lines.
@@ -216,12 +237,16 @@ class CHFileChar:
                                                                                                     g_filename,
                                                                                                     n_line))
             n_line += 1
-            line = line.rstrip('\r\n')
+            line_had_eol = line.endswith((u'\n', u'\r'))
+            line = line.rstrip(u'\r\n')
 
             # Always make an exact copy of the original line (minus the whitespace/EOL normalization above) of the
             # line in the likely case that we never modify this character object and thus can trivially do its rewrite
             # with a zero text diff.
-            self.literal_elems.append(CHFileLiteral(line))
+            if line_had_eol:
+                self.literal_elems.append(CHFileLiteral(line))
+            else:
+                self.literal_elems.append(CHFileLiteralPart(line))
 
             # Proactively catch this rare unsupported syntax case (only applies to top-level of character history
             # definitions, obviously not the arbitrarily-complex brace matching in history entries).
@@ -243,22 +268,34 @@ class CHFileChar:
                     self.bdate = d
                 del d  # (Want Python to throw a NameError if state mismatch)
                 histent_brace_wait = False
-
-            m = p_char_dynasty.match(line)
-            if m:
-                self.dynasty = dequoteCommentableVal(m)
-                self.dynasty.val = int(self.dynasty.val)
-                continue
-
-            m = p_char_culture.match(line)
-            if m:
-                self.culture = dequoteCommentableVal(m)
                 continue
 
             m = p_char_name.match(line)
             if m:
                 self.name = dequoteCommentableVal(m)
                 continue
+
+            m = p_char_female.match(line)
+            if m and m.group(1) == u'yes':
+                self.female = True
+                continue
+                
+            m = p_char_dynasty.match(line)
+            if m:
+                self.dynasty = dequoteCommentableVal(m)
+                self.dynasty.val = int(self.dynasty.val)
+                continue
+                
+            m = p_char_religion.match(line)
+            if m:
+                self.religion = dequoteCommentableVal(m)
+                continue
+                
+            m = p_char_culture.match(line)
+            if m:
+                self.culture = dequoteCommentableVal(m)
+                continue
+
 
             m = p_char_hist_entry_start.match(line)
             if m:
@@ -278,6 +315,8 @@ class CHFileChar:
 
             m = p_char_end.match(line)
             if m:
+                if not line_had_eol:
+                    self.is_last_in_file = True
                 self._finalize()
 
                 # Index
@@ -330,7 +369,8 @@ class CHFile:
                 if len(line) == 0:  # EOF
                     break
                 n_line += 1
-                line = line.rstrip('\r\n')
+                line_had_eol = line.endswith((u'\n', u'\r'))
+                line = line.rstrip(u'\r\n')
 
                 m = p_char_start.match(line)
                 if m:  # Matched the start of a character definition
@@ -351,12 +391,24 @@ class CHFile:
 
                 m = p_bare_comment_or_blank.match(line)
                 if m:  # Literal data, should be kept in-place on rewrite if possible
-                    self.elems.append(CHFileLiteral(m.group()))
+                    if line_had_eol:
+                        self.elems.append(CHFileLiteral(line))
+                    else:
+                        self.elems.append(CHFileLiteralPart(line))
                     continue
 
                 # Or else...
                 raise CHParseError("Unexpected token at %s: line %d!" % (g_filename, n_line))
 
+        # Remove the last blank file element / mark it as last if a char obj to minimize diff
+        # elem_cnt = len(self.elems)
+        # if elem_cnt > 0:
+        #     last_elem = self.elems[elem_cnt-1]
+        #     if isinstance(last_elem, (CHFileLiteral, CHFileLiteralPart)):
+        #         if len(last_elem.literal) == 0:
+        #             self.elems.pop()
+        #     if isinstance(last_elem, CHFileChar):
+        #         last_elem.is_last_in_file = True
 
 class CharHistory:
     def __init__(self, log_file=None, log_verbosity=0):

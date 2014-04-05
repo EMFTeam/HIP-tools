@@ -1,7 +1,9 @@
 #!/usr/bin/python
 __author__ = 'zijistark'
-VERSION = '1.0.1'
+VERSION = '1.0.2'
 
+# culture-melt  --  a program to automatically transform the Crusader Kings II character history with simple rules
+# Copyright (C) 2014 Matthew D. Hall
 
 import os
 import sys
@@ -12,10 +14,13 @@ import traceback
 import argparse
 import meltcsv
 import history
-import pprint
 
 
 p_date = re.compile(r'^(\d{1,4})\.(\d{1,2})\.(\d{1,2})$')
+
+
+stats_n_chars_melted = 0
+stats_n_chars_affected = 0
 
 
 def get_args():
@@ -65,17 +70,19 @@ def transform(rules, ch, melt_date):
             cultures_melted[r.cul_later] = 1
 
         global stats_n_chars_melted
+        global stats_n_chars_affected
 
         #print('\nDynasty: ' + str(r.dyn_id))
 
         # Actual transform rule implied by original spreadsheet row finally gets executed...
         for c in ch.chars_by_dynasty[r.dyn_id]:
+            stats_n_chars_affected += 1
             new_cul = r.cul_early if c.bdate < melt_date else r.cul_later
             if new_cul != c.culture.val:
-                #print('  Character{{ Name: "{}" / ID: {} }}'.format(c.name.val, c.id))
-                c.dirty = True
                 stats_n_chars_melted += 1
-                c.culture = history.CommentableVal(new_cul, '# was ' + c.culture.val)
+                #print('  Character{{ Name: "{}" / ID: {} }}'.format(c.name.val, c.id))
+                c.culture = history.CommentableVal(new_cul, '# melted from: ' + c.culture.val)
+                c.dirty = True
 
     return cultures_melted
 
@@ -91,21 +98,15 @@ def main():
             return 1
 
         # Canonicalize date for later lexicographic comparisons in rules
-        args.date = history.DateVal(m.group(1), m.group(2), m.group(3))
+        melt_date = history.DateVal(m.group(1), m.group(2), m.group(3))
 
         # Ensure that we can open the input spreadsheet and parse its rules sufficiently
         if not os.path.isfile(args.rule_file):
             sys.stderr.write("The given culture melt input spreadsheet '%s' is not a valid file.\n" % args.rule_file)
             return 1
 
-        global stats_n_chars_melted
-        stats_n_chars_melted = 0
-
         with codecs.open(args.rule_file, mode='rb', encoding='cp1252') as f:
             melt_rules = meltcsv.parse_melt_rules(f)
-
-        #for r in melt_rules:
-        #    print(str(r))
 
         # Handle output directory preexistence
         if os.path.exists(args.output_history_dir):
@@ -125,39 +126,20 @@ def main():
         char_hist = history.CharHistory(sys.stdout, args.verbose)
         char_hist.parse_dir(args.history_dir)  # Parse entire character history folder
 
-        # with open('1170_vanilla_survey.csv', 'wb') as o:
-        #     o.write('DYNASTY;ID;DEMESNE;COMMENT;CHARACTER ID\r\n')
-        #     with open('raw_1170_survey.txt', 'r') as i:
-        #         for line in i:
-        #             line.rstrip('\r\n')
-        #             s = line.split(' ', 1)
-        #
-        #             m = re.match(r'^([^\|]+)\|([^\|]+)\|\s*(\[[^\]]+\])?\s*$', s[1])
-        #             if not m:
-        #                 print('failed match: ' + line)
-        #                 continue
-        #             s = {'dynID': int(char_hist.chars[int(s[0])].dynasty.val),
-        #                  'dynasty': m.group(1),
-        #                  'charID': s[0],
-        #                  'comment': m.group(3),
-        #                  'demesne': m.group(2)}
-        #             o.write('{dynasty};{dynID};{demesne};{comment};{charID}\r\n'.format(**s))
-
-
-
-        cul_melted = transform(melt_rules, char_hist, args.date)
+        cul_melted = transform(melt_rules, char_hist, melt_date)
 
         char_hist.rewrite(args.output_history_dir)  # Fully rewrite the history folder from parse trace in RAM
 
         if len(cul_melted) > 0:
-            print('Cultures melted:')
+            print('Rule-affected cultures (does not imply rule had effects):')
 
             for cul in sorted(cul_melted):
-                print('  {} [{} dynasty rules effectively contributed to melt]'.format(cul, cul_melted[cul]))
+                print('  {} [{} rules]'.format(cul, cul_melted[cul]))
         else:
-            print('No cultures were melted.')
+            print('No cultures were rule-affected.')
 
-        print('Characters actually melted: {}'.format(stats_n_chars_melted))
+        print('Characters theoretically affected: {}'.format(stats_n_chars_affected))
+        print('Characters actually rewritten: {}'.format(stats_n_chars_melted))
 
         return 0
 
