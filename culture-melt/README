@@ -1,0 +1,37 @@
+culture-melt, its included CKII character history parser, and its
+history transformer/rewriter designed to produce minimal textual diffs
+are a project of myself, Matthew D. Hall. I remain the software's
+maintainer and only developer. Personally, I think it's just a big
+hack with insufficiently robust parsing, but I must say, it sure can
+do some powerful things with Crusader Kings II's unwieldy character
+history database in practice.
+
+The capabilities of this software under the hood are currently far
+greater than their usage. If you want to help change that and would
+like me to work with you to build a specialised frontend or extended
+history logic support for your use case (e.g., even off the wall
+things like filling in the blanks in character history for extending
+timelines or adding new titles to be held, complete transforms of
+traits / attributes, etc.), simply contact me, and I would love to
+help you achieve something cool with this software.
+
+Today, culture-melt directly serves only one specific use case in its
+frontend design and explicit parsing, dynasty-based rules for not only
+rewriting culture but also optionally doing so to different
+alternatives based upon character birth date.  The specific driving
+use case was the 'German Culture Melt' for the SWMH mod, a part of the
+HIP project.
+
+Also, if you'd like to adapt any of this code to your own needs,
+simply note that this program and its components are licensed under
+the open source GPL v3 license (see COPYING); in other words, have at
+it. I'd love to hear about it, though.
+
+If you'd like to make contributions to it, you're welcome.  See the
+project as part of the HIP-tools repository on GitHub, and fork away:
+
+https://github.com/zijistark/HIP-tools
+
+Matthew D. Hall - zijistark
+zijistark@gmail.com
+http://www.zijistark.com/
