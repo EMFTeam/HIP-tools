@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# -*- coding: latin-1 -*-
+# -*- coding: cp1252 -*-
 # -*- python-indent-offset: 4 -*-
 
 import os
@@ -9,9 +9,8 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 2, 'micro': 7,
-           'Release-Date': '2014-03-07 18:01:33 UTC',
-           'Released-By': 'Meneth <pb@meneth.com>'}
+version = {'major': 1, 'minor': 2, 'patch': 8,
+           'Released-By': 'Meneth <hip@meneth.com>'}
 
 
 # noinspection PyPep8
@@ -19,54 +18,117 @@ def initLocalisation():
     global i18n
     i18n = {'INTRO':
                 {
-                    'fr': "Cette version de Historical Immersion Project date du %s.\n"
-                          "Taper 'o' ou 'oui' pour valider, ou laisser le champ vierge. Toute autre\n"
-                          "réponse sera interpretée comme négative.\n"
-                          "Pour abandonner à tout moment l'installation, appuyer sur Ctrl+C.\n",
-                    'es': "Esta vercion de Historical Immersion Project fecha del %s.\n"
-                          "Escribe 's' o 'si' para aceptar, o deja el campo en blanco. Cualquier otro\n"
-                          "caso sera considerado un 'no'.\n",
-                    'en': "This version of the Historical Immersion Project was released %s.\n"
-                          "To confirm a prompt, respond with 'y' or 'yes' (sans quotes) or simply hit\n"
-                          "ENTER. Besides a blank line, anything else will be interpreted as 'no.'\n\n"
-                          "If at any time you wish to abort the installation, press Ctrl+C.\n",
+                    'fr': u"Cette version de Historical Immersion Project date du %s.\n"
+                          u"Taper 'o' ou 'oui' pour valider, ou laisser le champ vierge. Toute autre\n"
+                          u"réponse sera interpretée comme négative.\n"
+                          u"Pour abandonner à tout moment l'installation, appuyer sur Ctrl+C.\n",
+                    'es': u"Esta vercion de Historical Immersion Project fecha del %s.\n"
+                          u"Escribe 's' o 'si' para aceptar, o deja el campo en blanco. Cualquier otro\n"
+                          u"caso sera considerado un 'no'.\n",
+                    'en': u"This version of the Historical Immersion Project was released %s.\n"
+                          u"To confirm a prompt, respond with 'y' or 'yes' (sans quotes) or simply hit\n"
+                          u"ENTER. Besides a blank line, anything else will be interpreted as 'no.'\n\n"
+                          u"If at any time you wish to abort the installation, press Ctrl+C.\n",
                 },
             'ENABLE_MOD':
                 {
-                    'fr': "Voulez-vous installer %s ? [oui]",
-                    'es': "Deseas instalar %s? [si]",
-                    'en': "Do you want to install %s? [yes]",
+                    'fr': u"Voulez-vous installer %s ? [oui]",
+                    'es': u"Deseas instalar %s? [si]",
+                    'en': u"Do you want to install %s? [yes]",
                 },
             'ENABLE_MOD_XOR':
                 {
-                    'fr': "Voulez-vous installer %s (%s) ? [oui]",
-                    'es': "Deseas instalar %s (%s)? [si]",
-                    'en': "Do you want to install %s (%s)? [yes]",
+                    'fr': u"Voulez-vous installer %s (%s) ? [oui]",
+                    'es': u"Deseas instalar %s (%s)? [si]",
+                    'en': u"Do you want to install %s (%s)? [yes]",
                 },
             'ENABLE_MOD_NOT_DEFAULT_COMPAT':
                 {
-                    'fr': "\nNOTE: %s might be incompatible with your system.\nVoulez-vous installer %s ? [non]",
-                    'es': "\nNOTE: %s might be incompatible with your system.\nDeseas instalar %s? [no]",
-                    'en': "\nNOTE: %s might be incompatible with your system.\nDo you want to install %s? [no]",
+                    'fr': u"\nNOTE: %s might be incompatible with your system.\nVoulez-vous installer %s ? [non]",
+                    'es': u"\nNOTE: %s might be incompatible with your system.\nDeseas instalar %s? [no]",
+                    'en': u"\nNOTE: %s might be incompatible with your system.\nDo you want to install %s? [no]",
                 },
             'ENABLE_MOD_XOR_WARN':
                 {
-                    'fr': "\n%s et %s sont incompatibles. Vous devez n'en choisir qu'un : ",
-                    'es': "\n%s and %s are incompatible. You may only select one:",
-                    'en': "\n%s and %s are incompatible. You may only select one:",
+                    'fr': u"\n%s et %s sont incompatibles. Vous devez n'en choisir qu'un : ",
+                    'es': u"\n%s and %s are incompatible. You may only select one:",
+                    'en': u"\n%s and %s are incompatible. You may only select one:",
                 },
             'PUSH_FOLDER':
                 {
-                    'fr': 'Préparation %s',
-                    'es': 'Preparaciòn %s',
-                    'en': 'Preparing %s',
+                    'fr': u'Préparation %s',
+                    'es': u'Preparaciòn %s',
+                    'en': u'Preparing %s',
                 },
             'COMPILING':
                 {
-                    'fr': "Compilation '%s' ...",
-                    'es': "Compilar '%s' ...",
-                    'en': "Compiling '%s' ...",
+                    'fr': u"Compilation '%s' ...",
+                    'es': u"Compilar '%s' ...",
+                    'en': u"Compiling '%s' ...",
                 },
+            'SWMH_NATIVE':
+                {
+                    'fr': u"SWMH avec les noms culturels locaux, plutôt qu'en anglais ou francisés",
+                    'es': u"SWMH con localizacion nativa para culturas y titulos, en lugar de ingles",
+                    'en': u"SWMH with native localisation for cultures and titles, rather than English",
+                },
+            'VIET_PORTRAIT_FIX':
+                {
+                    'fr': u"VIET Immersion nécessite tous les DLC de portraits. Les avez-vous\n"
+                          u"tous ? [oui]",
+                    'es': u"VIET inmersion depende de los retratos DLC. Tiene todos los retratos\n"
+                          u"DLC? [si]",
+                    'en': u"VIET Immersion depends on the portrait DLCs. Do you have all of the\n"
+                          u"portrait DLCs? [yes]",
+                },
+            'MOVE_VS_COPY':
+                {
+                    'fr': u"L'installeur DEPLACE ou COPIE les fichiers d'installation. La\n"
+                          u"COPIE permet l'installation ultérieure de differents combos de\n"
+                          u"mods à partir de l'installeur de base. Notez que DEPLACER est\n"
+                          u"plus rapide que COPIER.\n\n"
+                          u"Voulez-vous donc que les fichiers soient DEPLACES plutôt que\n"
+                          u"COPIES ? [oui]",
+                    'es': u"Mover los archivos en lugar de copiarlos es mucho mas rapido, pero hace\n"
+                          u"que la instalacion de varias copias sea mas complicada.\n\n"
+                          u"Quieres que los archivos de los modulos se muevan en lugar de copiarse? [si]",
+                    'en': u"The installer can either directly MOVE the module package's data files\n"
+                          u"into your installation folder, deleting the package in the process, or\n"
+                          u"it can preserve the installation package by COPYING the files into the\n"
+                          u"installation folder. Moving is faster than copying, but copying allows\n"
+                          u"you to reinstall at will (e.g., with different module combinations).\n\n"
+                          u"Would you like to MOVE rather than COPY? [yes]",
+                },
+            'MOVE_CONFIRM':
+                {
+                    'fr': u"Etes-vous sûr ?\n"
+                          u"Voulez-vous supprimer les fichiers d'installation une fois l'opération terminée ? "
+                          u"[oui]",
+                    'es': u"?Esta seguro?\n"
+                          u"?Quieres eliminar el paquete despuès de la instalaciòn? [si]",
+                    'en': u"Are you sure?\n"
+                          u"Do you want to delete the package after installation? [yes]",
+
+                },
+            'TARGET_FOLDER':
+                {
+                    'fr': u"Installer le mod dans un répertoire existant supprimera ce répertoire.\n"
+                          u"Dans quel répertoire souhaites-tu procéder à l'installation ?\n"
+                          u"Laisser le champ vierge pour '%s'.",
+                    'es': u"Instalar el mod en una carpeta existente eliminara dicha carpeta.\n"
+                          u"En que carpeta deseas realizar la instalacion?\n"
+                          u"Dejar en blanco para '%s'.",
+                    'en': u"Installing the mod into a folder that exists will first delete that folder.\n"
+                          u"Into what folder would you like to install?\n"
+                          u"Leave blank for '%s':",
+                },
+            'INSTALL_DONE':
+                {
+                    'fr': u"Installation terminée. Taper ENTREE pour quitter.",
+                    'es': u"Instalacion terminada. Presiona ENTER para salir.",
+                    'en': u"Installation done. Hit ENTER to exit.",
+                }
+
             }
 
 
@@ -356,8 +418,8 @@ def normalizeCwd():
 
 # noinspection PyDictCreation
 def initVersionEnvInfo():
-    global versionStr
-    versionStr = '{}.{}.{}'.format(version['major'], version['minor'], version['micro'])
+    global version
+    version['Version'] = '{}.{}.{}'.format(version['major'], version['minor'], version['patch'])
 
     ## if 'Commit-ID' in version:
     ## versionStr += '.git~' + version['Commit-ID'][0:7]
@@ -387,13 +449,11 @@ def initVersionEnvInfo():
 
 def printVersionEnvInfo():
     # Print the installer's version info (installer *script*, not module package)
-
-    print('HIP Installer Version:')
-    print(versionStr + '\n')
+    print('HIP Installer:')
 
     # Fill this with any extended version info keys we want printed, if present.
     # This is the order in which they'll be displayed.
-    extKeys = ['Commit-ID', 'Release-Date', 'Released-By']
+    extKeys = ['Version', 'Commit-ID', 'Release-Date', 'Released-By']
 
     # Resolve optional keys to found keys
     extKeys = [k for k in extKeys if k in version]
@@ -437,7 +497,7 @@ def getPkgVersions(modDirs):
 def getInstallOptions():
     # Determine user language for installation
     global language
-    language = promptUser("For English, hit ENTER. En français, taper 'f'. Para español, presiona 'e'.")
+    language = promptUser(u"For English, hit ENTER. En français, taper 'f'. Para español, presiona 'e'.")
 
     if language == 'f':
         language = 'fr'
@@ -450,27 +510,7 @@ def getInstallOptions():
     print(localise('INTRO') % versions['pkg'])
 
     global move
-
-    if language == 'fr':
-        move = promptUser("L'installeur DEPLACE ou COPIE les fichiers d'installation. La\n"
-                          "COPIE permet l'installation ultérieure de differents combos de\n"
-                          "mods à partir de l'installeur de base. Notez que DEPLACER est\n"
-                          "plus rapide que COPIER.\n\n"
-                          "Voulez-vous donc que les fichiers soient DEPLACES plutôt que\n"
-                          "COPIES ? [oui]")
-    elif language == 'es':
-        move = promptUser("Mover los archivos en lugar de copiarlos es mucho mas rapido, pero hace\n"
-                          "que la instalacion de varias copias sea mas complicada.\n\n"
-                          "Quieres que los archivos de los modulos se muevan en lugar de copiarse? [si]")
-    else:
-        move = promptUser("The installer can either directly MOVE the module package's data files\n"
-                          "into your installation folder, deleting the package in the process, or\n"
-                          "it can preserve the installation package by COPYING the files into the\n"
-                          "installation folder. Moving is faster than copying, but copying allows\n"
-                          "you to reinstall at will (e.g., with different module combinations).\n\n"
-                          "Would you like to MOVE rather than COPY? [yes]")
-
-    move = isYes(move)
+    move = isYes(promptUser(localise('MOVE_VS_COPY')))
 
     # Confirm. "User studies" now "prove" this default is questionable (i.e.,
     # copy not being default), but I think the move method should remain the
@@ -489,17 +529,7 @@ def getInstallOptions():
     # versions of files mixed into the new release.
 
     if move:
-        if language == 'fr':
-            move = promptUser("Etes-vous sûr ?\n"
-                              "Voulez-vous supprimer les fichiers d'installation une fois l'opération terminée ? [oui]")
-        elif language == 'es':
-            move = promptUser("?Esta seguro?\n"
-                              "?Quieres eliminar el paquete despuès de la instalaciòn? [si]")
-        else:
-            move = promptUser("Are you sure?\n"
-                              "Do you want to delete the package after installation? [yes]")
-
-    move = isYes(move)
+        move = isYes(promptUser(localise('MOVE_CONFIRM')))
     dbg.trace('user choice: move instead of copy: {}'.format(move))
 
     # Determine installation target folder...
@@ -509,20 +539,7 @@ def getInstallOptions():
     # Note that we use the case-preserving form of promptUser for the target folder (also determines name in launcher)
 
     global targetFolder
-
-    if language == 'fr':
-        targetFolder = promptUser("Installer le mod dans un répertoire existant supprimera ce répertoire.\n"
-                                  "Dans quel répertoire souhaites-tu procéder à l'installation ?\n"
-                                  "Laisser le champ vierge pour '%s'." % defaultFolder, lc=False)
-    elif language == 'es':
-        targetFolder = promptUser("Instalar el mod en una carpeta existente eliminara dicha carpeta.\n"
-                                  "En que carpeta deseas realizar la instalacion?\n"
-                                  "Dejar en blanco para '%s'." % defaultFolder, lc=False)
-    else:
-        targetFolder = promptUser("Installing the mod into a folder that exists will first delete that folder.\n"
-                                  "Into what folder would you like to install?\n"
-                                  "Leave blank for '%s':" % defaultFolder, lc=False)
-
+    targetFolder = promptUser(localise('TARGET_FOLDER') % defaultFolder, lc=False)
     if targetFolder == '':
         targetFolder = defaultFolder
     else:
@@ -607,7 +624,9 @@ def main():
 
         SWMH = False
         VIETimmersion = False
-        promptUser("VIET Immersion does not yet work with Rajas of India, and thus cannot be enabled. Hit enter to continue.")
+        promptUser("VIET Immersion doesn't yet work with CKII patch 2.1.X and thus is disabled.\n"
+                   "Hit ENTER to continue.")
+
         SWMH = enableMod("SWMH (%s" % versions['SWMH'])
 
         # swmhVIET = enableModXOR('SWMH', versions['SWMH'], 'VIET Immersion', versions['VIET'])
@@ -619,15 +638,9 @@ def main():
 
         VIET = (VIETtraits or VIETevents or VIETimmersion)
 
+        SWMHnative = True
         if SWMH:
-            if language == 'fr':
-                SWMHnative = enableMod("SWMH avec les noms culturels locaux, plutôt qu'en anglais ou francisés")
-            elif language == 'es':
-                SWMHnative = enableMod("SWMH con localizacion nativa para culturas y titulos, en lugar de ingles")
-            else:
-                SWMHnative = enableMod("SWMH with native localisation for cultures and titles, rather than English")
-        else:
-            SWMHnative = True
+            SWMHnative = enableMod(localise('SWMH_NATIVE'))
 
         # Prepare for installation
         if os.path.exists(targetFolder):
@@ -638,7 +651,7 @@ def main():
         # Install...
         global targetSrc
         targetSrc = {}
-        
+
         moduleOutput = ["Historical Immersion Project (%s)\nEnabled modules:\n" % versions['pkg']]
         dbg.push('performing virtual filesystem merge...')
 
@@ -714,17 +727,7 @@ def main():
                 pushFolder("VIET_Immersion/vanilla")
                 pushFolder("Converter/VIET")
 
-            if language == 'fr':
-                answer = promptUser("VIET Immersion nécessite tous les DLC de portraits. Les avez-vous\n"
-                                    "tous ? [oui]")
-            elif language == 'es':
-                answer = promptUser("VIET inmersion depende de los retratos DLC. Tiene todos los retratos\n"
-                                    "DLC? [si]")
-            else:
-                answer = promptUser("VIET Immersion depends on the portrait DLCs. Do you have all of the\n"
-                                    "portrait DLCs? [yes]")
-
-            if not isYes(answer):
+            if not isYes(promptUser('VIET_PORTRAIT_FIX')):
                 dbg.push("user chose VIET Immersion but does not have all portrait DLCs. applying fix...")
                 popTree("common/cultures")
                 dbg.push("removing portrait .gfx files...")
@@ -757,7 +760,11 @@ def main():
         endTime = time.clock()
 
         if timerMode:
-            print('Compilation took %0.1f seconds' % (endTime - startTime))
+            print('Folder compilation took %0.1f seconds.' % (endTime - startTime))
+
+        mapFilename = "%s/file2mod_map.txt" % targetFolder
+        print("Mapped listing of all compiled files to their source modules:")
+        print(mapFilename + '\n')
 
         # Generate a new .mod file, regardless of whether it's default
         if targetFolder != defaultFolder:
@@ -766,19 +773,29 @@ def main():
             modFileBase = 'HIP'
 
         modFilename = modFileBase + '.mod'
+
+        # CKII command line argument parser can't handle dashes in .mod file names (which are passed as arguments to
+        # CKII.exe by the launcher)
+        if '-' in modFilename:
+            modFilename = modFilename.replace('-', '__')
+
         dbg.trace("generating .mod file " + quoteIfWS(modFilename))
-        print("Generating mod definition file: " + quoteIfWS(modFilename))
+        print("Generated new mod definition file:")
+        print(modFilename + '\n')
 
         with open(modFilename, "w") as modFile:
-            modFile.write('name = "HIP - %s" #Name that shows in launcher\n' % targetFolder)
+            modFile.write('name = "HIP - %s"  # Name to use as a dependency if making a sub-mod\n' % targetFolder)
             modFile.write('path = "mod/%s"\n' % targetFolder)
             if platform != 'mac':
-                modFile.write('user_dir = "%s" #For saves, gfx cache, etc.\n' % modFileBase)
+                modFile.write('user_dir = "%s"  '
+                              '# Ensure we get our own versions of the gfx/map caches and log folders\n' %
+                              modFileBase)
 
         # Dump modules selected and their respective versions to <mod>/version.txt
         versionFilename = "%s/version.txt" % targetFolder
         dbg.trace("dumping compiled modpack version summary to " + quoteIfWS(versionFilename))
-        print("Generating mod combination/versions summary: " + quoteIfWS(versionFilename))
+        print("Summarized mods' combination and versions (please include in bug reports!):")
+        print(versionFilename + "\n")
 
         with open(versionFilename, "w") as output:
             output.write("".join(moduleOutput))
@@ -789,13 +806,7 @@ def main():
 
         # Installation complete
         dbg.trace("installation complete")
-
-        if language == 'fr':
-            promptUser("Installation terminée. Taper ENTREE pour quitter.")
-        elif language == 'es':
-            promptUser("Instalacion terminada. Presiona ENTER para salir.")
-        else:
-            promptUser("Installation done. Hit ENTER to exit.")
+        promptUser(localise('INSTALL_DONE'))
 
         return 0  # Return success code to OS
 
