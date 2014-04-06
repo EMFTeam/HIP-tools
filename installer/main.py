@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 2, 'patch': 8,
+version = {'major': 1, 'minor': 2, 'patch': 9,
            'Released-By': 'Meneth <hip@meneth.com>'}
 
 
@@ -313,6 +313,8 @@ def pushFolder(folder, prunePaths=None, ignoreFiles=None):
                 dbg.trace('IGNORE: ' + quoteIfWS(src))
                 continue
 
+            dbg.trace(quoteIfWS(dst) + ' <= ' + quoteIfWS(src))
+
             targetSrc[dst] = TargetSource(folder, src)
         dbg.pop()
     dbg.pop()
@@ -321,13 +323,17 @@ def pushFolder(folder, prunePaths=None, ignoreFiles=None):
 def popFile(f):
     p = os.path.join(targetFolder, f)
     if p in targetSrc:
+        dbg.trace("popFile: {}".format(quoteIfWS(p)))
         del targetSrc[p]
 
 
 def popTree(d):
     t = os.path.join(targetFolder, d)
+    dbg.push("popTree: {}".format(quoteIfWS(t)))
     for p in [p for p in targetSrc.keys() if p.startswith(t)]:
+        dbg.trace(p)
         del targetSrc[p]
+    dbg.pop()
 
 
 def stripPathHead(path):
@@ -371,8 +377,8 @@ def detectPlatform():
 
 
 def cleanUserDir(userDir):
-    if platform != 'mac':
-        print('Clearing cache in ' + quoteIfWS(userDir))
+    #if platform != 'mac':
+    #    print('Clearing cache in ' + quoteIfWS(userDir))
 
     dbg.push('clearing cache in ' + quoteIfWS(userDir))
     for d in [os.path.join(userDir, e) for e in ['gfx', 'map', 'interface', 'logs']]:
@@ -382,10 +388,10 @@ def cleanUserDir(userDir):
 
 def resetCaches():
     if platform == 'mac':
-        print('Clearing preexisting gfx/map cache')
+        print('Clearing preexisting CKII gfx/map cache')
         cleanUserDir('..')
     elif platform == 'win':
-        print('Clearing preexisting HIP gfx/map caches ...')
+        print('Clearing preexisting HIP-related CKII gfx/map caches ...')
 
         # Match *all* userdirs in CKII user directory which include 'HIP' in their
         # directory name, as this also covers all cases with external mods used with
@@ -399,7 +405,7 @@ def resetCaches():
             if os.path.isdir(userDir) and 'HIP' in userDir:
                 cleanUserDir(userDir)
     else:
-        pass  # TODO: linux user dirs are where?
+        pass  # TODO: linux user dirs are where? [can check this on my box but don't know about user_dir support]
 
 
 # Changes the current working directory to the same as that of the
@@ -555,8 +561,6 @@ def main():
 
         dbgMode = (len(sys.argv) > 1 and '-D' in sys.argv[1:])
         versionMode = (len(sys.argv) > 1 and '-V' in sys.argv[1:])
-        #timerMode = (len(sys.argv) > 1 and '-T' in sys.argv[1:])
-        timerMode = True
 
         # The debug tracer's file object is unbuffered (always flushes all writes
         # to disk/pipe immediately), and it lives until the end of the program, so
@@ -624,17 +628,17 @@ def main():
 
         SWMH = False
         VIETimmersion = False
-        promptUser("VIET Immersion doesn't yet work with CKII patch 2.1.X and thus is disabled.\n"
-                   "Hit ENTER to continue.")
 
-        SWMH = enableMod("SWMH (%s" % versions['SWMH'])
+        #promptUser("VIET Immersion doesn't yet work with CKII patch 2.1.X and thus is disabled.\n"
+        #           "Hit ENTER to continue.")
+        #SWMH = enableMod("SWMH (%s" % versions['SWMH'])
 
-        # swmhVIET = enableModXOR('SWMH', versions['SWMH'], 'VIET Immersion', versions['VIET'])
+        swmhVIET = enableModXOR('SWMH', versions['SWMH'], 'VIET Immersion', versions['VIET'])
 
-        #if swmhVIET == 'SWMH':
-        #    SWMH = True
-        #elif swmhVIET == 'VIET Immersion':
-        #    VIETimmersion = True
+        if swmhVIET == 'SWMH':
+            SWMH = True
+        elif swmhVIET == 'VIET Immersion':
+            VIETimmersion = True
 
         VIET = (VIETtraits or VIETevents or VIETimmersion)
 
@@ -727,7 +731,7 @@ def main():
                 pushFolder("VIET_Immersion/vanilla")
                 pushFolder("Converter/VIET")
 
-            if not isYes(promptUser('VIET_PORTRAIT_FIX')):
+            if not isYes(promptUser(localise('VIET_PORTRAIT_FIX'))):
                 dbg.push("user chose VIET Immersion but does not have all portrait DLCs. applying fix...")
                 popTree("common/cultures")
                 dbg.push("removing portrait .gfx files...")
@@ -758,9 +762,7 @@ def main():
             rmTree("modules")  # Cleanup
 
         endTime = time.clock()
-
-        if timerMode:
-            print('Folder compilation took %0.1f seconds.' % (endTime - startTime))
+        print('Folder compilation took %0.1f seconds.\n' % (endTime - startTime))
 
         mapFilename = "%s/file2mod_map.txt" % targetFolder
         print("Mapped listing of all compiled files to their source modules:")
@@ -780,8 +782,6 @@ def main():
             modFilename = modFilename.replace('-', '__')
 
         dbg.trace("generating .mod file " + quoteIfWS(modFilename))
-        print("Generated new mod definition file:")
-        print(modFilename + '\n')
 
         with open(modFilename, "w") as modFile:
             modFile.write('name = "HIP - %s"  # Name to use as a dependency if making a sub-mod\n' % targetFolder)
@@ -791,14 +791,18 @@ def main():
                               '# Ensure we get our own versions of the gfx/map caches and log folders\n' %
                               modFileBase)
 
+        print("Generated new mod definition file:")
+        print(modFilename + '\n')
+
         # Dump modules selected and their respective versions to <mod>/version.txt
         versionFilename = "%s/version.txt" % targetFolder
-        dbg.trace("dumping compiled modpack version summary to " + quoteIfWS(versionFilename))
-        print("Summarized mods' combination and versions (please include in bug reports!):")
-        print(versionFilename + "\n")
 
         with open(versionFilename, "w") as output:
             output.write("".join(moduleOutput))
+
+        dbg.trace("dumping compiled modpack version summary to " + quoteIfWS(versionFilename))
+        print("Summarized mods' combination/versions (INCLUDE FILE CONTENTS IN BUG REPORTS):")
+        print(versionFilename + "\n")
 
         # Reset all gfx/map/interface/logs cache for every instance of a preexisting
         # user_dir that includes HIP, platform-agnostic.
