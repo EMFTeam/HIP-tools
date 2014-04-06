@@ -538,7 +538,8 @@ def main():
 
         dbgMode = (len(sys.argv) > 1 and '-D' in sys.argv[1:])
         versionMode = (len(sys.argv) > 1 and '-V' in sys.argv[1:])
-        timerMode = (len(sys.argv) > 1 and '-T' in sys.argv[1:])
+        #timerMode = (len(sys.argv) > 1 and '-T' in sys.argv[1:])
+        timerMode = True
 
         # The debug tracer's file object is unbuffered (always flushes all writes
         # to disk/pipe immediately), and it lives until the end of the program, so
