@@ -9,7 +9,7 @@ use Readonly;
 
 use Time::HiRes;
 
-use CK2SaveFile;
+use SaveFile;
 
 Readonly my $ARCHIVE_BASE_DIR => '/cygdrive/c/Users/Stark/Documents/asrotor';
 
@@ -59,7 +59,7 @@ for my $i (0..$#sg_filenames) {
 		print "series broken: missing save #$i\n";
 	}
 	else {
-		$sf = CK2SaveFile->new($sg_filenames[$i]);
+		$sf = SaveFile->new($sg_filenames[$i]);
 
 		my $tstart = Time::HiRes::time();
 		$sf->parse();

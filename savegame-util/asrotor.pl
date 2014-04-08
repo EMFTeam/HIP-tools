@@ -9,6 +9,7 @@ use File::stat;
 use File::Copy;
 use File::Basename;
 use File::Spec;
+use POSIX qw(setsid);
 use Readonly;
 
 my $PROG = basename($0);
@@ -17,10 +18,12 @@ my $prog_no_ext = $PROG;
 $prog_no_ext =~ s/^\.//;
 $prog_no_ext =~ s/^(.*?)\..*$/$1/;
 
-my $ARCHIVE_DIR_DEFAULT = "/cygdrive/c/Users/$ENV{USER}/Documents/$prog_no_ext";
+my $home_doc_dir = File::Spec->catdir(qw( /cygdrive c Users ), $ENV{USER}, 'Documents');
+
+my $ARCHIVE_DIR_DEFAULT = File::Spec->catdir($home_doc_dir, $prog_no_ext);
 $ARCHIVE_DIR_DEFAULT = undef unless -d $ARCHIVE_DIR_DEFAULT;
 
-my $USER_DIR_DEFAULT = "/cygdrive/c/Users/$ENV{USER}/Documents/Paradox Interactive/Crusader Kings II";
+my $USER_DIR_DEFAULT = File::Spec->catdir($home_doc_dir, 'Paradox Interactive', 'Crusader Kings II');
 $USER_DIR_DEFAULT = undef unless -d $USER_DIR_DEFAULT;
 
 
@@ -30,6 +33,7 @@ my $opt_mod_user_dir;
 my $opt_name;
 my $opt_continue = 0;
 my $opt_bench_file = 0;
+my $opt_daemon = 0;
 
 GetOptions(
 	'a|archive-dir=s' => \$opt_archive_dir,
@@ -37,6 +41,7 @@ GetOptions(
 	'm|mod-user-dir=s' => \$opt_mod_user_dir,
     'n|name=s' => \$opt_name,
     'c|continue' => \$opt_continue,
+	'D|daemonize' => \$opt_daemon,
 	) or croak;
 
 croak "specify a user directory with --user-dir" unless $opt_user_dir;
@@ -56,14 +61,28 @@ if ($opt_mod_user_dir) {
 	}
 }
 
-my $save_dir = "$user_dir/save games";
-my $autosave_file = "$save_dir/autosave.ck2";
-my $archive_dir = "$opt_archive_dir/$opt_name";
-my $counter_file = "$archive_dir/.counter";
-my $bench_file = "$archive_dir/benchmark_$opt_name.csv";
+my $save_dir = File::Spec->catfile($user_dir, 'save games');
+my $autosave_file = File::Spec->catfile($save_dir, 'autosave.ck2');
+my $archive_dir = File::Spec->catfile($opt_archive_dir, $opt_name);
+my $counter_file = File::Spec->catfile($archive_dir, '.counter');
+my $bench_file = File::Spec->catfile($archive_dir, 'benchmark_'.$opt_name.'.csv');
+my $pid_file = File::Spec->catfile($archive_dir, '.pid');
 
 unless (-e $save_dir) {
 	mkdir $save_dir or croak "folder creation failed: $!: $save_dir";
+}
+
+if (-e $pid_file) {
+	open(my $pf, '<', $pid_file);
+	my $pid = <$pf>;
+	$pf->close;
+
+	if (kill 0 => $pid) {
+		print STDERR "A daemon instance is already running on this series: pid $pid\n";
+	}
+	else {
+		unlink($pid_file);
+	}
 }
 
 my $bf;
@@ -75,12 +94,15 @@ my $counter = 0;
 sub finish {
 	$bf->close;
 
+	unlink $pid_file if $opt_daemon;
+	
 	print "Archived ".($counter-$counter_start)." autosaves, series totaling $counter, over ".sprintf("%.2f", (time()-$time_start)/60)." minutes.\n";
 	print "Path: $archive_dir\n";
 	exit 0;
 }
 
 $SIG{INT} = \&finish;
+$SIG{TERM} = \&finish;
 
 
 if (-e $archive_dir) {
@@ -106,6 +128,8 @@ while (1) {
 	if ($waiting) {
 		print STDERR "Waiting for first autosave (start the game)...\n";
 		$waiting = 0; # only print this reminder at the start
+		
+		daemonize() if $opt_daemon;
 	}
 
 	my $st = stat($autosave_file);
@@ -167,4 +191,22 @@ sub read_counter_file {
     open(my $cf, '<', $counter_file) or croak $!;
     $counter = <$cf>;
     $counter =~ s/\r?\n$//;
+}
+
+sub daemonize {
+	print STDERR "Detaching to run in the background (kill with INT/TERM)...\n";
+	
+	my $null = File::Spec->devnull;
+	
+	chdir($archive_dir)       or croak "can't chdir: $!: $archive_dir";
+	open(STDIN,  "<", $null)  or croak "can't read $null: $!";
+	open(STDOUT, ">", $null)  or croak "can't write to $null: $!";
+	defined(my $pid = fork()) or croak "can't fork: $!";
+	exit if $pid;  # parent exits, child continues with new detached session
+	(setsid() != -1)          or croak "can't start a new session: $!";
+	open(STDERR, ">&STDOUT")  or croak "can't dup stderr -> stdout: $!";
+	
+	open(my $pf, '>', $pid_file);
+	$pf->print($$);
+	$pf->close;
 }
