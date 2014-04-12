@@ -34,6 +34,7 @@ my $opt_name;
 my $opt_continue = 0;
 my $opt_bench_file = 0;
 my $opt_daemon = 0;
+my $opt_resume_reason;
 
 GetOptions(
 	'a|archive-dir=s' => \$opt_archive_dir,
@@ -42,8 +43,13 @@ GetOptions(
     'n|name=s' => \$opt_name,
     'c|continue' => \$opt_continue,
 	'D|daemonize' => \$opt_daemon,
+	'r|resume-reason=s' => \$opt_resume_reason,
+	'ctd|resume-ctd' => sub { $opt_resume_reason = 'CTD' },
+	'normal|resume-normal' => sub { $opt_resume_reason = 'Normal' }, 
 	) or croak;
 
+$opt_continue = 1 if $opt_resume_reason;
+	
 croak "specify a user directory with --user-dir" unless $opt_user_dir;
 croak "specify a name for the savegame series with --name" unless $opt_name;
 croak "specify an archive root directory with --archive-dir" unless $opt_archive_dir;
@@ -78,9 +84,14 @@ if (-e $pid_file) {
 	$pf->close;
 
 	if (kill 0 => $pid) {
-		print STDERR "A daemon instance is already running on this series: pid $pid\n";
+		print STDERR "A daemon (background) rotator instance is already running here!\n";
+		print STDERR "Its process ID is $pid. Gracefully terminate it with the command:\nkill $pid\n";
+		exit 1;
 	}
 	else {
+		print STDERR "Warning: Found PID file from previous daemon rotator, but it's no longer running.\n";
+		print STDERR "This means that it may have not cleanly shutdown. It's possible that this could\n";
+		print STDERR "cause holes or duplicates in series counter IDs or an incomplete benchmark entry.\n\n";
 		unlink($pid_file);
 	}
 }
@@ -107,6 +118,7 @@ $SIG{TERM} = \&finish;
 
 if (-e $archive_dir) {
     croak "archive directory already exists; continue existing archive with --continue" unless $opt_continue;
+	croak "must specify a resume reason with either --resume-reason, --ctd, or --normal" unless $opt_resume_reason;
     croak "cannot continue without series counter file" if (! -f $counter_file);
 
     read_counter_file();
@@ -117,7 +129,7 @@ else {
     mkdir($archive_dir) or croak $!;
     update_counter_file();
 	open($bf, '>', $bench_file) or croak "file open failed: $!: $bench_file";
-	$bf->print("Relative Year;Duration (seconds);File Size (MB)\n");
+	$bf->print("Relative Year;Duration (seconds);File Size (MB);Resume Reason;Comment\n");
 }
 
 my $as_mtime = (-f $autosave_file) ? stat($autosave_file)->mtime : 0;
@@ -150,10 +162,11 @@ while (1) {
 		my $size_mb = sprintf('%0.1f', $st->size / 1_000_000);
 	
 		if ($counter == $counter_start) { # the first save in a run can't be clocked
-			$bf->print($counter, ';', ';', $size_mb, "\n");
+			my $resume_reason = ($counter) ? $opt_resume_reason : '';
+			$bf->print($counter, ';', ';', $size_mb, ';', $resume_reason, ';', "\n");
 		}
 		else {
-			$bf->print($counter, ';', $st->mtime-$as_mtime, ';', $size_mb, "\n");
+			$bf->print($counter, ';', $st->mtime-$as_mtime, ';', $size_mb, ';;', "\n");
 		}
 		
 		$bf->flush;
@@ -165,7 +178,7 @@ while (1) {
 		update_counter_file();
 		
 		# now move the save to the head of our archive series
-				
+
 		my $dest_file = "$opt_name.$counter.ck2";
 		File::Copy::move($autosave_file, "$archive_dir/$dest_file") or croak $!;
 		
