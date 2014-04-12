@@ -18,53 +18,54 @@ def initLocalisation():
     global i18n
     i18n = {'INTRO':
                 {
-                    'fr': u"Cette version de Historical Immersion Project date du %s.\n"
+                    'fr': u"Cette version de Historical Immersion Project date du {}.\n"
                           u"Taper 'o' ou 'oui' pour valider, ou laisser le champ vierge. Toute autre\n"
                           u"réponse sera interpretée comme négative.\n"
                           u"Pour abandonner à tout moment l'installation, appuyer sur Ctrl+C.\n",
-                    'es': u"Esta vercion de Historical Immersion Project fecha del %s.\n"
+                    'es': u"Esta vercion de Historical Immersion Project fecha del {}.\n"
                           u"Escribe 's' o 'si' para aceptar, o deja el campo en blanco. Cualquier otro\n"
                           u"caso sera considerado un 'no'.\n",
-                    'en': u"This version of the Historical Immersion Project was released %s.\n"
+                    'en': u"This version of the Historical Immersion Project was released {}.\n"
                           u"To confirm a prompt, respond with 'y' or 'yes' (sans quotes) or simply hit\n"
                           u"ENTER. Besides a blank line, anything else will be interpreted as 'no.'\n\n"
                           u"If at any time you wish to abort the installation, press Ctrl+C.\n",
                 },
             'ENABLE_MOD':
+
                 {
-                    'fr': u"Voulez-vous installer %s ? [oui]",
-                    'es': u"Deseas instalar %s? [si]",
-                    'en': u"Do you want to install %s? [yes]",
+                    'fr': u"Voulez-vous installer {} ? [oui]",
+                    'es': u"Deseas instalar {}? [si]",
+                    'en': u"Do you want to install {}? [yes]",
                 },
             'ENABLE_MOD_XOR':
                 {
-                    'fr': u"Voulez-vous installer %s (%s) ? [oui]",
-                    'es': u"Deseas instalar %s (%s)? [si]",
-                    'en': u"Do you want to install %s (%s)? [yes]",
+                    'fr': u"Voulez-vous installer {} ({}) ? [oui]",
+                    'es': u"Deseas instalar {} ({})? [si]",
+                    'en': u"Do you want to install {} ({})? [yes]",
                 },
             'ENABLE_MOD_NOT_DEFAULT_COMPAT':
                 {
-                    'fr': u"\nNOTE: %s might be incompatible with your system.\nVoulez-vous installer %s ? [non]",
-                    'es': u"\nNOTE: %s might be incompatible with your system.\nDeseas instalar %s? [no]",
-                    'en': u"\nNOTE: %s might be incompatible with your system.\nDo you want to install %s? [no]",
+                    'fr': u"\nNOTE: {} might be incompatible with your system.\nVoulez-vous installer {} ? [non]",
+                    'es': u"\nNOTE: {} might be incompatible with your system.\nDeseas instalar {}? [no]",
+                    'en': u"\nNOTE: {} might be incompatible with your system.\nDo you want to install {}? [no]",
                 },
             'ENABLE_MOD_XOR_WARN':
                 {
-                    'fr': u"\n%s et %s sont incompatibles. Vous devez n'en choisir qu'un : ",
-                    'es': u"\n%s and %s are incompatible. You may only select one:",
-                    'en': u"\n%s and %s are incompatible. You may only select one:",
+                    'fr': u"\n{} et {} sont incompatibles. Vous devez n'en choisir qu'un : ",
+                    'es': u"\n{} and {} are incompatible. You may only select one:",
+                    'en': u"\n{} and {} are incompatible. You may only select one:",
                 },
             'PUSH_FOLDER':
                 {
-                    'fr': u'Préparation %s',
-                    'es': u'Preparaciòn %s',
-                    'en': u'Preparing %s',
+                    'fr': u'Préparation {}',
+                    'es': u'Preparaciòn {}',
+                    'en': u'Preparing {}',
                 },
             'COMPILING':
                 {
-                    'fr': u"Compilation '%s' ...",
-                    'es': u"Compilar '%s' ...",
-                    'en': u"Compiling '%s' ...",
+                    'fr': u"Compilation '{}' ...",
+                    'es': u"Compilar '{}' ...",
+                    'en': u"Compiling '{}' ...",
                 },
             'SWMH_NATIVE':
                 {
@@ -114,13 +115,13 @@ def initLocalisation():
                 {
                     'fr': u"Installer le mod dans un répertoire existant supprimera ce répertoire.\n"
                           u"Dans quel répertoire souhaites-tu procéder à l'installation ?\n"
-                          u"Laisser le champ vierge pour '%s'.",
+                          u"Laisser le champ vierge pour '{}'.",
                     'es': u"Instalar el mod en una carpeta existente eliminara dicha carpeta.\n"
                           u"En que carpeta deseas realizar la instalacion?\n"
-                          u"Dejar en blanco para '%s'.",
+                          u"Dejar en blanco para '{}'.",
                     'en': u"Installing the mod into a folder that exists will first delete that folder.\n"
                           u"Into what folder would you like to install?\n"
-                          u"Leave blank for '%s':",
+                          u"Leave blank for '{}':",
                 },
             'INSTALL_DONE':
                 {
@@ -130,7 +131,6 @@ def initLocalisation():
                 }
 
             }
-
 
 def localise(key):
     return i18n[key][language]
@@ -212,9 +212,9 @@ class TargetSource:
 
 
 def promptUser(prompt, lc=True):
-    sys.stdout.write(prompt + ' ')
+    sys.stdout.write(prompt + u' ')
     sys.stdout.flush()
-    response = sys.stdin.readline().strip()
+    response = sys.stdin.readline().strip()  # TODO: broken if diff locales use non-ASCII chars in response
     return response.lower() if lc else response
 
 
@@ -233,17 +233,17 @@ def isYesDefaultNo(answer):
 
 
 def enableMod(name):
-    return isYes(promptUser(localise('ENABLE_MOD') % name))
+    return isYes(promptUser(localise('ENABLE_MOD').format(name)))
 
 
 def enableModDefaultNo(name):
-    return isYesDefaultNo(promptUser(localise('ENABLE_MOD_NOT_DEFAULT_COMPAT') % (name, name)))
+    return isYesDefaultNo(promptUser(localise('ENABLE_MOD_NOT_DEFAULT_COMPAT').format((name, name))))
 
 
 def enableModXOR(nameA, versionA, nameB, versionB):
-    print(localise('ENABLE_MOD_XOR_WARN') % (nameA, nameB))
+    print(localise('ENABLE_MOD_XOR_WARN').format(nameA, nameB))
     for n, v in [(nameA, versionA), (nameB, versionB)]:
-        if isYes(promptUser(localise('ENABLE_MOD_XOR') % (n, v))):
+        if isYes(promptUser(localise('ENABLE_MOD_XOR').format(n, v))):
             return n
     return None
 
@@ -280,7 +280,7 @@ def pushFolder(folder, prunePaths=None, ignoreFiles=None):
     if not prunePaths:
         prunePaths = {}
 
-    print(localise('PUSH_FOLDER') % quoteIfWS(folder))
+    #print(localise('PUSH_FOLDER').format(unicode(quoteIfWS(folder))))
 
     srcFolder = os.path.join('modules', folder)
     dbg.push("compile: pushing folder " + srcFolder)
@@ -347,14 +347,14 @@ def stripPathHead(path):
 
 
 def compileTarget():
-    print(localise('COMPILING') % targetFolder)
+    print(localise('COMPILING').format(targetFolder))
     mapFilename = os.path.join(targetFolder, 'file2mod_map.txt')
-    dbg.push("compiling target with file->mod mapping dumped to '%s'..." % mapFilename)
-    x = len(targetSrc) // 20
+    dbg.push("compiling target with file->mod mapping dumped to '{}'...".format(mapFilename))
+    x = len(targetSrc) // 10
     with open(mapFilename, "w") as mapFile:
         for n, dstPath in enumerate(sorted(targetSrc)):
             if n % x == 0:
-                print("%s%%" % (n // x * 5))
+                print(u"{}%".format((n // x * 10)))
             src = targetSrc[dstPath]
             mapFile.write('%s <= [%s]\n' % (stripPathHead(dstPath), src.folder))
             if src.isDir:
@@ -388,10 +388,10 @@ def cleanUserDir(userDir):
 
 def resetCaches():
     if platform == 'mac':
-        print('Clearing preexisting CKII gfx/map cache')
+        print(u'Clearing preexisting CKII gfx/map cache')
         cleanUserDir('..')
     elif platform == 'win':
-        print('Clearing preexisting HIP-related CKII gfx/map caches ...')
+        print(u'Clearing preexisting HIP-related CKII gfx/map caches ...')
 
         # Match *all* userdirs in CKII user directory which include 'HIP' in their
         # directory name, as this also covers all cases with external mods used with
@@ -455,7 +455,7 @@ def initVersionEnvInfo():
 
 def printVersionEnvInfo():
     # Print the installer's version info (installer *script*, not module package)
-    print('HIP Installer:')
+    print(u'HIP Installer:')
 
     # Fill this with any extended version info keys we want printed, if present.
     # This is the order in which they'll be displayed.
@@ -469,22 +469,22 @@ def printVersionEnvInfo():
         extKeys = [k + ': ' for k in extKeys]
         maxKeyWidth = len(max(extKeys, key=len))
         for k, v in zip(extKeys, extVals):
-            print('% -*s%s' % (maxKeyWidth, k, v))
+            print('% -*s%s' % (maxKeyWidth, k, v))  # TODO: needs to be upgraded to use format() and output UTF-8
         sys.stdout.write('\n')
 
-    print('HIP Installer Path: ')
-    print(programPath + '\n')
+    print(u'HIP Installer Path: ')
+    print(unicode(programPath + '\n'))
 
     # Print the OS version/build info
     import platform as p
 
-    print('Operating System / Platform:')
-    print(sys.platform + ': ' + p.platform() + '\n')
+    print(u'Operating System / Platform:')
+    print(unicode(sys.platform + ': ' + p.platform() + '\n'))
 
     # Print our runtime interpreter's version/build info
 
-    print("Python Runtime Version:")
-    print(sys.version)
+    print(u"Python Runtime Version:")
+    print(unicode(sys.version))
     return
 
 
@@ -495,7 +495,7 @@ def getPkgVersions(modDirs):
     for mod in modDirs.keys():
         f = os.path.join("modules", modDirs[mod], "version.txt")
         dbg.trace("%s: reading %s" % (mod, f))
-        versions[mod] = open(f).readline().strip()
+        versions[mod] = unicode(open(f).readline().strip())
         dbg.trace("%s: version: %s" % (mod, versions[mod]))
     dbg.pop()
 
@@ -513,7 +513,7 @@ def getInstallOptions():
         language = 'en'
 
     # Show HIP installer version & explain interactive prompting
-    print(localise('INTRO') % versions['pkg'])
+    print(localise('INTRO').format(versions['pkg']))
 
     global move
     move = isYes(promptUser(localise('MOVE_VS_COPY')))
@@ -545,7 +545,7 @@ def getInstallOptions():
     # Note that we use the case-preserving form of promptUser for the target folder (also determines name in launcher)
 
     global targetFolder
-    targetFolder = promptUser(localise('TARGET_FOLDER') % defaultFolder, lc=False)
+    targetFolder = promptUser(localise('TARGET_FOLDER').format(unicode(defaultFolder)), lc=False)
     if targetFolder == '':
         targetFolder = defaultFolder
     else:
@@ -610,28 +610,28 @@ def main():
         getInstallOptions()
 
         # Determine module combination...
-        PB = enableMod("Project Balance (%s)" % versions['PB'])
-        ARKOarmoiries = enableMod("ARKOpack Armoiries (coats of arms) (%s)" % versions['ARKO'])
-        ARKOinterface = enableMod("ARKOpack Interface (%s)" % versions['ARKO'])
+        PB = enableMod(u"Project Balance ({})".format(versions['PB']))
+        ARKOarmoiries = enableMod(u"ARKOpack Armoiries (coats of arms) ({})".format(versions['ARKO']))
+        ARKOinterface = enableMod(u"ARKOpack Interface ({})".format(versions['ARKO']))
 
         if platform == 'win':
-            NBRT = enableMod("NBRT+ (%s)" % versions['NBRT'])
+            NBRT = enableMod(u"NBRT+ ({})".format(versions['NBRT']))
         else:
-            NBRT = enableModDefaultNo("NBRT+ (%s)" % versions['NBRT'])
+            NBRT = enableModDefaultNo(u"NBRT+ ({})".format(versions['NBRT']))
 
         if PB:
             VIETtraits = False
         else:
-            VIETtraits = enableMod("VIET traits (%s)" % versions['VIET'])
+            VIETtraits = enableMod(u"VIET traits ({})".format(versions['VIET']))
 
-        VIETevents = enableMod("VIET events (%s)" % versions['VIET'])
+        VIETevents = enableMod(u"VIET events ({})".format(versions['VIET']))
 
         SWMH = False
         VIETimmersion = False
 
         #promptUser("VIET Immersion doesn't yet work with CKII patch 2.1.X and thus is disabled.\n"
         #           "Hit ENTER to continue.")
-        #SWMH = enableMod("SWMH (%s" % versions['SWMH'])
+        #SWMH = enableMod("SWMH ({}" % versions['SWMH'])
 
         swmhVIET = enableModXOR('SWMH', versions['SWMH'], 'VIET Immersion', versions['VIET'])
 
@@ -762,11 +762,11 @@ def main():
             rmTree("modules")  # Cleanup
 
         endTime = time.clock()
-        print('Folder compilation took %0.1f seconds.\n' % (endTime - startTime))
+        print(u'Folder compilation took %0.1f seconds.\n' % (endTime - startTime))
 
-        mapFilename = "%s/file2mod_map.txt" % targetFolder
-        print("Mapped listing of all compiled files to their source modules:")
-        print(mapFilename + '\n')
+        mapFilename = os.path.join(targetFolder, "file2mod_map.txt")
+        print(u"Mapped listing of all compiled files to their source modules:")
+        print(unicode(mapFilename + '\n'))
 
         # Generate a new .mod file, regardless of whether it's default
         if targetFolder != defaultFolder:
@@ -791,18 +791,18 @@ def main():
                               '# Ensure we get our own versions of the gfx/map caches and log folders\n' %
                               modFileBase)
 
-        print("Generated new mod definition file:")
-        print(modFilename + '\n')
+        print(u"Generated new mod definition file:")
+        print(unicode(modFilename + '\n'))
 
         # Dump modules selected and their respective versions to <mod>/version.txt
-        versionFilename = "%s/version.txt" % targetFolder
+        versionFilename = os.path.join(targetFolder, "version.txt")
 
         with open(versionFilename, "w") as output:
             output.write("".join(moduleOutput))
 
         dbg.trace("dumping compiled modpack version summary to " + quoteIfWS(versionFilename))
-        print("Summarized mods' combination/versions (INCLUDE FILE CONTENTS IN BUG REPORTS):")
-        print(versionFilename + "\n")
+        print(u"Summarized mod combination/versions (INCLUDE FILE CONTENTS IN BUG REPORTS):")
+        print(unicode(versionFilename + "\n"))
 
         # Reset all gfx/map/interface/logs cache for every instance of a preexisting
         # user_dir that includes HIP, platform-agnostic.
@@ -843,4 +843,11 @@ def main():
 
 
 if __name__ == "__main__":
+    import codecs
+    import locale
+
+    encoding = locale.getpreferredencoding()
+    writer = codecs.getwriter(encoding)
+    sys.stdout = writer(sys.stdout, errors='ignore')
+
     sys.exit(main())
