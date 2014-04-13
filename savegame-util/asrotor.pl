@@ -141,7 +141,20 @@ while (1) {
 		print STDERR "Waiting for first autosave (start the game)...\n";
 		$waiting = 0; # only print this reminder at the start
 		
-		daemonize() if $opt_daemon;
+		if ($opt_daemon) {
+			my $pid = daemonize();
+
+			if ($pid) {
+				# parent... print PID of child for later reference, then exit.
+				print STDERR "Running in the background...\nTo terminate: kill $pid\n";
+				exit 0;
+			}
+			else {
+				# child... now detach from terminal and create a new session
+				detach();
+				# then continue onward...
+			}
+		}
 	}
 
 	my $st = stat($autosave_file);
@@ -207,15 +220,16 @@ sub read_counter_file {
 }
 
 sub daemonize {
-	print STDERR "Detaching to run in the background (kill with INT/TERM)...\n";
-	
 	my $null = File::Spec->devnull;
 	
 	chdir($archive_dir)       or croak "can't chdir: $!: $archive_dir";
 	open(STDIN,  "<", $null)  or croak "can't read $null: $!";
 	open(STDOUT, ">", $null)  or croak "can't write to $null: $!";
 	defined(my $pid = fork()) or croak "can't fork: $!";
-	exit if $pid;  # parent exits, child continues with new detached session
+	return $pid;
+}
+
+sub detach {
 	(setsid() != -1)          or croak "can't start a new session: $!";
 	open(STDERR, ">&STDOUT")  or croak "can't dup stderr -> stdout: $!";
 	
