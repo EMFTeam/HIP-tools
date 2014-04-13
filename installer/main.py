@@ -237,7 +237,7 @@ def enableMod(name):
 
 
 def enableModDefaultNo(name):
-    return isYesDefaultNo(promptUser(localise('ENABLE_MOD_NOT_DEFAULT_COMPAT').format((name, name))))
+    return isYesDefaultNo(promptUser(localise('ENABLE_MOD_NOT_DEFAULT_COMPAT').format(name, name)))
 
 
 def enableModXOR(nameA, versionA, nameB, versionB):
