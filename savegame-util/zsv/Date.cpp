@@ -1,7 +1,7 @@
 
 #include "Date.h"
 
-const unsigned int Date::MONTH_DAY[12] = {
+constexpr int32_t Date::MONTH_DAY[12] = {
     31,
     28,
     31,
@@ -17,7 +17,7 @@ const unsigned int Date::MONTH_DAY[12] = {
 };
 
 
-const unsigned int Date::MONTH_DOY[12] = {
+constexpr int32_t Date::MONTH_DOY[12] = {
     0,
     31,
     59,
