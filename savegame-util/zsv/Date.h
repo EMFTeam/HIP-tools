@@ -20,14 +20,33 @@ class Date {
     uint8_t  m;
     uint8_t  d;
     
+    static constexpr int32_t MONTH_DAY[12];
+    static constexpr int32_t MONTH_DOY[12];
+
+    static constexpr int32_t calc_epoch_days(uint16_t y, uint8_t m, uint8_t d, int factor) {
+        return factor * ( 365*y + MONTH_DOY[m] + d );
+    }
+    
 public:
     
-    Date(char* s); // parse date from a mutable NULL-terminated string
+    //Date(char* s); // parse date from a mutable NULL-terminated string
+
+    constexpr Date(uint16_t _y, uint8_t _m, uint8_t _d, int factor)
+        : epoch_d( calc_epoch_days(_y-1, _m-1, _d-1, factor) ), y(_y), m(_m), d(_d) { }
     
-    uint16_t year()       const { return y; }
-    uint8_t  month()      const { return m; }
-    uint8_t  day()        const { return d; }
-    int32_t  epoch_days() const { return epoch_d; }
+    constexpr Date(int32_t e) : epoch_d(e) {
+        y = (e < 0) ? -1*e/365 : e/365;
+        // ...
+    }
+    
+    constexpr uint16_t year()       { return y; }
+    constexpr uint8_t  month()      { return m; }
+    constexpr uint8_t  day()        { return d; }
+    constexpr int32_t  epoch_days() { return epoch_d; }
+    
+    constexpr bool operator<(const Date& rhs) { return epoch_d < rhs.epoch_d; }
+    constexpr bool operator==(const Date& rhs) { return epoch_d == rhs.epoch_d; }
+    constexpr Date operator-(const Date& rhs) { return Date(epoch_d - rhs.epoch_d); }
 };
 
 
