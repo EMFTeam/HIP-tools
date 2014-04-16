@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 2, 'patch': 9,
+version = {'major': 1, 'minor': 2, 'patch': 10,
            'Released-By': 'Meneth <hip@meneth.com>'}
 
 
@@ -282,6 +282,7 @@ def pushFolder(folder, prunePaths=None, ignoreFiles=None):
 
     #print(localise('PUSH_FOLDER').format(unicode(quoteIfWS(folder))))
 
+    folder = os.path.normpath(folder)
     srcFolder = os.path.join('modules', folder)
     dbg.push("compile: pushing folder " + srcFolder)
 
@@ -321,6 +322,7 @@ def pushFolder(folder, prunePaths=None, ignoreFiles=None):
 
 
 def popFile(f):
+    f = os.path.normpath(f)
     p = os.path.join(targetFolder, f)
     if p in targetSrc:
         dbg.trace("popFile: {}".format(quoteIfWS(p)))
@@ -328,6 +330,7 @@ def popFile(f):
 
 
 def popTree(d):
+    d = os.path.normpath(d)
     t = os.path.join(targetFolder, d)
     dbg.push("popTree: {}".format(quoteIfWS(t)))
     for p in [p for p in targetSrc.keys() if p.startswith(t)]:
