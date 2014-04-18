@@ -20,8 +20,35 @@ class Date {
     uint8_t  m;
     uint8_t  d;
     
-    static constexpr int32_t MONTH_DAY[12];
-    static constexpr int32_t MONTH_DOY[12];
+    static constexpr int32_t MONTH_DAY[12] = {
+        31,
+        28,
+        31,
+        30,
+        31,
+        30,
+        31,
+        31,
+        30,
+        31,
+        30,
+        31,
+    };
+    
+    static constexpr int32_t MONTH_DOY[12] = {
+        0,
+        31,
+        59,
+        90,
+        120,
+        151,
+        181,
+        212,
+        243,
+        273,
+        304,
+        334,
+    };
 
     static constexpr int32_t calc_epoch_days(uint16_t y, uint8_t m, uint8_t d, int factor) {
         return factor * ( 365*y + MONTH_DOY[m] + d );
@@ -34,10 +61,7 @@ public:
     constexpr Date(uint16_t _y, uint8_t _m, uint8_t _d, int factor)
         : epoch_d( calc_epoch_days(_y-1, _m-1, _d-1, factor) ), y(_y), m(_m), d(_d) { }
     
-    constexpr Date(int32_t e) : epoch_d(e) {
-        y = (e < 0) ? -1*e/365 : e/365;
-        // ...
-    }
+    constexpr Date(int32_t e) : epoch_d(e), y( (e < 0) ? -1*e/365 : e/365 ), m(0), d(0) { }  // FIXME
     
     constexpr uint16_t year()       { return y; }
     constexpr uint8_t  month()      { return m; }

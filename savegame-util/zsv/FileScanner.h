@@ -13,16 +13,7 @@ class FileScanner {
     
 public:
     
-    FileScanner(FILE* _f) : f(_f), n_line(0) {
-        buf[0] = '\0';
-    }
-    
-    ~FileScanner() {
-        if (f)
-           fclose(f);
-
-        f = 0;
-    }
+    FileScanner(FILE* _f) : f(_f), n_line(0) { *buf = '\0'; }
     
     FILE* handle() const { return f; }
     unsigned int line() const { return n_line; }
@@ -36,38 +27,18 @@ public:
         return &buf[0];
     }
 
-    /* EOL characters stripped from next line (Windows CRLF assumed) */
-    char* next() {
-        if (!readline())
-            return 0;
-
-        char* eol = strrchr(&buf[0], '\r');
-
-        if (eol)
-            *eol = '\0';
-        
-        return &buf[0];
-    }
+    /* line input w/ EOL character(s) stripped (supports all EOL variants) */
+    char* readline_chomp();
     
     /* consume n lines blindly */
-    bool eat() {
-        return readline();
-    }
+    bool skip_line() { return readline(); }
     
-    bool eat(unsigned int n) {
-        for (unsigned int i = n; i > 0; --i)
-            if (!eat()) return false;
+    bool skip_lines(unsigned int n) {
+        for (unsigned int i = n; i > 0; --i) if (!skip_line()) return false;
     }
     
     /* skip lines until see literal string stop */
-    char* skip_until(const char* stop) {
-        while (readline()) {
-            if (strcmp(&buf[0], stop) == 0)
-                return &buf[0];
-        }
-        
-        return 0;
-    }
+    char* skip_until_line(const char* stop);
 };
 
 
