@@ -1,0 +1,26 @@
+﻿Build started 4/19/2014 8:09:43 PM.
+     1>Project "c:\Users\Stark\documents\GitHub\HIP-tools\HIP_2014-04-19_patch1\HIP_2014-04-19_patch1\HIP_2014-04-19_patch1.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /O1 /Oi /Os /Oy- /GL /D WIN32 /D NDEBUG /D _CONSOLE /Gm- /EHsc /MT /GS- /Gy /fp:fast /Zc:wchar_t /Zc:forScope /GR- /Yu"stdafx.h" /Fp"Release\HIP_2014-04-19_patch1.pch" /Fo"Release\\" /Fd"Release\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt "HIP_2014-04-19_patch1.cpp"
+         HIP_2014-04-19_patch1.cpp
+     1>HIP_2014-04-19_patch1.cpp(123): warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include\string.h(164) : see declaration of 'strerror'
+     1>HIP_2014-04-19_patch1.cpp(131): warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include\string.h(164) : see declaration of 'strerror'
+     1>HIP_2014-04-19_patch1.cpp(140): warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include\string.h(164) : see declaration of 'strerror'
+     1>HIP_2014-04-19_patch1.cpp(148): warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include\string.h(164) : see declaration of 'strerror'
+     1>HIP_2014-04-19_patch1.cpp(153): warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include\string.h(164) : see declaration of 'strerror'
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"c:\users\stark\documents\github\HIP-tools\HIP_2014-04-19_patch1\Release\HIP_2014-04-19_patch1.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:"c:\users\stark\documents\github\HIP-tools\HIP_2014-04-19_patch1\Release\HIP_2014-04-19_patch1.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"c:\users\stark\documents\github\HIP-tools\HIP_2014-04-19_patch1\Release\HIP_2014-04-19_patch1.lib" /MACHINE:X86 /SAFESEH "Release\HIP_2014-04-19_patch1.obj"
+         Release\stdafx.obj
+         Generating code
+         Finished generating code
+         HIP_2014-04-19_patch1.vcxproj -> c:\users\stark\documents\github\HIP-tools\HIP_2014-04-19_patch1\Release\HIP_2014-04-19_patch1.exe
+     1>Done Building Project "c:\Users\Stark\documents\GitHub\HIP-tools\HIP_2014-04-19_patch1\HIP_2014-04-19_patch1\HIP_2014-04-19_patch1.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:00.41
