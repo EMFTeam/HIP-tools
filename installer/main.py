@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 2, 'patch': 10,
+version = {'major': 1, 'minor': 2, 'patch': 11,
            'Released-By': 'Meneth <hip@meneth.com>'}
 
 
@@ -739,7 +739,6 @@ def main():
                 popTree("common/cultures")
                 dbg.push("removing portrait .gfx files...")
                 popFile("interface/portrait_sprites_DLC.gfx")
-                popFile("interface/portraits_mediterranean.gfx")
                 popFile("interface/portraits_norse.gfx")
                 popFile("interface/portraits_persian.gfx")
                 popFile("interface/portraits_saxon.gfx")
