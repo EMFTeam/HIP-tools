@@ -286,6 +286,11 @@ def pushFolder(folder, prunePaths=None, ignoreFiles=None):
 
     folder = os.path.normpath(folder)
     srcFolder = os.path.join('modules', folder)
+
+    if not os.path.exists(srcFolder):
+        dbg.trace("WARNING! MODULE NOT FOUND: {}".format(quoteIfWS(folder)))
+        return
+
     dbg.push("compile: pushing folder " + srcFolder)
 
     for root, dirs, files in os.walk(srcFolder):
@@ -701,6 +706,7 @@ def main():
                 pushFolder("English SWMH")
             if PB:
                 pushFolder("PB + SWMH")
+            pushFolder("SWMH_Logic")
             dbg.pop()
 
         if NBRT:
