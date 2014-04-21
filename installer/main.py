@@ -9,8 +9,10 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 2, 'patch': 11,
-           'Released-By': 'Meneth <hip@meneth.com>'}
+version = {'major': 1, 'minor': 2, 'patch': 12,
+           'Primary Developer': 'zijistark <zijistark@gmail.com>',
+           'Developer':         'Meneth    <hip@meneth.com>',
+           'Release Manager':   'Meneth    <hip@meneth.com>'}
 
 
 # noinspection PyPep8
@@ -462,7 +464,7 @@ def printVersionEnvInfo():
 
     # Fill this with any extended version info keys we want printed, if present.
     # This is the order in which they'll be displayed.
-    extKeys = ['Version', 'Commit-ID', 'Release-Date', 'Released-By']
+    extKeys = ['Version', 'Commit ID', 'Primary Developer', 'Developer', 'Release Manager']
 
     # Resolve optional keys to found keys
     extKeys = [k for k in extKeys if k in version]
@@ -662,7 +664,8 @@ def main():
         moduleOutput = ["Historical Immersion Project (%s)\nEnabled modules:\n" % versions['pkg']]
         dbg.push('performing virtual filesystem merge...')
 
-        pushFolder("Converter/Common")
+        if PB or VIETimmersion:
+            pushFolder("Converter/Common")
 
         if ARKOarmoiries:
             dbg.push("merging ARKO CoA...")
