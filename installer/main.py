@@ -75,7 +75,7 @@ def initLocalisation():
                     'es': u"SWMH con localizacion nativa para culturas y titulos, en lugar de ingles",
                     'en': u"SWMH with native localisation for cultures and titles, rather than English",
                 },
-            'VIET_PORTRAIT_FIX':
+            'VIET_PORTRAIT_FIX':  # OBSOLETE: Remove when appropriate text has been translated for CPR.
                 {
                     'fr': u"VIET Immersion nécessite tous les DLC de portraits. Les avez-vous\n"
                           u"tous ? [oui]",
@@ -753,24 +753,6 @@ def main():
             else:
                 pushFolder("VIET_Immersion/vanilla")
                 pushFolder("Converter/VIET")
-
-            if not isYes(promptUser(localise('VIET_PORTRAIT_FIX'))):
-                dbg.push("user chose VIET Immersion but does not have all portrait DLCs. applying fix...")
-                popTree("common/cultures")
-                dbg.push("removing portrait .gfx files...")
-                popFile("interface/portrait_sprites_DLC.gfx")
-                popFile("interface/portraits_norse.gfx")
-                popFile("interface/portraits_persian.gfx")
-                popFile("interface/portraits_saxon.gfx")
-                popFile("interface/portraits_turkish.gfx")
-                popFile("interface/portraits_ugric.gfx")
-                popFile("interface/portraits_westernslavic.gfx")
-                dbg.pop()
-                if not PB:
-                    pushFolder("VIET_portrait_fix/VIET")
-                else:
-                    pushFolder("VIET_portrait_fix/PB")
-                dbg.pop()
             dbg.pop()
 
         if CPR:
