@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 2, 'patch': 12,
+version = {'major': 1, 'minor': 3, 'patch': 0,
            'Primary Developer': 'zijistark <zijistark@gmail.com>',
            'Developer':         'Meneth    <hip@meneth.com>',
            'Release Manager':   'Meneth    <hip@meneth.com>'}
@@ -616,6 +616,9 @@ def main():
 
         getPkgVersions(modDirs)
 
+        # TODO: Remove me when cybr adds a version.txt to CPR!
+        versions['CPR'] = '2.0.2 - 2014/04/30'
+
         # Prompt user for options related to this install
         getInstallOptions()
 
@@ -635,6 +638,14 @@ def main():
             VIETtraits = enableMod(u"VIET traits ({})".format(versions['VIET']))
 
         VIETevents = enableMod(u"VIET events ({})".format(versions['VIET']))
+
+        dlcDetectFailed = True
+        CPR = False
+
+        if dlcDetectFailed:
+            print(u'NOTE: Cultures and Portraits Revamp (CPR) requires all the portrait DLCs.\n'
+                  u'If you do not have all of the portrait DLCs, then do not enable CPR.\n')
+            CPR = enableModDefaultNo(u'Cultures and Portraits Revamp ({})'.format(versions['CPR']))
 
         SWMH = False
         VIETimmersion = False
@@ -760,6 +771,20 @@ def main():
                 else:
                     pushFolder("VIET_portrait_fix/PB")
                 dbg.pop()
+            dbg.pop()
+
+        if CPR:
+            dbg.push('merging CPR...')
+            moduleOutput.append("Cultures and Portaits Revamp (%s)\n" % versions['CPR'])
+            pushFolder('Cultures and Portraits Revamp/common')
+            if SWMH:
+                pushFolder('Cultures and Portraits Revamp/SWMH')
+            elif VIETimmersion:
+                pushFolder('Cultures and Portraits Revamp/VIET')
+            elif PB:
+                pushFolder('Cultures and Portraits Revamp/PB')
+            else:
+                pushFolder('Cultures and Portraits Revamp/Vanilla')
             dbg.pop()
 
         dbg.pop("virtual filesystem merge complete")
