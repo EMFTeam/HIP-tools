@@ -771,7 +771,7 @@ def main():
 
         dbg.pop("virtual filesystem merge complete")
 
-        startTime = time.clock()
+        startTime = time.time()
 
         # do all the actual compilation (file I/O)
         compileTarget()
@@ -779,7 +779,7 @@ def main():
         if move:
             rmTree("modules")  # Cleanup
 
-        endTime = time.clock()
+        endTime = time.time()
         print(u'Folder compilation took %0.1f seconds.\n' % (endTime - startTime))
 
         mapFilename = os.path.join(targetFolder, "file2mod_map.txt")
