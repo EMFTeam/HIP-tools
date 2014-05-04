@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 3, 'patch': 0,
+version = {'major': 1, 'minor': 3, 'patch': 1,
            'Primary Developer': 'zijistark <zijistark@gmail.com>',
            'Developer':         'Meneth    <hip@meneth.com>',
            'Release Manager':   'Meneth    <hip@meneth.com>'}
@@ -38,6 +38,13 @@ def initLocalisation():
                     'fr': u"Voulez-vous installer {} ? [oui]",
                     'es': u"Deseas instalar {}? [si]",
                     'en': u"Do you want to install {}? [yes]",
+                },
+            'ENABLE_MOD_NOT_DEFAULT':
+
+                {
+                    'fr': u"Voulez-vous installer {} ? [non]",
+                    'es': u"Deseas instalar {}? [no]",
+                    'en': u"Do you want to install {}? [no]",
                 },
             'ENABLE_MOD_XOR':
                 {
@@ -238,8 +245,11 @@ def enableMod(name):
     return isYes(promptUser(localise('ENABLE_MOD').format(name)))
 
 
-def enableModDefaultNo(name):
-    return isYesDefaultNo(promptUser(localise('ENABLE_MOD_NOT_DEFAULT_COMPAT').format(name, name)))
+def enableModDefaultNo(name, compat=False):
+    if compat:
+        return isYesDefaultNo(promptUser(localise('ENABLE_MOD_NOT_DEFAULT').format(name)))
+    else:
+        return isYesDefaultNo(promptUser(localise('ENABLE_MOD_NOT_DEFAULT_COMPAT').format(name, name)))
 
 
 def enableModXOR(nameA, versionA, nameB, versionB):
@@ -640,16 +650,12 @@ def main():
         CPR = False
 
         if dlcDetectFailed:
-            print(u'NOTE: Cultures and Portraits Revamp (CPR) requires all the portrait DLCs.\n'
-                  u'If you do not have all of the portrait DLCs, then do not enable CPR.\n')
-            CPR = enableModDefaultNo(u'Cultures and Portraits Revamp ({})'.format(versions['CPR']))
+            print(u"\nNOTE: Cultures and Portraits Revamp (CPR) requires all of the\n"
+                  u"portrait DLCs. If you don't have them all, do not enable CPR.\n")
+            CPR = enableModDefaultNo(u'CPR ({})'.format(versions['CPR']), compat=True)
 
         SWMH = False
         VIETimmersion = False
-
-        #promptUser("VIET Immersion doesn't yet work with CKII patch 2.1.X and thus is disabled.\n"
-        #           "Hit ENTER to continue.")
-        #SWMH = enableMod("SWMH ({}" % versions['SWMH'])
 
         swmhVIET = enableModXOR('SWMH', versions['SWMH'], 'VIET Immersion', versions['VIET'])
 
