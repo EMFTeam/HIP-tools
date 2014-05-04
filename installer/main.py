@@ -616,9 +616,6 @@ def main():
 
         getPkgVersions(modDirs)
 
-        # TODO: Remove me when cybr adds a version.txt to CPR!
-        versions['CPR'] = '2.0.2 - 2014/04/30'
-
         # Prompt user for options related to this install
         getInstallOptions()
 
