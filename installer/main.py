@@ -639,13 +639,6 @@ def main():
         else:
             NBRT = enableModDefaultNo(u"NBRT+ ({})".format(versions['NBRT']))
 
-        if PB:
-            VIETtraits = False
-        else:
-            VIETtraits = enableMod(u"VIET traits ({})".format(versions['VIET']))
-
-        VIETevents = enableMod(u"VIET events ({})".format(versions['VIET']))
-
         dlcDetectFailed = True
         CPR = False
 
@@ -663,6 +656,9 @@ def main():
             SWMH = True
         elif swmhVIET == 'VIET Immersion':
             VIETimmersion = True
+
+        VIETevents = True if VIETimmersion else enableMod(u"VIET Events ({})".format(versions['VIET']))
+        VIETtraits = False if PB else enableMod(u"VIET Traits ({})".format(versions['VIET']))
 
         VIET = (VIETtraits or VIETevents or VIETimmersion)
 
