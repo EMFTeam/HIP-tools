@@ -622,7 +622,9 @@ def main():
                    'PB': 'ProjectBalance',
                    'SWMH': 'SWMH',
                    'NBRT': 'NBRT+',
-                   'ARKO': 'ARKOpack_Armoiries'}
+                   'ARKO': 'ARKOpack_Armoiries',
+                   'CPR': 'Cultures and Portraits Revamp'
+        }
 
         getPkgVersions(modDirs)
 
