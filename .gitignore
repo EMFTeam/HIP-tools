@@ -17,3 +17,6 @@ $RECYCLE.BIN/
 
 # PyCharm stuff
 .idea
+
+# SCons build state / dependency tracking cache DB
+.sconsign.dblite
