@@ -16,7 +16,7 @@ my $vanilla_dir = "/cygdrive/c/Program Files (x86)/Steam/SteamApps/common/Crusad
 
 my @components = (
 	{ name => 'Vanilla', dirs => [ $vanilla_dir ], vanilla => 1 }, # comes first
-#	{ name => 'HIP', dirs => ['HIP_Common/HIP_Common'] },
+#	{ name => 'HIP', dirs => ['HIP/HIP_Commons'] },
 	{ name => 'PB', dirs => ['PB/ProjectBalance', 'PB/PB + SWMH'] },
 	{ name => 'SWMH', dirs => ['SWMH/SWMH', 'SWMHLogic/SWMH_Logic'] },
 	{
@@ -32,9 +32,15 @@ my @components = (
 	},
 );
 
-my $opt_block_sz = 10_000;
-my $opt_output_dir = File::Spec->catdir(abs_path(), 'charalloc');
+# Currently, we only output a text file denoting free blocks. Intention was/is to
+# output a component color-coded 2D image of ID space block usage and
+# conflict/sharing visualization image, possibly with HTML drill-down to efficiently
+# cover such a large ID space (would be a [re]useful visualization Lego), so that's
+# why we use a mandatory output _directory_ for a mere text file of output.
+
+my $opt_output_dir = File::Spec->catdir(abs_path(), 'out_charalloc');
 my $opt_force = 0;
+my $opt_block_sz = 10_000;
 
 ## End of configuration variables ##
 
@@ -59,6 +65,8 @@ make_path($opt_output_dir) or croak "Couldn't create output path: $opt_output_di
 
 # We'll be changing dirs, so we need the output path absolute.
 $opt_output_dir = abs_path($opt_output_dir);
+
+my $free_txt_file = File::Spec->catfile($opt_output_dir, "free_blocks.txt");
 
 # Switch current working directory to the HIP components' base directory
 chdir $base_dir or croak "Couldn't change working directory: $!: $base_dir";
@@ -110,6 +118,18 @@ print "\nTotal character definitions scanned: $n_char_scanned\n";
 
 
 # Calculate collisons and other stuff which doesn't really matter
+
+# Why does little of this matter? The specific inter-component ID
+# space (incl. direct overlap/redefinition) sharing relationships
+# are what's of actual interest.  Only at least a 1.5D color image
+# can capture that information effectively, and even so, it's going
+# to be a pretty clever visualization if it's not 10000px tall and
+# smoothly mapped. All my good ideas on that involve a dynamic image
+# (e.g., a series of images that can be clicked-through in a browser
+# to drill-down into areas of high conflict/sharing and get past the
+# otherwise vast, spotted free spaces, showing specific space sharing
+# relationships very clearly). Not a priority.
+
 for my $ch (values %char) {
 	my @defs = @{ $ch->{definitions} };
 	
@@ -119,7 +139,7 @@ for my $ch (values %char) {
 		for my $def (@defs) { ++$def->{component}{n_xd} }
 	}
 	elsif (scalar @defs == 1) {
-		# Character is truly unique within all of HIP
+		# Character is truly unique within all of HIP (not very useful)
 		
 		for my $def (@defs) { ++$def->{component}{n_uniq} }
 	}
@@ -149,6 +169,8 @@ for my $c ( sort { $b->{n_uniq} <=> $a->{n_uniq} } @components ) {
 		print "Maximum ID:                    $c->{max}\n";	
 	}
 }
+
+
 
 exit 0;
 
