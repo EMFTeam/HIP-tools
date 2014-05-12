@@ -13,7 +13,7 @@ As these tools evolve free-form and are not tied to any given release of HIP or 
 
 #### Copying ####
 
-All software within this repository uses, unless explicitly stated otherwise in the tools' source files, the permissive, open source MIT License (see file: LICENSE).
+All software within this repository uses, unless explicitly stated otherwise in the tools' source files, the [viral] open source GPLv2 License (see file: LICENSE). With the exception of installer/* which is jointly owned and copyright 2014 Meneth and zijistark, all other programs at the time of this writing are owned and copyright 2014 zijistark (Matthew D. Hall).
 
 #### Collaboration ####
 
@@ -26,10 +26,12 @@ Pull requests will be freely accepted from the public so long as they meet HIP's
 Please use email. Current direct collaborators include:
 
 - Meneth (github@meneth.com)
-    - HIP Installer (Creator)
+    - HIP installer (Creator)
 
 - zijistark (zijistark@gmail.com)
-    - HIP Installer
-    - Project Balance Tools
-    - SWMH Tools
-
+    - HIP installer
+    - Project Balance tools
+    - SWMH tools
+    - Code analysis
+    - Meta-modding
+    - CKII savegame analysis
