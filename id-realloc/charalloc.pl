@@ -40,17 +40,17 @@ my @components = (
 
 my $opt_output_dir = File::Spec->catdir(abs_path(), 'out_charalloc');
 my $opt_force = 0;
-my $opt_block_sz = 10_000;
+my $opt_blk_sz = 10_000;
 
 ## End of configuration variables ##
 
 GetOptions(
-	'b|block-size=i' => \$opt_block_sz,
+	'b|block-size=i' => \$opt_blk_sz,
     'o|output-dir=s' => \$opt_output_dir,
 	'f|force' => \$opt_force) or croak;
 
 croak "Block size must be a positive integer multiple of 10 (-b, --block-size)"
-	unless ($opt_block_sz > 0 && $opt_block_sz % 10 == 0);
+	unless ($opt_blk_sz > 0 && $opt_blk_sz % 10 == 0);
 	
 if (-e $opt_output_dir) {
 	if ($opt_force) {
@@ -66,7 +66,7 @@ make_path($opt_output_dir) or croak "Couldn't create output path: $opt_output_di
 # We'll be changing dirs, so we need the output path absolute.
 $opt_output_dir = abs_path($opt_output_dir);
 
-my $free_txt_file = File::Spec->catfile($opt_output_dir, "free_blocks.txt");
+my $free_blk_file = File::Spec->catfile($opt_output_dir, "free_blocks.txt");
 
 # Switch current working directory to the HIP components' base directory
 chdir $base_dir or croak "Couldn't change working directory: $!: $base_dir";
@@ -170,7 +170,26 @@ for my $c ( sort { $b->{n_uniq} <=> $a->{n_uniq} } @components ) {
 	}
 }
 
+# open(my $f, '>', $free_blk_file) or croak "Failed to open for writing: $!: $free_blk_file";
 
+# my $last = 0;
+# my $blk_sz = $opt_blk_sz;
+
+# for my $id (sort { $a <=> $b } keys %chars) {
+
+	# my $start = $id;
+	# $start -= $id % $blk_sz if ($id % $blk_sz); # 
+	
+	# my $dist = $id - $last;
+
+	# if ($id < $end) {
+		# # nothing to scoop.
+		
+	# }
+	# else {
+		# # scoop some free blocks.
+	# }
+# }
 
 exit 0;
 
@@ -209,7 +228,7 @@ sub parse_char_file {
 			parse_err($file, $n_line, "failed to recognize character opening statement (span multiple lines?)");
 		}
 
-		my $def = { id => $id, component => $c, file => $file, line => $n_line };
+		my $def = { component => $c, file => $file, line => $n_line };
 		
 		# we're now at brace nest level 1, directly inside a char definition.
 		# only return here once the file pointer is advanced to the line or EOF
@@ -232,6 +251,7 @@ sub parse_char_file {
 		else {
 			# a freshie.
 			$char = $chars->{$id} = {
+				id => $id,
 				definitions => [ $def ],
 				mask => $c->{mask},
 				vanilla => $vanilla,
