@@ -3,19 +3,20 @@
 use strict;
 use warnings;
 use Carp;
+use Readonly;
 use Getopt::Long qw(:config gnu_getopt);
+use Cwd qw(abs_path);
 use File::Spec;
-use Data::Dumper;
-use File::Basename qw(basename);
+use File::Path qw(make_path remove_tree);
 
-my $CHAR_HIST_DIR = 'history/characters';
+## Configuration variables ##
 
 my $base_dir = "/cygdrive/c/Users/Stark/Documents/GitHub";
 my $vanilla_dir = "/cygdrive/c/Program Files (x86)/Steam/SteamApps/common/Crusader Kings II"; # must be absolute
 
 my @components = (
 	{ name => 'Vanilla', dirs => [ $vanilla_dir ], vanilla => 1 }, # comes first
-#	{ name => 'HIP', dirs => ['HIP_Common/HIP_Common'] },
+#	{ name => 'HIP', dirs => ['HIP/HIP_Commons'] },
 	{ name => 'PB', dirs => ['PB/ProjectBalance', 'PB/PB + SWMH'] },
 	{ name => 'SWMH', dirs => ['SWMH/SWMH', 'SWMHLogic/SWMH_Logic'] },
 	{
@@ -31,87 +32,164 @@ my @components = (
 	},
 );
 
-## End of config. variables ##
+# Currently, we only output a text file denoting free blocks. Intention was/is to
+# output a component color-coded 2D image of ID space block usage and
+# conflict/sharing visualization image, possibly with HTML drill-down to efficiently
+# cover such a large ID space (would be a [re]useful visualization Lego), so that's
+# why we use a mandatory output _directory_ for a mere text file of output.
 
+my $opt_output_dir = File::Spec->catdir(abs_path(), 'out_charalloc');
+my $opt_force = 0;
+my $opt_blk_sz = 10_000;
+
+## End of configuration variables ##
+
+GetOptions(
+	'b|block-size=i' => \$opt_blk_sz,
+    'o|output-dir=s' => \$opt_output_dir,
+	'f|force' => \$opt_force) or croak;
+
+croak "Block size must be a positive integer multiple of 10 (-b, --block-size)"
+	unless ($opt_blk_sz > 0 && $opt_blk_sz % 10 == 0);
+	
+if (-e $opt_output_dir) {
+	if ($opt_force) {
+		remove_tree($opt_output_dir);
+	}
+	else {
+		croak "Output directory preexists (use -f, --force)";
+	}
+}
+
+make_path($opt_output_dir) or croak "Couldn't create output path: $opt_output_dir";
+
+# We'll be changing dirs, so we need the output path absolute.
+$opt_output_dir = abs_path($opt_output_dir);
+
+my $free_blk_file = File::Spec->catfile($opt_output_dir, "free_blocks.txt");
 
 # Switch current working directory to the HIP components' base directory
-chdir $base_dir or croak "could not change working directory: $!: $base_dir";
+chdir $base_dir or croak "Couldn't change working directory: $!: $base_dir";
 
 # Master map of character IDs defined in history files to their source(s)
 my %char = ();
+
+Readonly my $ID_MIN => -1;
+Readonly my $ID_MAX => (1<<30)-1;
+Readonly my $CHAR_HIST_DIR => 'history/characters';
+
 my $n_char_scanned = 0;
+my $component_id = 0;
 
-my $ID_MIN = -1;
-my $ID_MAX = (1<<30)-1;
-
-# Scan all components' history files for characters (vanilla first)
 for my $c (@components) {
-	print "$c->{name}\n";
+#	print "$c->{name}\n";
 
-	# Initialize component-level counters
-	$c->{n} = 0; # Num. of characters defined
-	$c->{n_xd} = 0; # Num. of characters that collide with itself or other components, aside from vanilla
+	# Initialize component-level accounting
+	$c->{n} = 0;
+	$c->{n_xd} = 0;
+	$c->{n_uniq} = 0;
+
 	$c->{max} = $ID_MIN; # Maximum character ID defined
 	$c->{min} = $ID_MAX; # Minimum character ID defined
 	$c->{max_nv} = $ID_MIN; # Maximum non-vanilla character ID defined
 	$c->{min_nv} = $ID_MAX; # Minimum non-vanilla character ID defined
+	
+	$c->{mask} = 1;
+	$c->{mask} <<= $component_id;
+	$c->{id} = $component_id++;
+
+	# Scan all components' history files for characters (vanilla first)
 	
 	for my $mod_dir (@{ $c->{dirs} }) {
 		my $hist_dir = File::Spec->catdir($mod_dir, $CHAR_HIST_DIR);
 
 		next unless -e $hist_dir; # Only interested in those components feat. characters
 	
-		print "  $hist_dir\n";
+#		print "  $hist_dir\n";
 
 		for my $filename ( load_txt_filenames($hist_dir) ) {
 			$n_char_scanned += my $n_char = parse_char_file( File::Spec->catfile($hist_dir, $filename), $c, \%char );
-			print "    $filename ($n_char)\n";
+#			print "    $filename ($n_char)\n";
 		}
 	}
 }
 
 print "\nTotal character definitions scanned: $n_char_scanned\n";
 
-# Calculate collisons
+
+# Calculate collisons and other stuff which doesn't really matter
+
+# Why does little of this matter? The specific inter-component ID
+# space (incl. direct overlap/redefinition) sharing relationships
+# are what's of actual interest.  Only at least a 1.5D color image
+# can capture that information effectively, and even so, it's going
+# to be a pretty clever visualization if it's not 10000px tall and
+# smoothly mapped. All my good ideas on that involve a dynamic image
+# (e.g., a series of images that can be clicked-through in a browser
+# to drill-down into areas of high conflict/sharing and get past the
+# otherwise vast, spotted free spaces, showing specific space sharing
+# relationships very clearly). Not a priority.
+
 for my $ch (values %char) {
-	next if $ch->{vanilla};
+	my @defs = @{ $ch->{definitions} };
 	
-	if (scalar @{ $ch->{definitions} } > 1) {
-		for my $def (@{ $ch->{definitions} }) {
-			++$def->{component}{n_xd};
-			
-			# And here's where we can do a lot with multiply-defined characters w/i HIP
-			# and their exact locations but presently only count them...
-		}
+	if (scalar @defs > 1 && !$ch->{vanilla}) {
+		# Non-vanilla character has multiple definitions within HIP
+		
+		for my $def (@defs) { ++$def->{component}{n_xd} }
+	}
+	elsif (scalar @defs == 1) {
+		# Character is truly unique within all of HIP (not very useful)
+		
+		for my $def (@defs) { ++$def->{component}{n_uniq} }
+	}
+	else {
+		# Collision, but with a vanilla character, so it's not of interest.
 	}
 }
+
 
 # And here's where we can do a lot with overlapping character ID allocation blocks but
 # presently do no analysis whatsoever...
 
-# Calculate "unique" definitions (somewhat strange, because it includes vanilla characters,
-# and it is a measure of those actually defined or overridden by the mod-- not how many the
-# mod, in combination with vanilla files not overridden, might actually present in-game). A
-# lower number generally indicates less complexity and probably cleaner merge state with
-# vanilla.  OTOH, the component may just feature a lot of new characters.
-map { $_->{n_uniq} = $_->{n} - $_->{n_xd} } @components;
 
 # Sorted by unique character definitions, descending
 for my $c ( sort { $b->{n_uniq} <=> $a->{n_uniq} } @components ) {
 
-	print "\n\U$c->{name}\n";
-	print "Unique characters overridden (vanilla included): $c->{n_uniq}\n";
-	print "Collisions: $c->{n_xd}\n";
+	print "\n=="."\U$c->{name}"."==\n";
+	print "Truly unique characters:       $c->{n_uniq}\n";
 	
 	unless (exists $c->{vanilla}) {
-		print "Minimum non-vanilla ID: $c->{min_nv}\n";
-		print "Maximum non-vanilla ID: $c->{max_nv}\n";
+		print "Collisions (vanilla excluded): $c->{n_xd}\n";
+		print "Minimum non-vanilla ID:        $c->{min_nv}\n";
+		print "Maximum non-vanilla ID:        $c->{max_nv}\n";
 	}
 	else {
-		print "Minimum ID: $c->{min}\n";
-		print "Maximum ID: $c->{max}\n";	
+		print "Minimum ID:                    $c->{min}\n";
+		print "Maximum ID:                    $c->{max}\n";	
 	}
 }
+
+# open(my $f, '>', $free_blk_file) or croak "Failed to open for writing: $!: $free_blk_file";
+
+# my $last = 0;
+# my $blk_sz = $opt_blk_sz;
+
+# for my $id (sort { $a <=> $b } keys %chars) {
+
+	# my $start = $id;
+	# $start -= $id % $blk_sz if ($id % $blk_sz); # 
+	
+	# my $dist = $id - $last;
+
+	# if ($id < $end) {
+		# # nothing to scoop.
+		
+	# }
+	# else {
+		# # scoop some free blocks.
+	# }
+# }
 
 exit 0;
 
@@ -150,7 +228,7 @@ sub parse_char_file {
 			parse_err($file, $n_line, "failed to recognize character opening statement (span multiple lines?)");
 		}
 
-		my $def = { id => $id, component => $c, file => $file, line => $n_line };
+		my $def = { component => $c, file => $file, line => $n_line };
 		
 		# we're now at brace nest level 1, directly inside a char definition.
 		# only return here once the file pointer is advanced to the line or EOF
@@ -165,14 +243,19 @@ sub parse_char_file {
 		if (exists $chars->{$id}) {
 			# character already defined by component(s).
 			$char = $chars->{$id};
-			# append to definitions list.
 			
-			#++$c->{n_xd} unless $char->{vanilla}; # only count as collision if non-vanilla
+			# append to definitions list and update the mask for collisions.
+			$char->{mask} |= $c->{mask};
 			push @{ $char->{definitions} }, $def;
 		}
 		else {
 			# a freshie.
-			$char = $chars->{$id} = { vanilla => $vanilla, definitions => [ $def ] };
+			$char = $chars->{$id} = {
+				id => $id,
+				definitions => [ $def ],
+				mask => $c->{mask},
+				vanilla => $vanilla,
+			};
 		}
 		
 		++$c->{n};
