@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 4, 'patch': 0,
+version = {'major': 1, 'minor': 4, 'patch': 1,
            'Primary Developer': 'zijistark <zijistark@gmail.com>',
            'Developer':         'Meneth    <hip@meneth.com>',
            'Release Manager':   'Meneth    <hip@meneth.com>'}
@@ -701,7 +701,7 @@ def main():
                    'SWMH': 'SWMH',
                    'NBRT': 'NBRT+',
                    'ARKO': 'ARKOpack_Armoiries',
-                   'CPR': 'Cultures and Portraits Revamp',
+                   # 'CPR': 'Cultures and Portraits Revamp',
                    }
 
         getPkgVersions(modDirs)
@@ -720,42 +720,45 @@ def main():
             NBRT = enableModDefaultNo(u"NBRT+ ({})".format(versions['NBRT']))
 
         CPR = False
-        cprMissingDLCNames = detectCPRMissingDLCs()
 
-        if cprMissingDLCNames is None:  # DLC auto-detection failed
-            if platform == 'win':  # Ideally, this case will never happen, but OS variant testing is required.
-                promptUser(u"\n\nWHOA THERE! I need your help! While trying to qualify your installation\n"
-                           u"for the portrait enhancement mod CPR, I could not determine your active\n"
-                           u"CKII game folder. This is almost certainly because this installer has not\n"
-                           u"been adapted for your Windows OS version/variant yet. Please contact this\n"
-                           u"installer's primary developer, zijistark <zijistark@gmail.com>, to assist\n"
-                           u"him in promptly adding support for it. Until then, you cannot install CPR!\n\n"
-                           u"Press ENTER to continue.")
+        if False:
+            cprMissingDLCNames = detectCPRMissingDLCs()
 
-            else:  # No auto-detection supported on mac/lin, so allow the user to choose CPR.
-                print(u"\n\nNOTE: Cultures and Portraits Revamp (CPR) requires ALL of the\n"
-                      u"portrait packs to run without crashing. Portrait DLCs required for CPR:\n")
+            if cprMissingDLCNames is None:  # DLC auto-detection failed
+                if platform == 'win':  # Ideally, this case will never happen, but OS variant testing is required.
+                    promptUser(u"\n\nWHOA THERE! I need your help! While trying to qualify your installation\n"
+                               u"for the portrait enhancement mod CPR, I could not determine your active\n"
+                               u"CKII game folder. This is almost certainly because this installer has not\n"
+                               u"been adapted for your Windows OS version/variant yet. Please contact this\n"
+                               u"installer's primary developer, zijistark <zijistark@gmail.com>, to assist\n"
+                               u"him in promptly adding support for it. Until then, you cannot install CPR!\n\n"
+                               u"Press ENTER to continue.")
 
-                # Display names of required DLCs, sorted by latest release date
-                for name in [cprReqDLCNames[f] for f in sorted(cprReqDLCNames.keys(), reverse=True)]:
+                else:  # No auto-detection supported on mac/lin, so allow the user to choose CPR.
+                    print(u"\n\nNOTE: Cultures and Portraits Revamp (CPR) requires ALL of the\n"
+                          u"portrait packs to run without crashing. Portrait DLCs required for CPR:\n")
+
+                    # Display names of required DLCs, sorted by latest release date
+                    for name in [cprReqDLCNames[f] for f in sorted(cprReqDLCNames.keys(), reverse=True)]:
+                        print(u"+ {}".format(name))
+
+                    sys.stdout.write('\n')
+
+                    CPR = enableModDefaultNo(u"CPR ({})".format(versions['CPR']), compat=True)
+
+            elif len(cprMissingDLCNames) > 0:  # DLC auto-detection succeeded, but there were missing DLCs.
+                print(u"\n\nCultures and Portraits Revamp (CPR) requires portrait pack DLCs which you,\n"
+                      u"unforunately, are lacking. If you want to use CPR, you'll need to install the\n"
+                      u"following DLCs first:\n")
+
+                for name in sorted(cprMissingDLCNames):
                     print(u"+ {}".format(name))
 
                 sys.stdout.write('\n')
 
-                CPR = enableModDefaultNo(u"CPR ({})".format(versions['CPR']), compat=True)
+            else:  # DLC auto-detection succeeded, and CPR is clear for take-off.
+                CPR = enableMod('CPR ({})'.format(versions['CPR']))
 
-        elif len(cprMissingDLCNames) > 0:  # DLC auto-detection succeeded, but there were missing DLCs.
-            print(u"\n\nCultures and Portraits Revamp (CPR) requires portrait pack DLCs which you,\n"
-                  u"unforunately, are lacking. If you want to use CPR, you'll need to install the\n"
-                  u"following DLCs first:\n")
-
-            for name in sorted(cprMissingDLCNames):
-                print(u"+ {}".format(name))
-
-            sys.stdout.write('\n')
-
-        else:  # DLC auto-detection succeeded, and CPR is clear for take-off.
-            CPR = enableMod('CPR ({})'.format(versions['CPR']))
 
         SWMH = False
         VIETimmersion = False
@@ -773,6 +776,10 @@ def main():
         VIETtraits = False if PB else enableMod(u"VIET Traits ({})".format(versions['VIET']))
 
         VIET = (VIETtraits or VIETevents or VIETimmersion)
+
+        promptUser(u"\nNOTE: Due to current issues with Cultures and Portraits Revamp (CPR),\n"
+                   u"the HIP team has temporarily suspended its installation availability.\n\n"
+                   u"Press ENTER to start the installation of the rest of your selections.")
 
         # Prepare for installation
         if os.path.exists(targetFolder):
