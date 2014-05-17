@@ -777,7 +777,7 @@ def main():
 
         VIET = (VIETtraits or VIETevents or VIETimmersion)
 
-        promptUser(u"\nNOTE: Due to current issues with Cultures and Portraits Revamp (CPR),\n"
+        promptUser(u"\n\nNOTE: Due to current issues with Cultures and Portraits Revamp (CPR),\n"
                    u"the HIP team has temporarily suspended its installation availability.\n\n"
                    u"Press ENTER to start the installation of the rest of your selections.")
 
