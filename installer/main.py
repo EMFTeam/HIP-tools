@@ -639,7 +639,8 @@ def detectCPRMissingDLCs():
             break
 
     if not gameFolder:
-        return None
+        # Get really desperate now and just try to see if the default game folder is a valid one.
+        gameFolder = os.path.normpath("C:/Program Files (x86)/Steam/SteamApps/common/Crusader Kings II")
 
     dlcFolder = os.path.join(gameFolder, 'dlc')
     if not os.path.isdir(dlcFolder):
