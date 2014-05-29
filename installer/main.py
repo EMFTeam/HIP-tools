@@ -9,8 +9,8 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 4, 'patch': 0,
-           'Primary Developer': 'zijistark <zijistark@gmail.com>',
+version = {'major': 1, 'minor': 4, 'patch': 1,
+           'Primary Developer': 'zijistark <0zijistark@gmail.com>',
            'Developer':         'Meneth    <hip@meneth.com>',
            'Release Manager':   'Meneth    <hip@meneth.com>'}
 
@@ -616,6 +616,7 @@ cprReqDLCNames = {'dlc/dlc013.dlc': 'African Portraits',
                   'dlc/dlc016.dlc': 'Russian Portraits',
                   'dlc/dlc041.dlc': 'Turkish Portraits'}
 
+
 # Determine whether the DLCs required for CPR are installed in the active game folder.
 # Returns None if DLC detection (game folder detection) fails, an empty list if all
 # requirements are met, and otherwise the exact list of the missing DLCs' names.
@@ -649,6 +650,14 @@ def detectCPRMissingDLCs():
             del reqDLCNames[f]
 
     return reqDLCNames.values()
+
+
+def printCPRReqDLCNames():
+    # Display names of required DLCs, sorted by latest release date
+    for name in [cprReqDLCNames[f] for f in sorted(cprReqDLCNames.keys(), reverse=True)]:
+        print(u"+ {}".format(name))
+
+    sys.stdout.write('\n')
 
 
 def main():
@@ -723,24 +732,23 @@ def main():
         cprMissingDLCNames = detectCPRMissingDLCs()
 
         if cprMissingDLCNames is None:  # DLC auto-detection failed
-            if platform == 'win':  # Ideally, this case will never happen, but OS variant testing is required.
-                promptUser(u"\n\nWHOA THERE! I need your help! While trying to qualify your installation\n"
-                           u"for the portrait enhancement mod CPR, I could not determine your active\n"
-                           u"CKII game folder. This is almost certainly because this installer has not\n"
-                           u"been adapted for your Windows OS version/variant yet. Please contact this\n"
-                           u"installer's primary developer, zijistark <zijistark@gmail.com>, to assist\n"
-                           u"him in promptly adding support for it. Until then, you cannot install CPR!\n\n"
-                           u"Press ENTER to continue.")
+            if platform == 'win':  # While unlikely, this happens with the current auto-detection code.
+                                   # It is treated as a special case to still draw some visibility to
+                                   # the problem.
+                print(u"\n\nNOTE: The HIP installer could not successfully determine your active CKII\n"
+                      u"game folder. Thus, it cannot auto-detect whether you meet all the portrait DLC\n"
+                      u"prerequisites of CPR. You may still install CPR, but expect the game to crash\n"
+                      u"with reckless abandon if you don't have all of following DLCs enabled:\n")
 
-            else:  # No auto-detection supported on mac/lin, so allow the user to choose CPR.
+                printCPRReqDLCNames()
+
+                CPR = enableModDefaultNo(u"CPR ({})".format(versions['CPR']), compat=True)
+
+            else:  # No auto-detection supported on mac/lin, so allow the user to choose CPR w/ zero fuss.
                 print(u"\n\nNOTE: Cultures and Portraits Revamp (CPR) requires ALL of the\n"
                       u"portrait packs to run without crashing. Portrait DLCs required for CPR:\n")
 
-                # Display names of required DLCs, sorted by latest release date
-                for name in [cprReqDLCNames[f] for f in sorted(cprReqDLCNames.keys(), reverse=True)]:
-                    print(u"+ {}".format(name))
-
-                sys.stdout.write('\n')
+                printCPRReqDLCNames()
 
                 CPR = enableModDefaultNo(u"CPR ({})".format(versions['CPR']), compat=True)
 
@@ -754,8 +762,9 @@ def main():
 
             sys.stdout.write('\n')
 
-        else:  # DLC auto-detection succeeded, and CPR is clear for take-off.
-            CPR = enableMod('CPR ({})'.format(versions['CPR']))
+        else:  # DLC auto-detection succeeded, and CPR is clear for take-off. However, we still default to No.
+            print(u"[ All installed portrait DLCs required for CPR auto-detected OK! ]")
+            CPR = enableModDefaultNo(u"CPR ({})".format(versions['CPR']), compat=True)
 
         SWMH = False
         VIETimmersion = False
