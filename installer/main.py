@@ -9,8 +9,8 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 4, 'patch': 1,
-           'Primary Developer': 'zijistark <0zijistark@gmail.com>',
+version = {'major': 1, 'minor': 4, 'patch': 2,
+           'Primary Developer': 'zijistark <zijistark@gmail.com>',
            'Developer':         'Meneth    <hip@meneth.com>',
            'Release Manager':   'Meneth    <hip@meneth.com>'}
 
@@ -627,7 +627,7 @@ def detectCPRMissingDLCs():
 
     # Method currently only works on Windows (and probably only Win7 and Win8), so quit
     # now if we're not at least running a Windows platform (win32, win64, or cygwin).
-    if platform != 'win':
+    if platform != 'win' or sys.platform.startswith('cyg'):
         return None
 
     gameFolder = None
