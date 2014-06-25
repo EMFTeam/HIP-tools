@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 4, 'patch': 2,
+version = {'major': 1, 'minor': 5, 'patch': 0,
            'Primary Developer': 'zijistark <zijistark@gmail.com>',
            'Developer':         'Meneth    <hip@meneth.com>',
            'Release Manager':   'Meneth    <hip@meneth.com>'}
@@ -397,7 +397,7 @@ def cleanUserDir(userDir):
 def resetCaches():
     if platform == 'mac':
         print(u'Clearing preexisting CKII gfx/map cache')
-        cleanUserDir('..')
+        cleanUserDir('..')  # TODO: Find out if the user_dir changes with the new 2.1.5 launcher
     elif platform == 'win':
         print(u'Clearing preexisting HIP-related CKII gfx/map caches ...')
 
@@ -413,7 +413,7 @@ def resetCaches():
             if os.path.isdir(userDir) and 'HIP' in userDir:
                 cleanUserDir(userDir)
     else:
-        pass  # TODO: linux user dirs are where? [can check this on my box but don't know about user_dir support]
+        pass  # TODO: Find out if the user_dir changes with the new 2.1.5 launcher
 
 
 # Changes the current working directory to the same as that of the
@@ -503,7 +503,10 @@ def getPkgVersions(modDirs):
     for mod in modDirs.keys():
         f = os.path.join("modules", modDirs[mod], "version.txt")
         dbg.trace("%s: reading %s" % (mod, f))
-        versions[mod] = unicode(open(f).readline().strip())
+        if os.path.exists(f):
+            versions[mod] = unicode(open(f).readline().strip())
+        else:
+            versions[mod] = u'no version'
         dbg.trace("%s: version: %s" % (mod, versions[mod]))
     dbg.pop()
 
@@ -511,9 +514,13 @@ def getPkgVersions(modDirs):
 def getInstallOptions():
     # Determine user language for installation
     global language
+    global betaMode
     language = promptUser(u"For English, hit ENTER. En français, taper 'f'. Para español, presiona 'e'.")
 
-    if language == 'f':
+    if language.startswith('B') or language.startswith('b'):
+        language = 'en'
+        betaMode = True
+    elif language == 'f':
         language = 'fr'
     elif language == 'e':
         language = 'es'
@@ -669,6 +676,8 @@ def main():
 
         dbgMode = (len(sys.argv) > 1 and '-D' in sys.argv[1:])
         versionMode = (len(sys.argv) > 1 and '-V' in sys.argv[1:])
+        global betaMode
+        betaMode = False
 
         # The debug tracer's file object is unbuffered (always flushes all writes
         # to disk/pipe immediately), and it lives until the end of the program, so
@@ -712,6 +721,7 @@ def main():
                    'NBRT': 'NBRT+',
                    'ARKO': 'ARKOpack_Armoiries',
                    'CPR': 'Cultures and Portraits Revamp',
+                   'EMF': 'EMF',
                    }
 
         getPkgVersions(modDirs)
@@ -721,6 +731,11 @@ def main():
 
         # Determine module combination...
         PB = enableMod(u"Project Balance ({})".format(versions['PB']))
+        EMF = False
+
+        if betaMode:
+            EMF = enableMod(u"EMF: Extended Mechanics and Flavor ({})".format(versions['EMF']))
+
         ARKOarmoiries = enableMod(u"ARKOpack Armoiries (coats of arms) ({})".format(versions['ARKO']))
         ARKOinterface = enableMod(u"ARKOpack Interface ({})".format(versions['ARKO']))
 
@@ -870,6 +885,16 @@ def main():
             else:
                 pushFolder("VIET_Immersion/vanilla")
                 pushFolder("Converter/VIET")
+            dbg.pop()
+
+        if EMF:
+            dbg.push('merging EMF...')
+            moduleOutput.append("Extended Mechanics and Flavor [EMF] (%s)" % versions['EMF'])
+            pushFolder('EMF/EMF')
+            if PB:
+                pushFolder('EMF/EMF+PB')
+            if SWMH:
+                pushFolder('EMF/EMF+SWMH')
             dbg.pop()
 
         if CPR:
