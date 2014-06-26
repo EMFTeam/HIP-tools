@@ -779,25 +779,20 @@ def main():
             sys.stdout.write('\n')
 
         else:  # DLC auto-detection succeeded, and CPR is clear for take-off. However, we still default to No.
-            print(u"[ All installed portrait DLCs required for CPR auto-detected OK! ]")
+            print(u"[ All required portrait DLCs for CPR auto-detected! ]")
             CPR = enableModDefaultNo(u"CPR ({})".format(versions['CPR']), compat=True)
 
-        SWMH = False
         VIETimmersion = False
-        SWMHnative = True
-
-        swmhVIET = enableModXOR('SWMH', versions['SWMH'], 'VIET Immersion', versions['VIET'])
-
-        if swmhVIET == 'SWMH':
-            SWMH = True
-            SWMHnative = enableMod(localise('SWMH_NATIVE'))
-        elif swmhVIET == 'VIET Immersion':
-            VIETimmersion = True
-
         VIETevents = True if VIETimmersion else enableMod(u"VIET Events ({})".format(versions['VIET']))
         VIETtraits = False if PB else enableMod(u"VIET Traits ({})".format(versions['VIET']))
-
         VIET = (VIETtraits or VIETevents or VIETimmersion)
+
+        print(u"[ NOTE: VIET Immersion is not presently compatible with patch 2.1.5 ]")
+        SWMH = enableMod(u'SWMH ({})'.format(versions['SWMH']))
+        SWMHnative = True
+
+        if SWMH:
+            SWMHnative = enableMod(localise('SWMH_NATIVE'))
 
         # Prepare for installation
         if os.path.exists(targetFolder):
