@@ -812,6 +812,9 @@ def main():
         moduleOutput = ["Historical Immersion Project (%s)\nEnabled modules:\n" % versions['pkg']]
         dbg.push('performing virtual filesystem merge...')
 
+        if EMF:
+            pushFolder("HIP_Common")
+
         if PB or VIETimmersion:
             pushFolder("Converter/Common")
 
@@ -890,11 +893,11 @@ def main():
         if EMF:
             dbg.push('merging EMF...')
             moduleOutput.append("Extended Mechanics and Flavor [EMF] (%s)" % versions['EMF'])
-            pushFolder('EMF/EMF')
-            if PB:
-                pushFolder('EMF/EMF+PB')
+            pushFolder('EMF')
             if SWMH:
-                pushFolder('EMF/EMF+SWMH')
+                pushFolder('EMF+SWMH')
+            if PB:
+                pushFolder('EMF+PB')
             dbg.pop()
 
         if CPR:
