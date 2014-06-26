@@ -879,16 +879,16 @@ def main():
                 pushFolder("PB_VIET_Events")
             dbg.pop()
 
-        if VIETimmersion:
-            dbg.push("merging VIET Immersion...")
-            moduleOutput.append("VIET Immersion (%s)\n" % versions['VIET'])
-            pushFolder("VIET_Immersion/common")
-            if PB:
-                pushFolder("VIET_Immersion/PB")
-            else:
-                pushFolder("VIET_Immersion/vanilla")
-                pushFolder("Converter/VIET")
-            dbg.pop()
+        # if VIETimmersion:
+        #     dbg.push("merging VIET Immersion...")
+        #     moduleOutput.append("VIET Immersion (%s)\n" % versions['VIET'])
+        #     pushFolder("VIET_Immersion/common")
+        #     if PB:
+        #         pushFolder("VIET_Immersion/PB")
+        #     else:
+        #         pushFolder("VIET_Immersion/vanilla")
+        #         pushFolder("Converter/VIET")
+        #     dbg.pop()
 
         if EMF:
             dbg.push('merging EMF...')
