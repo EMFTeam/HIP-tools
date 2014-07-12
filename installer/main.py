@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 5, 'patch': 0,
+version = {'major': 1, 'minor': 5, 'patch': 1,
            'Primary Developer': 'zijistark <zijistark@gmail.com>',
            'Developer':         'Meneth    <hip@meneth.com>',
            'Release Manager':   'Meneth    <hip@meneth.com>'}
@@ -734,7 +734,7 @@ def main():
         EMF = False
 
         if betaMode:
-            EMF = enableMod(u"EMF: Extended Mechanics and Flavor ({})".format(versions['EMF']))
+            EMF = enableMod(u"EMF: Extended Mechanics & Flavor ({})".format(versions['EMF']))
 
         ARKOarmoiries = enableMod(u"ARKOpack Armoiries (coats of arms) ({})".format(versions['ARKO']))
         ARKOinterface = enableMod(u"ARKOpack Interface ({})".format(versions['ARKO']))
@@ -784,7 +784,7 @@ def main():
 
         VIETimmersion = False
         VIETevents = True if VIETimmersion else enableMod(u"VIET Events ({})".format(versions['VIET']))
-        VIETtraits = False if PB else enableMod(u"VIET Traits ({})".format(versions['VIET']))
+        VIETtraits = False if (PB or EMF) else enableMod(u"VIET Traits ({})".format(versions['VIET']))
         VIET = (VIETtraits or VIETevents or VIETimmersion)
 
         print(u"[ NOTE: VIET Immersion is not presently compatible with patch 2.1.5 ]")
