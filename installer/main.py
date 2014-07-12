@@ -35,26 +35,26 @@ def initLocalisation():
             'ENABLE_MOD':
             {
                 'fr': u"Voulez-vous installer {} ? [oui]",
-                'es': u"Deseas instalar {}? [si]",
-                'en': u"Do you want to install {}? [yes]",
+                'es': u"Instalar {}? [si]",
+                'en': u"Install {}? [yes]",
             },
             'ENABLE_MOD_NOT_DEFAULT':
             {
                 'fr': u"Voulez-vous installer {} ? [non]",
-                'es': u"Deseas instalar {}? [no]",
-                'en': u"Do you want to install {}? [no]",
+                'es': u"Instalar {}? [no]",
+                'en': u"Install {}? [no]",
             },
             'ENABLE_MOD_XOR':
             {
                 'fr': u"Voulez-vous installer {} ({}) ? [oui]",
-                'es': u"Deseas instalar {} ({})? [si]",
-                'en': u"Do you want to install {} ({})? [yes]",
+                'es': u"Instalar {} ({})? [si]",
+                'en': u"Install {} ({})? [yes]",
             },
             'ENABLE_MOD_NOT_DEFAULT_COMPAT':
             {
                 'fr': u"\nNOTE: {} might be incompatible with your system.\nVoulez-vous installer {} ? [non]",
-                'es': u"\nNOTE: {} might be incompatible with your system.\nDeseas instalar {}? [no]",
-                'en': u"\nNOTE: {} might be incompatible with your system.\nDo you want to install {}? [no]",
+                'es': u"\nNOTE: {} might be incompatible with your system.\nInstalar {}? [no]",
+                'en': u"\nNOTE: {} might be incompatible with your system.\nInstall {}? [no]",
             },
             'ENABLE_MOD_XOR_WARN':
             {
@@ -754,7 +754,7 @@ def main():
                 print(u"\n\nNOTE: The HIP installer could not successfully determine your active CKII\n"
                       u"game folder. Thus, it cannot auto-detect whether you meet all the portrait DLC\n"
                       u"prerequisites of CPR. You may still install CPR, but expect the game to crash\n"
-                      u"with reckless abandon if you don't have all of following DLCs enabled:\n")
+                      u"with reckless abandon if you don't have all of the following DLCs enabled:\n")
 
                 printCPRReqDLCNames()
 
@@ -787,7 +787,7 @@ def main():
         VIETtraits = False if (PB or EMF) else enableMod(u"VIET Traits ({})".format(versions['VIET']))
         VIET = (VIETtraits or VIETevents or VIETimmersion)
 
-        print(u"[ NOTE: VIET Immersion is not presently compatible with patch 2.1.5 ]")
+        print(u"[ NOTE: VIET Immersion is not presently compatible with patches 2.1.5, 2.1.6 ]")
         SWMH = enableMod(u'SWMH ({})'.format(versions['SWMH']))
         SWMHnative = True
 
@@ -887,7 +887,7 @@ def main():
 
         if EMF:
             dbg.push('merging EMF...')
-            moduleOutput.append("Extended Mechanics and Flavor [EMF] (%s)" % versions['EMF'])
+            moduleOutput.append("Extended Mechanics and Flavor [EMF] (%s)\n" % versions['EMF'])
             pushFolder('EMF')
             if SWMH:
                 pushFolder('EMF+SWMH')
