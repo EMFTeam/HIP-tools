@@ -9,10 +9,9 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 5, 'patch': 1,
-           'Primary Developer': 'zijistark <zijistark@gmail.com>',
-           'Developer':         'Meneth    <hip@meneth.com>',
-           'Release Manager':   'Meneth    <hip@meneth.com>'}
+version = {'major': 1, 'minor': 5, 'patch': 2,
+           'Developer':       'zijistark <zijistark@gmail.com>',
+           'Release Manager': 'Meneth    <hip@meneth.com>'}
 
 
 # noinspection PyPep8
@@ -621,7 +620,8 @@ cprReqDLCNames = {'dlc/dlc013.dlc': 'African Portraits',
                   'dlc/dlc002.dlc': 'Mongol Face Pack',
                   'dlc/dlc020.dlc': 'Norse Portraits',
                   'dlc/dlc016.dlc': 'Russian Portraits',
-                  'dlc/dlc041.dlc': 'Turkish Portraits'}
+                  'dlc/dlc041.dlc': 'Turkish Portraits',
+                  'dlc/dlc044.dlc': 'Persian Portraits'}
 
 
 # Determine whether the DLCs required for CPR are installed in the active game folder.
