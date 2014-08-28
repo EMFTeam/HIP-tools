@@ -735,6 +735,7 @@ def main():
 
         if betaMode:
             EMF = enableMod(u"EMF: Extended Mechanics & Flavor ({})".format(versions['EMF']))
+            PB = PB or EMF
 
         ARKOarmoiries = enableMod(u"ARKOpack Armoiries (coats of arms) ({})".format(versions['ARKO']))
         ARKOinterface = enableMod(u"ARKOpack Interface ({})".format(versions['ARKO']))
@@ -779,7 +780,7 @@ def main():
             sys.stdout.write('\n')
 
         else:  # DLC auto-detection succeeded, and CPR is clear for take-off. However, we still default to No.
-            print(u"[ All required portrait DLCs for CPR auto-detected! ]")
+            print(u"[ Required portrait DLCs for CPR auto-detected OK... ]")
             CPR = enableModDefaultNo(u"CPR ({})".format(versions['CPR']), compat=True)
 
         VIETimmersion = False
@@ -787,7 +788,6 @@ def main():
         VIETtraits = False if (PB or EMF) else enableMod(u"VIET Traits ({})".format(versions['VIET']))
         VIET = (VIETtraits or VIETevents or VIETimmersion)
 
-        print(u"[ NOTE: VIET Immersion is not presently compatible with patches 2.1.5, 2.1.6 ]")
         SWMH = enableMod(u'SWMH ({})'.format(versions['SWMH']))
         SWMHnative = True
 
@@ -796,7 +796,11 @@ def main():
 
         # Prepare for installation
         if os.path.exists(targetFolder):
+            print(u"\nRemoving preexisting '%s' ..." % targetFolder)
+            startTime = time.time()
             rmTree(targetFolder, 'target folder preexists. removing...')
+            endTime = time.time()
+            print(u'Removed (%0.1f sec).\n' % (endTime - startTime))
 
         mkTree(targetFolder)
 
@@ -887,12 +891,10 @@ def main():
 
         if EMF:
             dbg.push('merging EMF...')
-            moduleOutput.append("Extended Mechanics and Flavor [EMF] (%s)\n" % versions['EMF'])
+            moduleOutput.append("Extended Mechanics & Flavor [EMF] (%s)\n" % versions['EMF'])
             pushFolder('EMF')
             if SWMH:
                 pushFolder('EMF+SWMH')
-            if PB:
-                pushFolder('EMF+PB')
             dbg.pop()
 
         if CPR:
@@ -920,7 +922,7 @@ def main():
             rmTree("modules")  # Cleanup
 
         endTime = time.time()
-        print(u'Folder compilation took %0.1f seconds.\n' % (endTime - startTime))
+        print(u'Installed (%0.1f sec).\n' % (endTime - startTime))
 
         mapFilename = os.path.join(targetFolder, "file2mod_map.txt")
         print(u"Mapped listing of all compiled files to their source modules:")
