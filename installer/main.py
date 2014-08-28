@@ -895,6 +895,8 @@ def main():
             pushFolder('EMF')
             if SWMH:
                 pushFolder('EMF+SWMH')
+            if VIETevents:
+                pushFolder('EMF+VIEvents')
             dbg.pop()
 
         if CPR:
