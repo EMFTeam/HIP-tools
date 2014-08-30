@@ -355,6 +355,7 @@ def stripPathHead(path):
 
 def compileTarget():
     print(localise('COMPILING').format(targetFolder))
+    sys.stdout.flush()
     mapFilename = os.path.join(targetFolder, 'file2mod_map.txt')
     dbg.push("compiling target with file->mod mapping dumped to '{}'...".format(mapFilename))
     x = len(targetSrc) // 10
@@ -797,6 +798,7 @@ def main():
         # Prepare for installation
         if os.path.exists(targetFolder):
             print(u"\nRemoving preexisting '%s' ..." % targetFolder)
+            sys.stdout.flush()
             startTime = time.time()
             rmTree(targetFolder, 'target folder preexists. removing...')
             endTime = time.time()
