@@ -734,9 +734,8 @@ def main():
         PB = enableMod(u"Project Balance ({})".format(versions['PB']))
         EMF = False
 
-        if betaMode:
-            EMF = enableMod(u"EMF: Extended Mechanics & Flavor ({})".format(versions['EMF']))
-            PB = PB or EMF
+        EMF = enableMod(u"EMF: Extended Mechanics & Flavor ({})".format(versions['EMF']))
+        PB = PB or EMF
 
         ARKOarmoiries = enableMod(u"ARKOpack Armoiries (coats of arms) ({})".format(versions['ARKO']))
         ARKOinterface = enableMod(u"ARKOpack Interface ({})".format(versions['ARKO']))
@@ -813,10 +812,10 @@ def main():
         moduleOutput = ["Historical Immersion Project (%s)\nEnabled modules:\n" % versions['pkg']]
         dbg.push('performing virtual filesystem merge...')
 
-        if EMF:
+        if EMF or PB:
             pushFolder("HIP_Common")
 
-        if PB or VIETimmersion:
+        if EMF or PB or VIETimmersion:
             pushFolder("Converter/Common")
 
         if ARKOarmoiries:
