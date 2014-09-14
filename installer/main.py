@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 5, 'patch': 3,
+version = {'major': 1, 'minor': 5, 'patch': 4,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -731,11 +731,14 @@ def main():
         getInstallOptions()
 
         # Determine module combination...
-        PB = enableMod(u"Project Balance ({})".format(versions['PB']))
-        EMF = False
 
         EMF = enableMod(u"EMF: Extended Mechanics & Flavor ({})".format(versions['EMF']))
-        PB = PB or EMF
+        PB = True
+
+        if EMF:
+            print(u"[ Automatically including dependencies from Project Balance ... ]")
+        else:
+            PB = enableMod(u"Project Balance ({})".format(versions['PB']))
 
         ARKOarmoiries = enableMod(u"ARKOpack Armoiries (coats of arms) ({})".format(versions['ARKO']))
         ARKOinterface = enableMod(u"ARKOpack Interface ({})".format(versions['ARKO']))
