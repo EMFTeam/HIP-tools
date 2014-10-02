@@ -2,7 +2,7 @@
 # -*- coding: cp1252 -*-
 # -*- python-indent-offset: 4 -*-
 
-VERSION = '1.0'
+VERSION = '1.0-1'
 
 import sys
 import traceback
