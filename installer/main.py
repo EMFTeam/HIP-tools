@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 5, 'patch': 4,
+version = {'major': 1, 'minor': 5, 'patch': 5,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -736,7 +736,7 @@ def main():
         PB = True
 
         if EMF:
-            print(u"[ Automatically including dependencies from Project Balance ... ]")
+            print(u"[ Automatically including some of Project Balance ... ]")
         else:
             PB = enableMod(u"Project Balance ({})".format(versions['PB']))
 
@@ -787,6 +787,10 @@ def main():
             CPR = enableModDefaultNo(u"CPR ({})".format(versions['CPR']), compat=True)
 
         VIETimmersion = False
+
+        if betaMode:
+            VIETimmersion = enableMod(u"VIET Immersion ({})".format(versions['VIET']))
+
         VIETevents = True if VIETimmersion else enableMod(u"VIET Events ({})".format(versions['VIET']))
         VIETtraits = False if (PB or EMF) else enableMod(u"VIET Traits ({})".format(versions['VIET']))
         VIET = (VIETtraits or VIETevents or VIETimmersion)
@@ -815,7 +819,7 @@ def main():
         moduleOutput = ["Historical Immersion Project (%s)\nEnabled modules:\n" % versions['pkg']]
         dbg.push('performing virtual filesystem merge...')
 
-        if EMF or PB:
+        if EMF or PB or VIETimmersion or VIETevents:
             pushFolder("HIP_Common")
 
         if EMF or PB or VIETimmersion:
@@ -882,16 +886,18 @@ def main():
                 pushFolder("PB_VIET_Events")
             dbg.pop()
 
-        # if VIETimmersion:
-        #     dbg.push("merging VIET Immersion...")
-        #     moduleOutput.append("VIET Immersion (%s)\n" % versions['VIET'])
-        #     pushFolder("VIET_Immersion/common")
-        #     if PB:
-        #         pushFolder("VIET_Immersion/PB")
-        #     else:
-        #         pushFolder("VIET_Immersion/vanilla")
-        #         pushFolder("Converter/VIET")
-        #     dbg.pop()
+        if VIETimmersion:
+            dbg.push("merging VIET Immersion...")
+            moduleOutput.append("VIET Immersion (%s)\n" % versions['VIET'])
+            pushFolder("VIET_Immersion/common")
+            if PB:
+                pushFolder("VIET_Immersion/PB")
+                if EMF:
+                    pushFolder("VIET_Immersion/EMF")
+            else:
+                pushFolder("VIET_Immersion/vanilla")
+                pushFolder("Converter/VIET")
+            dbg.pop()
 
         if EMF:
             dbg.push('merging EMF...')
