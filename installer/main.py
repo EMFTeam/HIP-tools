@@ -801,8 +801,8 @@ def main():
         if SWMH:
             SWMHnative = enableMod(localise('SWMH_NATIVE'))
 
-		HIP = EMF or PB or VIETimmersion or VIETevents
-			
+        HIP = EMF or PB or VIETimmersion or VIETevents
+
         # Prepare for installation
         if os.path.exists(targetFolder):
             print(u"\nRemoving preexisting '%s' ..." % targetFolder)
@@ -901,16 +901,6 @@ def main():
                 pushFolder("Converter/VIET")
             dbg.pop()
 
-        if EMF:
-            dbg.push('merging EMF...')
-            moduleOutput.append("Extended Mechanics & Flavor [EMF] (%s)\n" % versions['EMF'])
-            pushFolder('EMF')
-            if SWMH:
-                pushFolder('EMF+SWMH')
-            if VIETevents:
-                pushFolder('EMF+VEvents')
-            dbg.pop()
-
         if CPR:
             dbg.push('merging CPR...')
             moduleOutput.append("Cultures and Portaits Revamp (%s)\n" % versions['CPR'])
@@ -923,6 +913,16 @@ def main():
                 pushFolder('Cultures and Portraits Revamp/PB')
             else:
                 pushFolder('Cultures and Portraits Revamp/Vanilla')
+            dbg.pop()
+
+        if EMF:
+            dbg.push('merging EMF...')
+            moduleOutput.append("Extended Mechanics & Flavor [EMF] (%s)\n" % versions['EMF'])
+            pushFolder('EMF')
+            if SWMH:
+                pushFolder('EMF+SWMH')
+            if VIETevents:
+                pushFolder('EMF+VEvents')
             dbg.pop()
 
         dbg.pop("virtual filesystem merge complete")
