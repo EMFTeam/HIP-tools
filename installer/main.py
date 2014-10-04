@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 5, 'patch': 5,
+version = {'major': 1, 'minor': 5, 'patch': 6,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -801,6 +801,8 @@ def main():
         if SWMH:
             SWMHnative = enableMod(localise('SWMH_NATIVE'))
 
+		HIP = EMF or PB or VIETimmersion or VIETevents
+			
         # Prepare for installation
         if os.path.exists(targetFolder):
             print(u"\nRemoving preexisting '%s' ..." % targetFolder)
@@ -819,9 +821,6 @@ def main():
         moduleOutput = ["Historical Immersion Project (%s)\nEnabled modules:\n" % versions['pkg']]
         dbg.push('performing virtual filesystem merge...')
 
-        if EMF or PB or VIETimmersion or VIETevents:
-            pushFolder("HIP_Common")
-
         if EMF or PB or VIETimmersion:
             pushFolder("Converter/Common")
 
@@ -835,10 +834,13 @@ def main():
             dbg.push("merging ARKO Interface...")
             moduleOutput.append("ARKO Interface (%s)\n" % versions['ARKO'])
             pushFolder("ARKOpack_Interface")
-            if VIET:
+            if HIP:
                 popTree("gfx/event_pictures")
             dbg.pop()
 
+        if HIP:
+            pushFolder("HIP_Common")
+			
         if VIET:
             pushFolder("VIET_Assets")
 
