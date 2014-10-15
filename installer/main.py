@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 6, 'patch': 1,
+version = {'major': 1, 'minor': 7, 'patch': 0,
            'Developer': 'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -69,9 +69,9 @@ def initLocalisation():
                 },
             'COMPILING':
                 {
-                    'fr': u"Compilation '{}' ...",
-                    'es': u"Compilar '{}' ...",
-                    'en': u"Compiling '{}' ...",
+                    'fr': u"> Compilation ...",
+                    'es': u"> Compilar ...",
+                    'en': u"> Compiling ...",
                 },
             'SWMH_NATIVE':
                 {
@@ -273,7 +273,7 @@ def mkTree(d, traceMsg=None):
     os.makedirs(d)
 
 
-def pushFolder(folder, prunePaths=None, ignoreFiles=None):
+def pushFolder(folder, targetFolder, prunePaths=None, ignoreFiles=None):
     if not ignoreFiles:
         ignoreFiles = {}
     if not prunePaths:
@@ -325,7 +325,7 @@ def pushFolder(folder, prunePaths=None, ignoreFiles=None):
     dbg.pop()
 
 
-def popFile(f):
+def popFile(f, targetFolder):
     f = os.path.normpath(f)
     p = os.path.join(targetFolder, f)
     if p in targetSrc:
@@ -333,7 +333,7 @@ def popFile(f):
         del targetSrc[p]
 
 
-def popTree(d):
+def popTree(d, targetFolder):
     d = os.path.normpath(d)
     t = os.path.join(targetFolder, d)
     dbg.push("popTree: {}".format(quoteIfWS(t)))
@@ -353,18 +353,23 @@ def stripPathHead(path):
     return path[newStart:]
 
 
-def compileTarget():
-    print(localise('COMPILING').format(targetFolder))
+def compileTarget(mapFilename):
+    print(localise('COMPILING'))
     sys.stdout.flush()
-    mapFilename = os.path.join(targetFolder, 'file2mod_map.txt')
+
     dbg.push("compiling target with file->mod mapping dumped to '{}'...".format(mapFilename))
     x = len(targetSrc) // 10
+
     with open(mapFilename, "w") as mapFile:
         for n, dstPath in enumerate(sorted(targetSrc)):
+
             if n % x == 0:
                 print(u"{}%".format((n // x * 10)))
+                sys.stdout.flush()
+
             src = targetSrc[dstPath]
             mapFile.write('%s <= [%s]\n' % (stripPathHead(dstPath), src.folder))
+
             if src.isDir:
                 mkTree(dstPath)
             elif move:
@@ -562,14 +567,16 @@ def getInstallOptions():
 
     # Note that we use the case-preserving form of promptUser for the target folder (also determines name in launcher)
 
-    global targetFolder
     targetFolder = '' if (steamMode or fastMode) \
         else promptUser(localise('TARGET_FOLDER').format(unicode(defaultFolder)), lc=False)
+
     if targetFolder == '':
         targetFolder = defaultFolder
     else:
         pass  # TODO: verify it contains no illegal characters
     dbg.trace('user choice: target folder: {}'.format(quoteIfWS(targetFolder)))
+
+    return targetFolder
 
 
 # Find installation location for a Steam game with the given Steam AppID with the methodology variant denoted
@@ -671,6 +678,45 @@ def printCPRReqDLCNames():
     sys.stdout.write('\n')
 
 
+def scaffoldMod(baseFolder, targetFolder, modBasename, modName, modPath, modUserDir=None):
+    # Remove preexisting target folder...
+    if os.path.exists(targetFolder):
+
+        if not steamMode:
+            sys.stdout.write('\n')
+
+        print(u"> Removing preexisting '%s' ..." % targetFolder)
+        sys.stdout.flush()
+        startTime = time.time()
+        rmTree(targetFolder, 'target folder preexists. removing...')
+        endTime = time.time()
+        print(u'> Removed (%0.1f sec).\n' % (endTime - startTime))
+
+    mkTree(targetFolder)
+
+    modFilename = modBasename + '.mod'
+
+    # CKII command line argument parser can't handle dashes in .mod file names (which are passed as arguments to
+    # CKII.exe by the launcher)
+    if '-' in modFilename:
+        modFilename = modFilename.replace('-', '__')
+
+    modFilename = os.path.join(baseFolder, modFilename)
+
+    # Generate a new .mod file...
+    dbg.trace("generating .mod file " + quoteIfWS(modFilename))
+
+    with open(modFilename, "w") as modFile:
+        modFile.write('name = "{}"  # Name to use as a dependency if making a sub-mod\n'.format(modName))
+        modFile.write('path = "mod/{}"\n'.format(modPath))
+        if modUserDir is not None:
+            modFile.write('user_dir = "%s"  '
+                          '# Ensure we get our own versions of the gfx/map caches and savegames\n' %
+                          modBasename)
+
+    return modFilename
+
+
 def main():
     # noinspection PyBroadException
     try:
@@ -735,10 +781,8 @@ def main():
 
         getPkgVersions(modDirs)
 
-        mods = {}
-
         # Prompt user for options related to this install
-        getInstallOptions()
+        targetFolder = getInstallOptions()
 
         # Determine module combination...
 
@@ -752,12 +796,6 @@ def main():
             else:
                 PB = enableMod(u"Project Balance ({})".format(versions['PB']))
 
-        ARKOarmoiries = True if steamMode \
-            else enableMod(u"ARKOpack Armoiries (coats of arms) ({})".format(versions['ARKO']))
-
-        ARKOinterface = False if (steamMode or fastMode) \
-            else enableMod(u"ARKOpack Interface ({})".format(versions['ARKO']))
-
         SWMH = False if steamMode else enableMod(u'SWMH ({})'.format(versions['SWMH']))
         SWMHnative = True
 
@@ -769,14 +807,23 @@ def main():
         else:
             NBRT = False if steamMode else enableModDefaultNo(u"NBRT+ ({})".format(versions['NBRT']))
 
-        if NBRT and SWMH:
-            NBRTfull = enableModDefaultNo(u"NBRT+SWMH ({})".format(versions['NBRT']))
+        if NBRT and SWMH and betaMode:
+            NBRTfull = enableModDefaultNo(u"BETA: Full NBRT+SWMH ({})".format(versions['NBRT']))
         else:
             NBRTfull = False
 
+        # ARKOCoA = True if steamMode \
+        #     else enableMod(u"ARKOpack Armoiries (coats of arms) ({})".format(versions['ARKO']))
+        #
+        # ARKOInt = False if (steamMode or fastMode) \
+        #     else enableMod(u"ARKOpack Interface ({})".format(versions['ARKO']))
+
+        ARKOCoA = False
+        ARKOInt = False
+
         CPR = False
 
-        if not steamMode:
+        if not steamMode and False:  # Disabled while CPR is disabled
             cprMissingDLCNames = detectCPRMissingDLCs()
 
             if cprMissingDLCNames is None:  # DLC auto-detection failed
@@ -821,182 +868,176 @@ def main():
         VIETimmersion = False
 
         if betaMode:
-            VIETimmersion = enableMod(u"VIET Immersion ({})".format(versions['VIET']))
+            VIETimmersion = enableMod(u"BETA: VIET Immersion ({})".format(versions['VIET']))
 
         VIETevents = True if (VIETimmersion or steamMode) else enableMod(u"VIET Events ({})".format(versions['VIET']))
         VIETtraits = False if (PB or EMF) else enableMod(u"VIET Traits ({})".format(versions['VIET']))
         VIET = (VIETtraits or VIETevents or VIETimmersion)
 
-        HIP = EMF or PB or VIETimmersion or VIETevents
+        if (not fastMode) and not steamMode:
+            print(u"[ NOTE: ARKOPack is not yet available for CKII v2.2. ]")
+            print(u"[ NOTE: CPR is not yet available for CKII v2.2. ]")
 
-        # Prepare for installation
-        if os.path.exists(targetFolder):
-            print(u"\nRemoving preexisting '%s' ..." % targetFolder)
-            sys.stdout.flush()
-            startTime = time.time()
-            rmTree(targetFolder, 'target folder preexists. removing...')
-            endTime = time.time()
-            print(u'Removed (%0.1f sec).\n' % (endTime - startTime))
+        HIP = EMF or PB or VIETimmersion or VIETevents  # HIP_Common (Isis, e_hip, our event picture stash, etc.)
+        Converter = (EMF or PB or VIETimmersion) and betaMode and not SWMH  # Vanilla EUIV Converter
 
-        mkTree(targetFolder)
+        euFolderBase = '../../Europa Universalis IV/mod'
+        euSubfolder = 'HIP_Converter'
+        euFolder = euFolderBase + '/' + euSubfolder
+
+        # Prepare for installation...
+
+        if targetFolder != defaultFolder:
+            modBasename = 'HIP_' + targetFolder
+        else:
+            modBasename = 'HIP'
+
+        modFilename = scaffoldMod('.',
+                                  targetFolder,
+                                  modBasename,
+                                  'HIP - ' + targetFolder,
+                                  targetFolder,
+                                  modBasename)
+
+        if Converter:
+            euModFilename = scaffoldMod(euFolderBase,
+                                        euFolder,
+                                        'HIP_Converter',
+                                        'HIP Converter Extra Files',
+                                        euSubfolder)
 
         # Install...
         global targetSrc
         targetSrc = {}
 
-        moduleOutput = ["Historical Immersion Project (%s)\nEnabled modules:\n" % versions['pkg']]
+        moduleOutput = ["[HIP %s]\nEnabled HIP modules:\n" % versions['pkg']]
         dbg.push('performing virtual filesystem merge...')
 
-        # if EMF or PB or VIETimmersion:
-        #     pushFolder("Converter/Common")  # Z: Converter seems to be causing instant CTD with CKII v2.2
-
-        if ARKOarmoiries:
+        if ARKOCoA:
             dbg.push("merging ARKO CoA...")
             moduleOutput.append("ARKO Armoiries (%s)\n" % versions['ARKO'])
-            pushFolder("ARKOpack_Armoiries")
+            pushFolder("ARKOpack_Armoiries", targetFolder)
             dbg.pop()
 
-        if ARKOinterface:
+        if ARKOInt:
             dbg.push("merging ARKO Interface...")
             moduleOutput.append("ARKO Interface (%s)\n" % versions['ARKO'])
-            pushFolder("ARKOpack_Interface")
+            pushFolder("ARKOpack_Interface", targetFolder)
             if HIP:
-                popTree("gfx/event_pictures")
+                popTree("gfx/event_pictures", targetFolder)
             dbg.pop()
 
         if HIP:
-            pushFolder("HIP_Common")
+            pushFolder("HIP_Common", targetFolder)
 
         if VIET:
-            pushFolder("VIET_Assets")
+            pushFolder("VIET_Assets", targetFolder)
 
         if PB:
             dbg.push("merging PB...")
             moduleOutput.append("Project Balance (%s)\n" % versions['PB'])
-            pushFolder("ProjectBalance")
-            # pushFolder("Converter/PB")  # Z: Converter seems to be causing instant CTD with CKII v2.2
+            pushFolder("ProjectBalance", targetFolder)
             dbg.pop()
 
         if SWMH:
             dbg.push("merging SWMH...")
-            pushFolder("SWMH")
+            pushFolder("SWMH", targetFolder)
             if SWMHnative:
                 moduleOutput.append("SWMH - Native localisation (%s)\n" % versions['SWMH'])
             else:
                 moduleOutput.append("SWMH - English localisation (%s)\n" % versions['SWMH'])
-                pushFolder("English SWMH")
+                pushFolder("English SWMH", targetFolder)
             if PB:
-                pushFolder("PB + SWMH")
-            pushFolder("SWMH_Logic")
+                pushFolder("PB + SWMH", targetFolder)
+            pushFolder("SWMH_Logic", targetFolder)
             dbg.pop()
 
         if NBRT:
             dbg.push("merging NBRT+...")
             moduleOutput.append("NBRT+ (%s)\n" % versions['NBRT'])
-            pushFolder("NBRT+")
+            pushFolder("NBRT+", targetFolder)
             if NBRTfull and SWMH and platform == "win":
-                pushFolder("NBRT+SWMH")  # Z: v2.2: This does not yet work and is thus disabled by default.
-            if ARKOarmoiries:
-                pushFolder("NBRT+ARKO")  # Z: v2.2: This will work
+                pushFolder("NBRT+SWMH", targetFolder)  # Z: v2.2: This does not work and is thus disabled by default.
+            if ARKOCoA:
+                pushFolder("NBRT+ARKO", targetFolder)  # Z: v2.2: This will work
             # Z: 2.2 compatch for NBRT+ Light/Normal
-            popFile('gfx/FX/pdxmap.fxh')
+            popFile('gfx/FX/pdxmap.fxh', targetFolder)
             dbg.pop()
 
         if VIETtraits:
             dbg.push("merging VIET Traits...")
             moduleOutput.append("VIET Traits (%s)\n" % versions['VIET'])
-            pushFolder("VIET_Traits")
+            pushFolder("VIET_Traits", targetFolder)
             dbg.pop()
 
         if VIETevents:
             dbg.push("merging VIET Events...")
             moduleOutput.append("VIET Events (%s)\n" % versions['VIET'])
-            pushFolder("VIET_Events")
+            pushFolder("VIET_Events", targetFolder)
             if PB:
-                pushFolder("PB_VIET_Events")
+                pushFolder("PB_VIET_Events", targetFolder)
             dbg.pop()
 
         if VIETimmersion:
             dbg.push("merging VIET Immersion...")
             moduleOutput.append("VIET Immersion (%s)\n" % versions['VIET'])
-            pushFolder("VIET_Immersion/common")
+            pushFolder("VIET_Immersion/common", targetFolder)
             if PB:
-                pushFolder("VIET_Immersion/PB")
+                pushFolder("VIET_Immersion/PB", targetFolder)
                 if EMF:
-                    pushFolder("VIET_Immersion/EMF")
+                    pushFolder("VIET_Immersion/EMF", targetFolder)
             else:
-                pushFolder("VIET_Immersion/vanilla")
-                # pushFolder("Converter/VIET")
+                pushFolder("VIET_Immersion/vanilla", targetFolder)
             dbg.pop()
 
         if CPR:
             dbg.push('merging CPR...')
             moduleOutput.append("Cultures and Portaits Revamp (%s)\n" % versions['CPR'])
-            pushFolder('Cultures and Portraits Revamp/common')
+            pushFolder('Cultures and Portraits Revamp/common', targetFolder)
             if SWMH:
-                pushFolder('Cultures and Portraits Revamp/SWMH')
+                pushFolder('Cultures and Portraits Revamp/SWMH', targetFolder)
             elif VIETimmersion:
-                pushFolder('Cultures and Portraits Revamp/VIET')
+                pushFolder('Cultures and Portraits Revamp/VIET', targetFolder)
             elif PB:
-                pushFolder('Cultures and Portraits Revamp/PB')
+                pushFolder('Cultures and Portraits Revamp/PB', targetFolder)
             else:
-                pushFolder('Cultures and Portraits Revamp/Vanilla')
+                pushFolder('Cultures and Portraits Revamp/Vanilla', targetFolder)
             dbg.pop()
 
         if EMF:
             dbg.push('merging EMF...')
-            moduleOutput.append("Extended Mechanics & Flavor [EMF] (%s)\n" % versions['EMF'])
-            pushFolder('EMF')
+            moduleOutput.append("EMF: Extended Mechanics & Flavor (%s)\n" % versions['EMF'])
+            pushFolder('EMF', targetFolder)
             if SWMH:
-                pushFolder('EMF+SWMH')
+                pushFolder('EMF+SWMH', targetFolder)
             if VIETevents:
-                pushFolder('EMF+VEvents')
+                pushFolder('EMF+VEvents', targetFolder)
             dbg.pop()
 
+        if Converter:
+            pushFolder("Converter/Vanilla", targetFolder)  # Z: Causes instant CTD with CKII v2.2, thus betaMode
+            pushFolder("Converter/Extra", euFolder)
+
         dbg.pop("virtual filesystem merge complete")
+
+        # Where to dump a mapping of all the compiled files to their source modules (will include stuff from outside
+        # targetFolder for now too if such stuff is pushed on to the virtual filesystem)
+        mapFilename = os.path.join(targetFolder, "file2mod_map.txt")
 
         startTime = time.time()
 
         # do all the actual compilation (file I/O)
-        compileTarget()
+        compileTarget(mapFilename)
 
         if move:
             rmTree("modules")  # Cleanup
 
         endTime = time.time()
-        print(u'Installed (%0.1f sec).\n' % (endTime - startTime))
-
-        mapFilename = os.path.join(targetFolder, "file2mod_map.txt")
+        print(u'> Compiled (%0.1f sec).\n' % (endTime - startTime))
 
         if not steamMode:
-            print(u"Mapped listing of all compiled files to their source modules:")
+            print(u"Mapping of all compiled mod files to their HIP source modules:")
             print(unicode(mapFilename + '\n'))
-
-        # Generate a new .mod file, regardless of whether it's default
-        if targetFolder != defaultFolder:
-            modFileBase = 'HIP_' + targetFolder
-        else:
-            modFileBase = 'HIP'
-
-        modFilename = modFileBase + '.mod'
-
-        # CKII command line argument parser can't handle dashes in .mod file names (which are passed as arguments to
-        # CKII.exe by the launcher)
-        if '-' in modFilename:
-            modFilename = modFilename.replace('-', '__')
-
-        dbg.trace("generating .mod file " + quoteIfWS(modFilename))
-
-        with open(modFilename, "w") as modFile:
-            modFile.write('name = "HIP - %s"  # Name to use as a dependency if making a sub-mod\n' % targetFolder)
-            modFile.write('path = "mod/%s"\n' % targetFolder)
-            if platform != 'mac':
-                modFile.write('user_dir = "%s"  '
-                              '# Ensure we get our own versions of the gfx/map caches and log folders\n' %
-                              modFileBase)
-
-        print(u"Generated new mod definition file:")
-        print(unicode(modFilename + '\n'))
 
         # Dump modules selected and their respective versions to <mod>/version.txt
         versionFilename = os.path.join(targetFolder, "version.txt")
