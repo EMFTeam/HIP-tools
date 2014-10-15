@@ -9,8 +9,8 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 5, 'patch': 6,
-           'Developer':       'zijistark <zijistark@gmail.com>',
+version = {'major': 1, 'minor': 6, 'patch': 1,
+           'Developer': 'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
 
@@ -18,114 +18,114 @@ version = {'major': 1, 'minor': 5, 'patch': 6,
 def initLocalisation():
     global i18n
     i18n = {'INTRO':
-            {
-                'fr': u"Cette version de Historical Immersion Project date du {}.\n"
-                      u"Taper 'o' ou 'oui' pour valider, ou laisser le champ vierge. Toute autre\n"
-                      u"réponse sera interpretée comme négative.\n"
-                      u"Pour abandonner à tout moment l'installation, appuyer sur Ctrl+C.\n",
-                'es': u"Esta vercion de Historical Immersion Project fecha del {}.\n"
-                      u"Escribe 's' o 'si' para aceptar, o deja el campo en blanco. Cualquier otro\n"
-                      u"caso sera considerado un 'no'.\n",
-                'en': u"This version of the Historical Immersion Project was released {}.\n"
-                      u"To confirm a prompt, respond with 'y' or 'yes' (sans quotes) or simply hit\n"
-                      u"ENTER. Besides a blank line, anything else will be interpreted as 'no.'\n\n"
-                      u"If at any time you wish to abort the installation, press Ctrl+C.\n",
-            },
+                {
+                    'fr': u"Cette version de Historical Immersion Project date du {}.\n"
+                          u"Taper 'o' ou 'oui' pour valider, ou laisser le champ vierge. Toute autre\n"
+                          u"réponse sera interpretée comme négative.\n"
+                          u"Pour abandonner à tout moment l'installation, appuyer sur Ctrl+C.\n",
+                    'es': u"Esta vercion de Historical Immersion Project fecha del {}.\n"
+                          u"Escribe 's' o 'si' para aceptar, o deja el campo en blanco. Cualquier otro\n"
+                          u"caso sera considerado un 'no'.\n",
+                    'en': u"This version of the Historical Immersion Project was released {}.\n"
+                          u"To confirm a prompt, respond with 'y' or 'yes' (sans quotes) or simply hit\n"
+                          u"ENTER. Besides a blank line, anything else will be interpreted as 'no.'\n\n"
+                          u"If at any time you wish to abort the installation, press Ctrl+C.\n",
+                },
             'ENABLE_MOD':
-            {
-                'fr': u"Voulez-vous installer {} ? [oui]",
-                'es': u"Instalar {}? [si]",
-                'en': u"Install {}? [yes]",
-            },
+                {
+                    'fr': u"Voulez-vous installer {} ? [oui]",
+                    'es': u"Instalar {}? [si]",
+                    'en': u"Install {}? [yes]",
+                },
             'ENABLE_MOD_NOT_DEFAULT':
-            {
-                'fr': u"Voulez-vous installer {} ? [non]",
-                'es': u"Instalar {}? [no]",
-                'en': u"Install {}? [no]",
-            },
+                {
+                    'fr': u"Voulez-vous installer {} ? [non]",
+                    'es': u"Instalar {}? [no]",
+                    'en': u"Install {}? [no]",
+                },
             'ENABLE_MOD_XOR':
-            {
-                'fr': u"Voulez-vous installer {} ({}) ? [oui]",
-                'es': u"Instalar {} ({})? [si]",
-                'en': u"Install {} ({})? [yes]",
-            },
+                {
+                    'fr': u"Voulez-vous installer {} ({}) ? [oui]",
+                    'es': u"Instalar {} ({})? [si]",
+                    'en': u"Install {} ({})? [yes]",
+                },
             'ENABLE_MOD_NOT_DEFAULT_COMPAT':
-            {
-                'fr': u"\nNOTE: {} might be incompatible with your system.\nVoulez-vous installer {} ? [non]",
-                'es': u"\nNOTE: {} might be incompatible with your system.\nInstalar {}? [no]",
-                'en': u"\nNOTE: {} might be incompatible with your system.\nInstall {}? [no]",
-            },
+                {
+                    'fr': u"\nNOTE: {} might be incompatible with your system.\nVoulez-vous installer {} ? [non]",
+                    'es': u"\nNOTE: {} might be incompatible with your system.\nInstalar {}? [no]",
+                    'en': u"\nNOTE: {} might be incompatible with your system.\nInstall {}? [no]",
+                },
             'ENABLE_MOD_XOR_WARN':
-            {
-                'fr': u"\n{} et {} sont incompatibles. Vous devez n'en choisir qu'un : ",
-                'es': u"\n{} and {} are incompatible. You may only select one:",
-                'en': u"\n{} and {} are incompatible. You may only select one:",
-            },
+                {
+                    'fr': u"\n{} et {} sont incompatibles. Vous devez n'en choisir qu'un : ",
+                    'es': u"\n{} and {} are incompatible. You may only select one:",
+                    'en': u"\n{} and {} are incompatible. You may only select one:",
+                },
             'PUSH_FOLDER':
-            {
-                'fr': u'Préparation {}',
-                'es': u'Preparaciòn {}',
-                'en': u'Preparing {}',
-            },
+                {
+                    'fr': u'Préparation {}',
+                    'es': u'Preparaciòn {}',
+                    'en': u'Preparing {}',
+                },
             'COMPILING':
-            {
-                'fr': u"Compilation '{}' ...",
-                'es': u"Compilar '{}' ...",
-                'en': u"Compiling '{}' ...",
-            },
+                {
+                    'fr': u"Compilation '{}' ...",
+                    'es': u"Compilar '{}' ...",
+                    'en': u"Compiling '{}' ...",
+                },
             'SWMH_NATIVE':
-            {
-                'fr': u"SWMH avec les noms culturels locaux, plutôt qu'en anglais ou francisés",
-                'es': u"SWMH con localizacion nativa para culturas y titulos, en lugar de ingles",
-                'en': u"SWMH with native localisation for cultures and titles, rather than English",
-            },
+                {
+                    'fr': u"SWMH avec les noms culturels locaux, plutôt qu'en anglais ou francisés",
+                    'es': u"SWMH con localizacion nativa para culturas y titulos, en lugar de ingles",
+                    'en': u"SWMH with native localisation for cultures and titles, rather than English",
+                },
             'MOVE_VS_COPY':
-            {
-                'fr': u"L'installeur DEPLACE ou COPIE les fichiers d'installation. La\n"
-                      u"COPIE permet l'installation ultérieure de differents combos de\n"
-                      u"mods à partir de l'installeur de base. Notez que DEPLACER est\n"
-                      u"plus rapide que COPIER.\n\n"
-                      u"Voulez-vous donc que les fichiers soient DEPLACES plutôt que\n"
-                      u"COPIES ? [oui]",
-                'es': u"Mover los archivos en lugar de copiarlos es mucho mas rapido, pero hace\n"
-                      u"que la instalacion de varias copias sea mas complicada.\n\n"
-                      u"Quieres que los archivos de los modulos se muevan en lugar de copiarse? [si]",
-                'en': u"The installer can either directly MOVE the module package's data files\n"
-                      u"into your installation folder, deleting the package in the process, or\n"
-                      u"it can preserve the installation package by COPYING the files into the\n"
-                      u"installation folder. Moving is faster than copying, but copying allows\n"
-                      u"you to reinstall at will (e.g., with different module combinations).\n\n"
-                      u"Would you like to MOVE rather than COPY? [yes]",
-            },
+                {
+                    'fr': u"L'installeur DEPLACE ou COPIE les fichiers d'installation. La\n"
+                          u"COPIE permet l'installation ultérieure de differents combos de\n"
+                          u"mods à partir de l'installeur de base. Notez que DEPLACER est\n"
+                          u"plus rapide que COPIER.\n\n"
+                          u"Voulez-vous donc que les fichiers soient DEPLACES plutôt que\n"
+                          u"COPIES ? [oui]",
+                    'es': u"Mover los archivos en lugar de copiarlos es mucho mas rapido, pero hace\n"
+                          u"que la instalacion de varias copias sea mas complicada.\n\n"
+                          u"Quieres que los archivos de los modulos se muevan en lugar de copiarse? [si]",
+                    'en': u"The installer can either directly MOVE the module package's data files\n"
+                          u"into your installation folder, deleting the package in the process, or\n"
+                          u"it can preserve the installation package by COPYING the files into the\n"
+                          u"installation folder. Moving is faster than copying, but copying allows\n"
+                          u"you to reinstall at will (e.g., with different module combinations).\n\n"
+                          u"Would you like to MOVE rather than COPY? [yes]",
+                },
             'MOVE_CONFIRM':
-            {
-                'fr': u"Etes-vous sûr ?\n"
-                      u"Voulez-vous supprimer les fichiers d'installation une fois l'opération terminée ? "
-                      u"[oui]",
-                'es': u"?Esta seguro?\n"
-                      u"?Quieres eliminar el paquete despuès de la instalaciòn? [si]",
-                'en': u"Are you sure?\n"
-                      u"Do you want to delete the package after installation? [yes]",
-            },
+                {
+                    'fr': u"Etes-vous sûr ?\n"
+                          u"Voulez-vous supprimer les fichiers d'installation une fois l'opération terminée ? "
+                          u"[oui]",
+                    'es': u"?Esta seguro?\n"
+                          u"?Quieres eliminar el paquete despuès de la instalaciòn? [si]",
+                    'en': u"Are you sure?\n"
+                          u"Do you want to delete the package after installation? [yes]",
+                },
             'TARGET_FOLDER':
-            {
-                'fr': u"Installer le mod dans un répertoire existant supprimera ce répertoire.\n"
-                      u"Dans quel répertoire souhaites-tu procéder à l'installation ?\n"
-                      u"Laisser le champ vierge pour '{}'.",
-                'es': u"Instalar el mod en una carpeta existente eliminara dicha carpeta.\n"
-                      u"En que carpeta deseas realizar la instalacion?\n"
-                      u"Dejar en blanco para '{}'.",
-                'en': u"Installing the mod into a folder that exists will first delete that folder.\n"
-                      u"Into what folder would you like to install?\n"
-                      u"Leave blank for '{}':",
-            },
+                {
+                    'fr': u"Installer le mod dans un répertoire existant supprimera ce répertoire.\n"
+                          u"Dans quel répertoire souhaites-tu procéder à l'installation ?\n"
+                          u"Laisser le champ vierge pour '{}'.",
+                    'es': u"Instalar el mod en una carpeta existente eliminara dicha carpeta.\n"
+                          u"En que carpeta deseas realizar la instalacion?\n"
+                          u"Dejar en blanco para '{}'.",
+                    'en': u"Installing the mod into a folder that exists will first delete that folder.\n"
+                          u"Into what folder would you like to install?\n"
+                          u"Leave blank for '{}':",
+                },
             'INSTALL_DONE':
-            {
-                'fr': u"Installation terminée. Taper ENTREE pour quitter.",
-                'es': u"Instalacion terminada. Presiona ENTER para salir.",
-                'en': u"Installation done. Hit ENTER to exit.",
-            }
-        }
+                {
+                    'fr': u"Installation terminée. Taper ENTREE pour quitter.",
+                    'es': u"Instalacion terminada. Presiona ENTER para salir.",
+                    'en': u"Installation done. Hit ENTER to exit.",
+                }
+    }
 
 
 def localise(key):
@@ -515,7 +515,9 @@ def getInstallOptions():
     # Determine user language for installation
     global language
     global betaMode
-    language = promptUser(u"For English, hit ENTER. En français, taper 'f'. Para español, presiona 'e'.")
+
+    language = '' if (steamMode or fastMode) else promptUser(u"For English, hit ENTER. En français, taper 'f'. Para "
+                                                             u"español, presiona 'e'.")
 
     if language.startswith('B') or language.startswith('b'):
         language = 'en'
@@ -528,10 +530,11 @@ def getInstallOptions():
         language = 'en'
 
     # Show HIP installer version & explain interactive prompting
-    print(localise('INTRO').format(versions['pkg']))
+    if not (steamMode or fastMode):
+        print(localise('INTRO').format(versions['pkg']))
 
     global move
-    move = isYes(promptUser(localise('MOVE_VS_COPY')))
+    move = False if (steamMode or fastMode) else isYes(promptUser(localise('MOVE_VS_COPY')))
 
     # Confirm. "User studies" now "prove" this default is questionable (i.e.,
     # copy not being default), but I think the move method should remain the
@@ -560,7 +563,8 @@ def getInstallOptions():
     # Note that we use the case-preserving form of promptUser for the target folder (also determines name in launcher)
 
     global targetFolder
-    targetFolder = promptUser(localise('TARGET_FOLDER').format(unicode(defaultFolder)), lc=False)
+    targetFolder = '' if (steamMode or fastMode) \
+        else promptUser(localise('TARGET_FOLDER').format(unicode(defaultFolder)), lc=False)
     if targetFolder == '':
         targetFolder = defaultFolder
     else:
@@ -571,7 +575,6 @@ def getInstallOptions():
 # Find installation location for a Steam game with the given Steam AppID with the methodology variant denoted
 # by variantID, where variantID is currently either 0 or 1.
 def getSteamGameFolder(appID, variantID):
-
     pathVariant = [r'\Wow6432Node', '']
     keyPath = r'SOFTWARE{}\Microsoft\Windows\CurrentVersion\Uninstall\Steam App {}'.format(pathVariant[variantID],
                                                                                            appID)
@@ -629,7 +632,6 @@ cprReqDLCNames = {'dlc/dlc013.dlc': 'African Portraits',
 # Returns None if DLC detection (game folder detection) fails, an empty list if all
 # requirements are met, and otherwise the exact list of the missing DLCs' names.
 def detectCPRMissingDLCs():
-
     # Normalize path keys denormReqDLCNames, platform-specific (varies even between cygwin and win32)
     reqDLCNames = {os.path.normpath(f): cprReqDLCNames[f] for f in cprReqDLCNames.keys()}
 
@@ -677,6 +679,12 @@ def main():
 
         dbgMode = (len(sys.argv) > 1 and '-D' in sys.argv[1:])
         versionMode = (len(sys.argv) > 1 and '-V' in sys.argv[1:])
+
+        global steamMode
+        global fastMode
+        steamMode = (len(sys.argv) > 1 and '-S' in sys.argv[1:])
+        fastMode = (len(sys.argv) > 1 and '-Z' in sys.argv[1:])
+
         global betaMode
         betaMode = False
 
@@ -723,83 +731,101 @@ def main():
                    'ARKO': 'ARKOpack_Armoiries',
                    'CPR': 'Cultures and Portraits Revamp',
                    'EMF': 'EMF',
-                   }
+        }
 
         getPkgVersions(modDirs)
+
+        mods = {}
 
         # Prompt user for options related to this install
         getInstallOptions()
 
         # Determine module combination...
 
-        EMF = enableMod(u"EMF: Extended Mechanics & Flavor ({})".format(versions['EMF']))
+        EMF = True if steamMode else enableMod(u"EMF: Extended Mechanics & Flavor ({})".format(versions['EMF']))
         PB = True
 
-        if EMF:
-            print(u"[ Automatically including some of Project Balance ... ]")
-        else:
-            PB = enableMod(u"Project Balance ({})".format(versions['PB']))
+        if not steamMode:
+            if EMF:
+                if not fastMode:
+                    print(u"[ Automatically including some of Project Balance ... ]")
+            else:
+                PB = enableMod(u"Project Balance ({})".format(versions['PB']))
 
-        ARKOarmoiries = enableMod(u"ARKOpack Armoiries (coats of arms) ({})".format(versions['ARKO']))
-        ARKOinterface = enableMod(u"ARKOpack Interface ({})".format(versions['ARKO']))
+        ARKOarmoiries = True if steamMode \
+            else enableMod(u"ARKOpack Armoiries (coats of arms) ({})".format(versions['ARKO']))
+
+        ARKOinterface = False if (steamMode or fastMode) \
+            else enableMod(u"ARKOpack Interface ({})".format(versions['ARKO']))
+
+        SWMH = False if steamMode else enableMod(u'SWMH ({})'.format(versions['SWMH']))
+        SWMHnative = True
+
+        if SWMH:
+            SWMHnative = True if (steamMode or fastMode) else enableMod(localise('SWMH_NATIVE'))
 
         if platform == 'win':
-            NBRT = enableMod(u"NBRT+ ({})".format(versions['NBRT']))
+            NBRT = True if (steamMode or fastMode) else enableMod(u"NBRT+ ({})".format(versions['NBRT']))
         else:
-            NBRT = enableModDefaultNo(u"NBRT+ ({})".format(versions['NBRT']))
+            NBRT = False if steamMode else enableModDefaultNo(u"NBRT+ ({})".format(versions['NBRT']))
+
+        if NBRT and SWMH:
+            NBRTfull = enableModDefaultNo(u"NBRT+SWMH ({})".format(versions['NBRT']))
+        else:
+            NBRTfull = False
 
         CPR = False
-        cprMissingDLCNames = detectCPRMissingDLCs()
 
-        if cprMissingDLCNames is None:  # DLC auto-detection failed
-            if platform == 'win':  # While unlikely, this happens with the current auto-detection code.
-                                   # It is treated as a special case to still draw some visibility to
-                                   # the problem.
-                print(u"\n\nNOTE: The HIP installer could not successfully determine your active CKII\n"
-                      u"game folder. Thus, it cannot auto-detect whether you meet all the portrait DLC\n"
-                      u"prerequisites of CPR. You may still install CPR, but expect the game to crash\n"
-                      u"with reckless abandon if you don't have all of the following DLCs enabled:\n")
+        if not steamMode:
+            cprMissingDLCNames = detectCPRMissingDLCs()
 
-                printCPRReqDLCNames()
+            if cprMissingDLCNames is None:  # DLC auto-detection failed
+                if platform == 'win':  # While unlikely, this happens with the current auto-detection code.
+                    # It is treated as a special case to still draw some visibility to
+                    # the problem.
+                    if not fastMode:
+                        print(u"\n\nNOTE: The HIP installer could not successfully determine your active CKII\n"
+                              u"game folder. Thus, it cannot auto-detect whether you meet all the portrait DLC\n"
+                              u"prerequisites of CPR. You may still install CPR, but expect the game to crash\n"
+                              u"with reckless abandon if you don't have all of the following DLCs enabled:\n")
 
+                        printCPRReqDLCNames()
+
+                    CPR = enableModDefaultNo(u"CPR ({})".format(versions['CPR']), compat=True)
+
+                else:  # No auto-detection supported on mac/lin, so allow the user to choose CPR w/ zero fuss.
+                    if not fastMode:
+                        print(u"\n\nNOTE: Cultures and Portraits Revamp (CPR) requires ALL of the\n"
+                              u"portrait packs to run without crashing. Portrait DLCs required for CPR:\n")
+
+                        printCPRReqDLCNames()
+
+                    CPR = enableModDefaultNo(u"CPR ({})".format(versions['CPR']), compat=True)
+
+            elif len(cprMissingDLCNames) > 0:  # DLC auto-detection succeeded, but there were missing DLCs.
+                if not fastMode:
+                    print(u"\n\nCultures and Portraits Revamp (CPR) requires portrait pack DLCs which you,\n"
+                          u"unforunately, are lacking. If you want to use CPR, you'll need to install the\n"
+                          u"following DLCs first:\n")
+
+                    for name in sorted(cprMissingDLCNames):
+                        print(u"+ {}".format(name))
+
+                    sys.stdout.write('\n')
+
+            else:  # DLC auto-detection succeeded, and CPR is clear for take-off. However, we still default to No.
+                if not fastMode:
+                    print(u"[ Required portrait DLCs for CPR auto-detected OK... ]")
                 CPR = enableModDefaultNo(u"CPR ({})".format(versions['CPR']), compat=True)
-
-            else:  # No auto-detection supported on mac/lin, so allow the user to choose CPR w/ zero fuss.
-                print(u"\n\nNOTE: Cultures and Portraits Revamp (CPR) requires ALL of the\n"
-                      u"portrait packs to run without crashing. Portrait DLCs required for CPR:\n")
-
-                printCPRReqDLCNames()
-
-                CPR = enableModDefaultNo(u"CPR ({})".format(versions['CPR']), compat=True)
-
-        elif len(cprMissingDLCNames) > 0:  # DLC auto-detection succeeded, but there were missing DLCs.
-            print(u"\n\nCultures and Portraits Revamp (CPR) requires portrait pack DLCs which you,\n"
-                  u"unforunately, are lacking. If you want to use CPR, you'll need to install the\n"
-                  u"following DLCs first:\n")
-
-            for name in sorted(cprMissingDLCNames):
-                print(u"+ {}".format(name))
-
-            sys.stdout.write('\n')
-
-        else:  # DLC auto-detection succeeded, and CPR is clear for take-off. However, we still default to No.
-            print(u"[ Required portrait DLCs for CPR auto-detected OK... ]")
-            CPR = enableModDefaultNo(u"CPR ({})".format(versions['CPR']), compat=True)
 
         VIETimmersion = False
 
         if betaMode:
             VIETimmersion = enableMod(u"VIET Immersion ({})".format(versions['VIET']))
 
-        VIETevents = True if VIETimmersion else enableMod(u"VIET Events ({})".format(versions['VIET']))
+        VIETevents = True if (VIETimmersion or steamMode) else enableMod(u"VIET Events ({})".format(versions['VIET']))
         VIETtraits = False if (PB or EMF) else enableMod(u"VIET Traits ({})".format(versions['VIET']))
         VIET = (VIETtraits or VIETevents or VIETimmersion)
-
-        SWMH = enableMod(u'SWMH ({})'.format(versions['SWMH']))
-        SWMHnative = True
-
-        if SWMH:
-            SWMHnative = enableMod(localise('SWMH_NATIVE'))
 
         HIP = EMF or PB or VIETimmersion or VIETevents
 
@@ -821,8 +847,8 @@ def main():
         moduleOutput = ["Historical Immersion Project (%s)\nEnabled modules:\n" % versions['pkg']]
         dbg.push('performing virtual filesystem merge...')
 
-        if EMF or PB or VIETimmersion:
-            pushFolder("Converter/Common")
+        # if EMF or PB or VIETimmersion:
+        #     pushFolder("Converter/Common")  # Z: Converter seems to be causing instant CTD with CKII v2.2
 
         if ARKOarmoiries:
             dbg.push("merging ARKO CoA...")
@@ -840,7 +866,7 @@ def main():
 
         if HIP:
             pushFolder("HIP_Common")
-			
+
         if VIET:
             pushFolder("VIET_Assets")
 
@@ -848,7 +874,7 @@ def main():
             dbg.push("merging PB...")
             moduleOutput.append("Project Balance (%s)\n" % versions['PB'])
             pushFolder("ProjectBalance")
-            pushFolder("Converter/PB")
+            # pushFolder("Converter/PB")  # Z: Converter seems to be causing instant CTD with CKII v2.2
             dbg.pop()
 
         if SWMH:
@@ -868,10 +894,12 @@ def main():
             dbg.push("merging NBRT+...")
             moduleOutput.append("NBRT+ (%s)\n" % versions['NBRT'])
             pushFolder("NBRT+")
-            if SWMH and platform == "win":
-                pushFolder("NBRT+SWMH")
+            if NBRTfull and SWMH and platform == "win":
+                pushFolder("NBRT+SWMH")  # Z: v2.2: This does not yet work and is thus disabled by default.
             if ARKOarmoiries:
-                pushFolder("NBRT+ARKO")
+                pushFolder("NBRT+ARKO")  # Z: v2.2: This will work
+            # Z: 2.2 compatch for NBRT+ Light/Normal
+            popFile('gfx/FX/pdxmap.fxh')
             dbg.pop()
 
         if VIETtraits:
@@ -898,7 +926,7 @@ def main():
                     pushFolder("VIET_Immersion/EMF")
             else:
                 pushFolder("VIET_Immersion/vanilla")
-                pushFolder("Converter/VIET")
+                # pushFolder("Converter/VIET")
             dbg.pop()
 
         if CPR:
@@ -939,8 +967,10 @@ def main():
         print(u'Installed (%0.1f sec).\n' % (endTime - startTime))
 
         mapFilename = os.path.join(targetFolder, "file2mod_map.txt")
-        print(u"Mapped listing of all compiled files to their source modules:")
-        print(unicode(mapFilename + '\n'))
+
+        if not steamMode:
+            print(u"Mapped listing of all compiled files to their source modules:")
+            print(unicode(mapFilename + '\n'))
 
         # Generate a new .mod file, regardless of whether it's default
         if targetFolder != defaultFolder:
