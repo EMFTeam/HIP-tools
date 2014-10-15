@@ -884,6 +884,7 @@ def main():
         euFolderBase = '../../Europa Universalis IV/mod'
         euSubfolder = 'HIP_Converter'
         euFolder = euFolderBase + '/' + euSubfolder
+        euModEnabled = os.path.isdir(euFolderBase)
 
         # Prepare for installation...
 
@@ -899,7 +900,7 @@ def main():
                                   targetFolder,
                                   modBasename)
 
-        if Converter:
+        if Converter and euModEnabled:
             euModFilename = scaffoldMod(euFolderBase,
                                         euFolder,
                                         'HIP_Converter',
@@ -1016,7 +1017,8 @@ def main():
 
         if Converter:
             pushFolder("Converter/Vanilla", targetFolder)  # Z: Causes instant CTD with CKII v2.2, thus betaMode
-            pushFolder("Converter/Extra", euFolder)
+            if euModEnabled:
+                pushFolder("Converter/Extra", euFolder)
 
         dbg.pop("virtual filesystem merge complete")
 
