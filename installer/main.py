@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 0,
+version = {'major': 1, 'minor': 7, 'patch': 1,
            'Developer': 'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -881,10 +881,9 @@ def main():
         HIP = EMF or PB or VIETimmersion or VIETevents  # HIP_Common (Isis, e_hip, our event picture stash, etc.)
         Converter = (EMF or PB or VIETimmersion) and betaMode and not SWMH  # Vanilla EUIV Converter
 
-        euFolderBase = '../../Europa Universalis IV/mod'
+        euFolderBase = '../eu4_export/mod'
         euSubfolder = 'HIP_Converter'
         euFolder = euFolderBase + '/' + euSubfolder
-        euModEnabled = os.path.isdir(euFolderBase)
 
         # Prepare for installation...
 
@@ -900,11 +899,11 @@ def main():
                                   targetFolder,
                                   modBasename)
 
-        if Converter and euModEnabled:
+        if Converter:
             euModFilename = scaffoldMod(euFolderBase,
                                         euFolder,
                                         'HIP_Converter',
-                                        'HIP Converter Extra Files',
+                                        'HIP Converter Support',
                                         euSubfolder)
 
         # Install...
