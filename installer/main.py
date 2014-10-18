@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 1,
+version = {'major': 1, 'minor': 7, 'patch': 2,
            'Developer': 'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -792,7 +792,7 @@ def main():
         if not steamMode:
             if EMF:
                 if not fastMode:
-                    print(u"[ Automatically including some of Project Balance ... ]")
+                    print(u"[ Automatically including shared files from Project Balance ... ]")
             else:
                 PB = enableMod(u"Project Balance ({})".format(versions['PB']))
 
@@ -1007,11 +1007,21 @@ def main():
         if EMF:
             dbg.push('merging EMF...')
             moduleOutput.append("EMF: Extended Mechanics & Flavor (%s)\n" % versions['EMF'])
-            pushFolder('EMF', targetFolder)
+
+            filteredFiles = ['common/landed_titles/landed_titles.txt'] if SWMH else []
+            pushFolder('EMF', targetFolder, ignoreFiles=filteredFiles)
+
             if SWMH:
                 pushFolder('EMF+SWMH', targetFolder)
             if VIETevents:
                 pushFolder('EMF+VEvents', targetFolder)
+
+            for f in ['e_arabia.txt', 'e_britannia.txt', 'e_bulgaria.txt', 'e_byzantium.txt', 'e_carpathia.txt',
+                      'e_ethiopia.txt', 'e_france.txt', 'e_hre.txt', 'e_italy.txt', 'e_mali.txt', 'e_persia.txt',
+                      'e_poland_lithuania.txt', 'e_russia.txt', 'e_scandinavia.txt', 'e_spain.txt', 'e_tartaria.txt',
+                      'india.txt']:
+                popFile(os.path.join('common/landed_titles/', f), targetFolder)
+
             dbg.pop()
 
         if Converter:
