@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 2,
+version = {'major': 1, 'minor': 7, 'patch': 3,
            'Developer': 'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -273,13 +273,18 @@ def mkTree(d, traceMsg=None):
     os.makedirs(d)
 
 
-def pushFolder(folder, targetFolder, prunePaths=None, ignoreFiles=None):
+def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None):
     if not ignoreFiles:
-        ignoreFiles = {}
+        ignoreFiles = set()
     if not prunePaths:
-        prunePaths = {}
+        prunePaths = set()
 
     #print(localise('PUSH_FOLDER').format(unicode(quoteIfWS(folder))))
+
+    # normalize paths in ignoreFiles and prunePaths
+
+    ignoreFiles = {os.path.normpath(x) for x in ignoreFiles}
+    prunePaths = {os.path.normpath(x) for x in prunePaths}
 
     folder = os.path.normpath(folder)
     srcFolder = os.path.join('modules', folder)
@@ -1008,8 +1013,8 @@ def main():
             dbg.push('merging EMF...')
             moduleOutput.append("EMF: Extended Mechanics & Flavor (%s)\n" % versions['EMF'])
 
-            filteredFiles = ['common/landed_titles/landed_titles.txt'] if SWMH else []
-            pushFolder('EMF', targetFolder, ignoreFiles=filteredFiles)
+            filteredFiles = {['common/landed_titles/landed_titles.txt']} if SWMH else None
+            pushFolder('EMF', targetFolder, filteredFiles)
 
             if SWMH:
                 pushFolder('EMF+SWMH', targetFolder)
@@ -1026,8 +1031,7 @@ def main():
 
         if Converter:
             pushFolder("Converter/Vanilla", targetFolder)  # Z: Causes instant CTD with CKII v2.2, thus betaMode
-            if euModEnabled:
-                pushFolder("Converter/Extra", euFolder)
+            pushFolder("Converter/Extra", euFolder)
 
         dbg.pop("virtual filesystem merge complete")
 
