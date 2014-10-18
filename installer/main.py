@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 3,
+version = {'major': 1, 'minor': 7, 'patch': 4,
            'Developer': 'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -1013,7 +1013,7 @@ def main():
             dbg.push('merging EMF...')
             moduleOutput.append("EMF: Extended Mechanics & Flavor (%s)\n" % versions['EMF'])
 
-            filteredFiles = {['common/landed_titles/landed_titles.txt']} if SWMH else None
+            filteredFiles = set(['common/landed_titles/landed_titles.txt']) if SWMH else set()
             pushFolder('EMF', targetFolder, filteredFiles)
 
             if SWMH:
