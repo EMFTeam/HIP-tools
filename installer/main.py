@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 4,
+version = {'major': 1, 'minor': 7, 'patch': 5,
            'Developer': 'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -274,17 +274,14 @@ def mkTree(d, traceMsg=None):
 
 
 def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None):
-    if not ignoreFiles:
+    if ignoreFiles is None:
         ignoreFiles = set()
-    if not prunePaths:
+    if prunePaths is None:
         prunePaths = set()
 
     #print(localise('PUSH_FOLDER').format(unicode(quoteIfWS(folder))))
 
     # normalize paths in ignoreFiles and prunePaths
-
-    ignoreFiles = {os.path.normpath(x) for x in ignoreFiles}
-    prunePaths = {os.path.normpath(x) for x in prunePaths}
 
     folder = os.path.normpath(folder)
     srcFolder = os.path.join('modules', folder)
@@ -292,6 +289,15 @@ def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None):
     if not os.path.exists(srcFolder):
         dbg.trace("WARNING! MODULE NOT FOUND: {}".format(quoteIfWS(folder)))
         return
+
+    ignoreFiles = {os.path.join(srcFolder, os.path.normpath(x)) for x in ignoreFiles}
+    prunePaths = {os.path.join(srcFolder, os.path.normpath(x)) for x in prunePaths}
+
+    for x in ignoreFiles:
+        dbg.trace('SOURCE FILE FILTER: {}'.format(quoteIfWS(x)))
+
+    for x in prunePaths:
+        dbg.trace('SOURCE PATH FILTER: {}'.format(quoteIfWS(x)))
 
     dbg.push("compile: pushing folder " + srcFolder)
 
@@ -1014,7 +1020,7 @@ def main():
             moduleOutput.append("EMF: Extended Mechanics & Flavor (%s)\n" % versions['EMF'])
 
             filteredFiles = set(['common/landed_titles/landed_titles.txt']) if SWMH else set()
-            pushFolder('EMF', targetFolder, filteredFiles)
+            pushFolder('EMF', targetFolder, ignoreFiles=filteredFiles)
 
             if SWMH:
                 pushFolder('EMF+SWMH', targetFolder)
