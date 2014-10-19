@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 5,
+version = {'major': 1, 'minor': 7, 'patch': 6,
            'Developer': 'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -736,6 +736,7 @@ def main():
 
         dbgMode = (len(sys.argv) > 1 and '-D' in sys.argv[1:])
         versionMode = (len(sys.argv) > 1 and '-V' in sys.argv[1:])
+        emfMode = (len(sys.argv) > 1 and '-E' in sys.argv[1:])
 
         global steamMode
         global fastMode
@@ -797,7 +798,11 @@ def main():
 
         # Determine module combination...
 
-        EMF = True if steamMode else enableMod(u"EMF: Extended Mechanics & Flavor ({})".format(versions['EMF']))
+        EMF = False
+
+        if emfMode:
+            EMF = True if steamMode else enableMod(u"EMF: Extended Mechanics & Flavor ({})".format(versions['EMF']))
+
         PB = True
 
         if not steamMode:
@@ -1032,6 +1037,11 @@ def main():
                       'e_poland_lithuania.txt', 'e_russia.txt', 'e_scandinavia.txt', 'e_spain.txt', 'e_tartaria.txt',
                       'india.txt']:
                 popFile(os.path.join('common/landed_titles/', f), targetFolder)
+
+            if SWMH:
+                popFile('decisions/indian_empire_decision.txt', targetFolder)
+
+            popFile('events/old_age_event.txt', targetFolder)
 
             dbg.pop()
 
