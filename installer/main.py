@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 6,
+version = {'major': 1, 'minor': 7, 'patch': 7,
            'Developer': 'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -1029,19 +1029,35 @@ def main():
 
             if SWMH:
                 pushFolder('EMF+SWMH', targetFolder)
+
             if VIETevents:
                 pushFolder('EMF+VEvents', targetFolder)
 
-            for f in ['e_arabia.txt', 'e_britannia.txt', 'e_bulgaria.txt', 'e_byzantium.txt', 'e_carpathia.txt',
-                      'e_ethiopia.txt', 'e_france.txt', 'e_hre.txt', 'e_italy.txt', 'e_mali.txt', 'e_persia.txt',
-                      'e_poland_lithuania.txt', 'e_russia.txt', 'e_scandinavia.txt', 'e_spain.txt', 'e_tartaria.txt',
+            for f in ['e_arabia.txt',
+                      'e_britannia.txt',
+                      'e_byzantium.txt',
+                      'e_carpathia.txt',
+                      'e_ethiopia.txt',
+                      'e_france.txt',
+                      'e_hre.txt',
+                      'e_italy.txt',
+                      'e_mali.txt',
+                      'e_persia.txt',
+                      'e_poland_lithuania.txt',
+                      'e_russia.txt',
+                      'e_scandinavia.txt',
+                      'e_spain.txt',
+                      'e_tartaria.txt',
                       'india.txt']:
                 popFile(os.path.join('common/landed_titles/', f), targetFolder)
 
+            if not SWMH:
+                popTree('history/technology', targetFolder)
+
+            popFile('history/titles/k_bohemia.txt', targetFolder)
+
             if SWMH:
                 popFile('decisions/indian_empire_decision.txt', targetFolder)
-
-            popFile('events/old_age_event.txt', targetFolder)
 
             dbg.pop()
 
