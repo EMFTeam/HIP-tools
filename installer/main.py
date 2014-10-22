@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 8,
+version = {'major': 1, 'minor': 7, 'patch': 9,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -795,9 +795,12 @@ def main():
         # Prompt user for options related to this install
         targetFolder = getInstallOptions()
 
+        if (not steamMode) and not fastMode:
+            sys.stdout.write('\n')
+
         # Determine module combination...
 
-        EMF = True if steamMode else enableMod(u"EMF: Extended Mechanics & Flavor ({})".format(versions['EMF']))
+        EMF = True if steamMode else enableMod(u"EMF ({})".format(versions['EMF']))
         PB = True
 
         if not steamMode:
@@ -806,6 +809,11 @@ def main():
                     print(u"[ Automatically including shared files from Project Balance ... ]")
             else:
                 PB = enableMod(u"Project Balance ({})".format(versions['PB']))
+
+        if (not steamMode) and not fastMode:
+            print(u"\nNOTE: The SWMH map does net yet include India and will never include the 769\n"
+                  u"bookmark. However, SWMH does support all Charlemagne mechancs in 867. If you'd\n"
+                  u"like to play with the vanilla map instead, simply type 'n' or 'no' for SWMH.\n")
 
         SWMH = False if steamMode else enableMod(u'SWMH ({})'.format(versions['SWMH']))
         SWMHnative = True
@@ -818,14 +826,11 @@ def main():
         else:
             NBRT = False if steamMode else enableModDefaultNo(u"NBRT+ ({})".format(versions['NBRT']))
 
-        # ARKOCoA = True if steamMode \
-        #     else enableMod(u"ARKOpack Armoiries (coats of arms) ({})".format(versions['ARKO']))
-        #
-        # ARKOInt = False if (steamMode or fastMode) \
-        #     else enableMod(u"ARKOpack Interface ({})".format(versions['ARKO']))
+        ARKOCoA = True if steamMode \
+            else enableMod(u"ARKOpack Armoiries (coats of arms) ({})".format(versions['ARKO']))
 
-        ARKOCoA = False
-        ARKOInt = False
+        ARKOInt = False if (steamMode or fastMode) \
+            else enableMod(u"ARKOpack Interface ({})".format(versions['ARKO']))
 
         CPR = False
 
@@ -871,6 +876,9 @@ def main():
                     print(u"[ Required portrait DLCs for CPR auto-detected OK... ]")
                 CPR = enableModDefaultNo(u"CPR ({})".format(versions['CPR']), compat=True)
 
+        if (not fastMode) and not steamMode:
+            print(u"[ NOTE: CPR is not yet available for CKII v2.2. ]")
+
         VIETimmersion = False
 
         if betaMode:
@@ -880,12 +888,8 @@ def main():
         VIETtraits = False if (PB or EMF) else enableMod(u"VIET Traits ({})".format(versions['VIET']))
         VIET = (VIETtraits or VIETevents or VIETimmersion)
 
-        if (not fastMode) and not steamMode:
-            print(u"[ NOTE: ARKOPack is not yet available for CKII v2.2. ]")
-            print(u"[ NOTE: CPR is not yet available for CKII v2.2. ]")
-
         HIP = EMF or PB or VIETimmersion or VIETevents  # HIP_Common (Isis, e_hip, our event picture stash, etc.)
-        Converter = (EMF or PB or VIETimmersion) and betaMode and not SWMH  # Vanilla EUIV Converter
+        Converter = (EMF or PB or VIETimmersion) and not SWMH  # Vanilla EUIV Converter
 
         euFolderBase = '../eu4_export/mod'
         euSubfolder = 'HIP_Converter'
@@ -1045,14 +1049,12 @@ def main():
                 popTree('history/technology', targetFolder)
 
             popFile('history/titles/k_bohemia.txt', targetFolder)
-
-            if SWMH:
-                popFile('decisions/indian_empire_decision.txt', targetFolder)
+            popFile('decisions/indian_empire_decision.txt', targetFolder)
 
             dbg.pop()
 
         if Converter:
-            pushFolder("Converter/Vanilla", targetFolder)  # Z: Causes instant CTD with CKII v2.2, thus betaMode
+            pushFolder("Converter/Vanilla", targetFolder)
             pushFolder("Converter/Extra", euFolder)
 
         dbg.pop("virtual filesystem merge complete")
