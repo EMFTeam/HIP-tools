@@ -9,8 +9,8 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 7,
-           'Developer': 'zijistark <zijistark@gmail.com>',
+version = {'major': 1, 'minor': 7, 'patch': 8,
+           'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
 
@@ -736,7 +736,6 @@ def main():
 
         dbgMode = (len(sys.argv) > 1 and '-D' in sys.argv[1:])
         versionMode = (len(sys.argv) > 1 and '-V' in sys.argv[1:])
-        emfMode = (len(sys.argv) > 1 and '-E' in sys.argv[1:])
 
         global steamMode
         global fastMode
@@ -798,11 +797,7 @@ def main():
 
         # Determine module combination...
 
-        EMF = False
-
-        if emfMode:
-            EMF = True if steamMode else enableMod(u"EMF: Extended Mechanics & Flavor ({})".format(versions['EMF']))
-
+        EMF = True if steamMode else enableMod(u"EMF: Extended Mechanics & Flavor ({})".format(versions['EMF']))
         PB = True
 
         if not steamMode:
@@ -822,11 +817,6 @@ def main():
             NBRT = True if (steamMode or fastMode) else enableMod(u"NBRT+ ({})".format(versions['NBRT']))
         else:
             NBRT = False if steamMode else enableModDefaultNo(u"NBRT+ ({})".format(versions['NBRT']))
-
-        if NBRT and SWMH and betaMode:
-            NBRTfull = enableModDefaultNo(u"BETA: Full NBRT+SWMH ({})".format(versions['NBRT']))
-        else:
-            NBRTfull = False
 
         # ARKOCoA = True if steamMode \
         #     else enableMod(u"ARKOpack Armoiries (coats of arms) ({})".format(versions['ARKO']))
@@ -972,12 +962,12 @@ def main():
             dbg.push("merging NBRT+...")
             moduleOutput.append("NBRT+ (%s)\n" % versions['NBRT'])
             pushFolder("NBRT+", targetFolder)
-            if NBRTfull and SWMH and platform == "win":
-                pushFolder("NBRT+SWMH", targetFolder)  # Z: v2.2: This does not work and is thus disabled by default.
+            if SWMH and platform == "win":
+                pushFolder("NBRT+SWMH", targetFolder)
             if ARKOCoA:
-                pushFolder("NBRT+ARKO", targetFolder)  # Z: v2.2: This will work
-            # Z: 2.2 compatch for NBRT+ Light/Normal
-            popFile('gfx/FX/pdxmap.fxh', targetFolder)
+                pushFolder("NBRT+ARKO", targetFolder)
+            if not SWMH:
+                popFile('gfx/FX/pdxmap.fxh', targetFolder)  # Z: 2.2 compatch for NBRT+ Light (and Mac/Linux compatch)
             dbg.pop()
 
         if VIETtraits:
