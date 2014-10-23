@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 9,
+version = {'major': 1, 'minor': 7, 'patch': 10,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -834,7 +834,7 @@ def main():
 
         CPR = False
 
-        if not steamMode and False:  # Disabled while CPR is disabled
+        if (not steamMode) and not betaMode:  # Disabled while CPR is disabled
             cprMissingDLCNames = detectCPRMissingDLCs()
 
             if cprMissingDLCNames is None:  # DLC auto-detection failed
@@ -849,7 +849,7 @@ def main():
 
                         printCPRReqDLCNames()
 
-                    CPR = enableModDefaultNo(u"CPR ({})".format(versions['CPR']), compat=True)
+                    CPR = enableModDefaultNo(u"BETA: CPR ({})".format(versions['CPR']), compat=True)
 
                 else:  # No auto-detection supported on mac/lin, so allow the user to choose CPR w/ zero fuss.
                     if not fastMode:
@@ -858,7 +858,7 @@ def main():
 
                         printCPRReqDLCNames()
 
-                    CPR = enableModDefaultNo(u"CPR ({})".format(versions['CPR']), compat=True)
+                    CPR = enableModDefaultNo(u"BETA: CPR ({})".format(versions['CPR']), compat=True)
 
             elif len(cprMissingDLCNames) > 0:  # DLC auto-detection succeeded, but there were missing DLCs.
                 if not fastMode:
@@ -874,9 +874,9 @@ def main():
             else:  # DLC auto-detection succeeded, and CPR is clear for take-off. However, we still default to No.
                 if not fastMode:
                     print(u"[ Required portrait DLCs for CPR auto-detected OK... ]")
-                CPR = enableModDefaultNo(u"CPR ({})".format(versions['CPR']), compat=True)
+                CPR = enableModDefaultNo(u"BETA: CPR ({})".format(versions['CPR']), compat=True)
 
-        if (not fastMode) and not steamMode:
+        if (not fastMode) and not steamMode and not betaMode:
             print(u"[ NOTE: CPR is not yet available for CKII v2.2. ]")
 
         VIETimmersion = False
