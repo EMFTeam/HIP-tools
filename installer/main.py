@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 11,
+version = {'major': 1, 'minor': 7, 'patch': 12,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -1044,6 +1044,7 @@ def main():
 
             if not SWMH:
                 popTree('history/technology', targetFolder)
+                popFile('history/titles/d_saxony.txt', targetFolder)
 
             popFile('history/titles/k_bohemia.txt', targetFolder)
             popFile('decisions/indian_empire_decision.txt', targetFolder)
