@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 13,
+version = {'major': 1, 'minor': 7, 'patch': 14,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -189,13 +189,14 @@ class DebugTrace(NullDebugTrace):
         self.file.flush()
 
     def push(self, s):  # Trace, then push indent stack
-        self.trace(s)
+        self.trace('{} {{'.format(s))
         self.i += 1
 
     def pop(self, s=None):  # Pop indent stack
         if self.i <= 0:
             raise InstallerTraceNestingError()
         self.i -= 1
+        self.trace('}')
         if s:
             self.trace(s)
 
@@ -255,21 +256,21 @@ def rmTree(directory, traceMsg=None):
     if traceMsg:
         dbg.trace(traceMsg)
     if os.path.exists(directory):
-        dbg.trace("RD: " + quoteIfWS(directory))
+        dbg.trace("rmdir({})".format(quoteIfWS(directory)))
         shutil.rmtree(directory)
 
 
 def rmFile(f, traceMsg=None):
     if traceMsg:
         dbg.trace(traceMsg)
-    dbg.trace("D: " + quoteIfWS(f))
+    dbg.trace('rm({})'.format(quoteIfWS(f)))
     os.remove(f)
 
 
 def mkTree(d, traceMsg=None):
     if traceMsg:
         dbg.trace(traceMsg)
-    dbg.trace("MD: " + quoteIfWS(d))
+    dbg.trace("mkdir({})".format(quoteIfWS(d)))
     os.makedirs(d)
 
 
@@ -287,23 +288,23 @@ def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None):
     srcFolder = os.path.join('modules', folder)
 
     if not os.path.exists(srcFolder):
-        dbg.trace("WARNING! MODULE NOT FOUND: {}".format(quoteIfWS(folder)))
+        dbg.trace("MODULE_NOT_FOUND({})".format(quoteIfWS(folder)))
         return
+
+    dbg.push('push_module({})'.format(quoteIfWS(srcFolder)))
 
     ignoreFiles = {os.path.join(srcFolder, os.path.normpath(x)) for x in ignoreFiles}
     prunePaths = {os.path.join(srcFolder, os.path.normpath(x)) for x in prunePaths}
 
     for x in ignoreFiles:
-        dbg.trace('SOURCE FILE FILTER: {}'.format(quoteIfWS(x)))
+        dbg.trace('file_filter({})'.format(quoteIfWS(x)))
 
     for x in prunePaths:
-        dbg.trace('SOURCE PATH FILTER: {}'.format(quoteIfWS(x)))
-
-    dbg.push("compile: pushing folder " + srcFolder)
+        dbg.trace('path_filter({})'.format(quoteIfWS(x)))
 
     for root, dirs, files in os.walk(srcFolder):
         newRoot = root.replace(srcFolder, targetFolder)
-        dbg.push('adding path ' + root)
+        dbg.push('push_dir({})'.format(quoteIfWS(root)))
 
         # Prune the source directory walk in-place according to prunePaths option,
         # and, of course, don't create pruned directories (none of the files in
@@ -312,26 +313,31 @@ def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None):
 
         for directory in dirs:
             srcPath = os.path.join(root, directory)
+#           dbg.trace('dir({})'.format(quoteIfWS(srcPath)))
             if srcPath in prunePaths:
-                dbg.trace("PRUNE: " + srcPath)
+                dbg.trace('filtered_dir({})'.format(quoteIfWS(srcPath)))
             else:
                 prunedDirs.append(directory)
                 newDir = os.path.join(newRoot, directory)
                 targetSrc[newDir] = TargetSource(folder, srcPath, isDir=True)
 
         dirs[:] = prunedDirs  # Filter subdirectories into which we should recurse on next os.walk()
+        nPushed = 0
 
         for f in files:
             src = os.path.join(root, f)
             dst = os.path.join(newRoot, f)
 
             if src in ignoreFiles:  # Selective ignore filter for individual files
-                dbg.trace('IGNORE: ' + quoteIfWS(src))
+                dbg.trace('filtered_file({})'.format(quoteIfWS(src)))
                 continue
 
-            dbg.trace(quoteIfWS(dst) + ' <= ' + quoteIfWS(src))
+#           dbg.trace(quoteIfWS(dst) + ' <= ' + quoteIfWS(src))
 
             targetSrc[dst] = TargetSource(folder, src)
+            nPushed += 1
+
+        dbg.trace('num_files_pushed({})'.format(nPushed))
         dbg.pop()
     dbg.pop()
 
@@ -340,14 +346,14 @@ def popFile(f, targetFolder):
     f = os.path.normpath(f)
     p = os.path.join(targetFolder, f)
     if p in targetSrc:
-        dbg.trace("popFile: {}".format(quoteIfWS(p)))
+        dbg.trace("pop_file({})".format(quoteIfWS(p)))
         del targetSrc[p]
 
 
 def popTree(d, targetFolder):
     d = os.path.normpath(d)
     t = os.path.join(targetFolder, d)
-    dbg.push("popTree: {}".format(quoteIfWS(t)))
+    dbg.push("pop_path_prefix({})".format(quoteIfWS(t)))
     for p in [p for p in targetSrc.keys() if p.startswith(t)]:
         dbg.trace(p)
         del targetSrc[p]
@@ -368,7 +374,6 @@ def compileTarget(mapFilename):
     print(localise('COMPILING'))
     sys.stdout.flush()
 
-    dbg.push("compiling target with file->mod mapping dumped to '{}'...".format(mapFilename))
     x = len(targetSrc) // 10
 
     with open(mapFilename, "w") as mapFile:
@@ -404,7 +409,7 @@ def cleanUserDir(userDir):
     #if platform != 'mac':
     #    print('Clearing cache in ' + quoteIfWS(userDir))
 
-    dbg.push('clearing cache in ' + quoteIfWS(userDir))
+    dbg.push('clean_userdir({})'.format(quoteIfWS(userDir)))
     for d in [os.path.join(userDir, e) for e in ['gfx', 'map', 'interface', 'logs']]:
         rmTree(d)
     dbg.pop()
@@ -515,15 +520,14 @@ def printVersionEnvInfo():
 def getPkgVersions(modDirs):
     global versions
     versions = {}
-    dbg.push("reading package/module versions")
+    dbg.push("read_versions")
     for mod in modDirs.keys():
         f = os.path.join("modules", modDirs[mod], "version.txt")
-        dbg.trace("%s: reading %s" % (mod, f))
         if os.path.exists(f):
             versions[mod] = unicode(open(f).readline().strip())
         else:
             versions[mod] = u'no version'
-        dbg.trace("%s: version: %s" % (mod, versions[mod]))
+        dbg.trace("version(%s => '%s')" % (mod, versions[mod]))
     dbg.pop()
 
 
@@ -570,7 +574,7 @@ def getInstallOptions():
 
     if move:
         move = isYes(promptUser(localise('MOVE_CONFIRM')))
-    dbg.trace('user choice: move instead of copy: {}'.format(move))
+    dbg.trace('move_instead_of_copy({})'.format(move))
 
     # Determine installation target folder...
     global defaultFolder
@@ -585,7 +589,7 @@ def getInstallOptions():
         targetFolder = defaultFolder
     else:
         pass  # TODO: verify it contains no illegal characters
-    dbg.trace('user choice: target folder: {}'.format(quoteIfWS(targetFolder)))
+    dbg.trace('target_folder({})'.format(quoteIfWS(targetFolder)))
 
     return targetFolder
 
@@ -597,7 +601,7 @@ def getSteamGameFolder(appID, variantID):
     keyPath = r'SOFTWARE{}\Microsoft\Windows\CurrentVersion\Uninstall\Steam App {}'.format(pathVariant[variantID],
                                                                                            appID)
 
-    dbg.push('looking for steam game folder in registry key ' + keyPath)
+    dbg.push('search_winreg_key({})'.format(keyPath))
 
     # TODO!!
     # _winreg import will fail on Python 3, so a check against the Python major version and subsequent conditional
@@ -622,7 +626,7 @@ def getSteamGameFolder(appID, variantID):
         if not folder:
             raise EnvironmentError()
 
-        dbg.trace('InstallLocation = {}'.format(folder[0]))
+        dbg.trace('winreg_key_found(InstallLocation => {})'.format(quoteIfWS(folder[0])))
 
         hKey.Close()
         hReg.Close()
@@ -715,7 +719,7 @@ def scaffoldMod(baseFolder, targetFolder, modBasename, modName, modPath, modUser
     modFilename = os.path.join(baseFolder, modFilename)
 
     # Generate a new .mod file...
-    dbg.trace("generating .mod file " + quoteIfWS(modFilename))
+    dbg.trace('write_dot_mod({})'.format(quoteIfWS(modFilename)))
 
     with open(modFilename, "w") as modFile:
         modFile.write('name = "{}"  # Name to use as a dependency if making a sub-mod\n'.format(modName))
@@ -754,11 +758,11 @@ def main():
         # trace data will have already had its __write() syscalls queued to the OS.
 
         global dbg
-        dbg = DebugTrace(open('HIP_debug.log', 'w', 0)) if dbgMode else NullDebugTrace()
+        dbg = DebugTrace(open('HIP_debug.log', 'w'), prefix='') if dbgMode else NullDebugTrace()
 
         global platform
         platform = detectPlatform()
-        dbg.trace('detected supported platform class: ' + platform)
+        dbg.trace('platform({})'.format(platform))
 
         if versionMode:
             printVersionEnvInfo()
@@ -921,16 +925,16 @@ def main():
         targetSrc = {}
 
         moduleOutput = ["[HIP %s]\nEnabled HIP modules:\n" % versions['pkg']]
-        dbg.push('performing virtual filesystem merge...')
+        dbg.push('merge_all')
 
         if ARKOCoA:
-            dbg.push("merging ARKO CoA...")
+            dbg.push("merge('ARKO CoA')")
             moduleOutput.append("ARKO Armoiries (%s)\n" % versions['ARKO'])
             pushFolder("ARKOpack_Armoiries", targetFolder)
             dbg.pop()
 
         if ARKOInt:
-            dbg.push("merging ARKO Interface...")
+            dbg.push("merge('ARKO Interface')")
             moduleOutput.append("ARKO Interface (%s)\n" % versions['ARKO'])
             pushFolder("ARKOpack_Interface", targetFolder)
             if HIP:
@@ -944,13 +948,13 @@ def main():
             pushFolder("VIET_Assets", targetFolder)
 
         if PB:
-            dbg.push("merging PB...")
+            dbg.push("merge(PB)")
             moduleOutput.append("Project Balance (%s)\n" % versions['PB'])
             pushFolder("ProjectBalance", targetFolder)
             dbg.pop()
 
         if SWMH:
-            dbg.push("merging SWMH...")
+            dbg.push("merge(SWMH)")
             pushFolder("SWMH", targetFolder)
             if SWMHnative:
                 moduleOutput.append("SWMH - Native localisation (%s)\n" % versions['SWMH'])
@@ -963,7 +967,7 @@ def main():
             dbg.pop()
 
         if NBRT:
-            dbg.push("merging NBRT+...")
+            dbg.push("merge(NBRT)")
             moduleOutput.append("NBRT+ (%s)\n" % versions['NBRT'])
             pushFolder("NBRT+", targetFolder)
             if SWMH and platform == "win":
@@ -975,13 +979,13 @@ def main():
             dbg.pop()
 
         if VIETtraits:
-            dbg.push("merging VIET Traits...")
+            dbg.push("merge('VIET Traits')")
             moduleOutput.append("VIET Traits (%s)\n" % versions['VIET'])
             pushFolder("VIET_Traits", targetFolder)
             dbg.pop()
 
         if VIETevents:
-            dbg.push("merging VIET Events...")
+            dbg.push("merge('VIET Events')")
             moduleOutput.append("VIET Events (%s)\n" % versions['VIET'])
             pushFolder("VIET_Events", targetFolder)
             if PB:
@@ -989,7 +993,7 @@ def main():
             dbg.pop()
 
         if VIETimmersion:
-            dbg.push("merging VIET Immersion...")
+            dbg.push("merge('VIET Immersion')")
             moduleOutput.append("VIET Immersion (%s)\n" % versions['VIET'])
 
             filterPath = set(['history']) if SWMH else set()
@@ -1009,7 +1013,7 @@ def main():
             dbg.pop()
 
         if CPR:
-            dbg.push('merging CPR...')
+            dbg.push('merge(CPR)')
             moduleOutput.append("Cultures and Portaits Revamp (%s)\n" % versions['CPR'])
             pushFolder('Cultures and Portraits Revamp/common', targetFolder)
             if SWMH:
@@ -1023,7 +1027,7 @@ def main():
             dbg.pop()
 
         if EMF:
-            dbg.push('merging EMF...')
+            dbg.push('merge(EMF)')
             moduleOutput.append("EMF: Extended Mechanics & Flavor (%s)\n" % versions['EMF'])
 
             filteredFiles = set(['common/landed_titles/landed_titles.txt']) if SWMH else set()
@@ -1066,7 +1070,7 @@ def main():
             pushFolder("Converter/Vanilla", targetFolder)
             pushFolder("Converter/Extra", euFolder)
 
-        dbg.pop("virtual filesystem merge complete")
+        dbg.pop("merge_done")
 
         # Where to dump a mapping of all the compiled files to their source modules (will include stuff from outside
         # targetFolder for now too if such stuff is pushed on to the virtual filesystem)
@@ -1093,7 +1097,6 @@ def main():
         with open(versionFilename, "w") as output:
             output.write("".join(moduleOutput))
 
-        dbg.trace("dumping compiled modpack version summary to " + quoteIfWS(versionFilename))
         print(u"Summarized mod combination/versions (INCLUDE FILE CONTENTS IN BUG REPORTS):")
         print(unicode(versionFilename + "\n"))
 
@@ -1102,7 +1105,7 @@ def main():
         resetCaches()
 
         # Installation complete
-        dbg.trace("installation complete")
+        dbg.trace("install_done")
         promptUser(localise('INSTALL_DONE'))
 
         return 0  # Return success code to OS
