@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 12,
+version = {'major': 1, 'minor': 7, 'patch': 13,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -689,7 +689,7 @@ def printCPRReqDLCNames():
     sys.stdout.write('\n')
 
 
-def scaffoldMod(baseFolder, targetFolder, modBasename, modName, modPath, modUserDir=None):
+def scaffoldMod(baseFolder, targetFolder, modBasename, modName, modPath, modUserDir=None, eu4Version=None):
     # Remove preexisting target folder...
     if os.path.exists(targetFolder):
 
@@ -724,6 +724,8 @@ def scaffoldMod(baseFolder, targetFolder, modBasename, modName, modPath, modUser
             modFile.write('user_dir = "%s"  '
                           '# Ensure we get our own versions of the gfx/map caches and savegames\n' %
                           modBasename)
+        if eu4Version is not None:
+            modFile.write('supported_version = {}\n'.format(eu4Version))
 
     return modFilename
 
@@ -911,7 +913,8 @@ def main():
                                         euFolder,
                                         'HIP_Converter',
                                         'HIP Converter Support',
-                                        euSubfolder)
+                                        euSubfolder,
+                                        eu4Version='1.8')
 
         # Install...
         global targetSrc
@@ -988,13 +991,21 @@ def main():
         if VIETimmersion:
             dbg.push("merging VIET Immersion...")
             moduleOutput.append("VIET Immersion (%s)\n" % versions['VIET'])
-            pushFolder("VIET_Immersion/common", targetFolder)
+
+            filterPath = set(['history']) if SWMH else set()
+
+            pushFolder("VIET_Immersion/common", targetFolder, prunePaths=filterPath)
+
             if PB:
-                pushFolder("VIET_Immersion/PB", targetFolder)
+                pushFolder("VIET_Immersion/PB", targetFolder, prunePaths=filterPath)
                 if EMF:
-                    pushFolder("VIET_Immersion/EMF", targetFolder)
+                    pushFolder("VIET_Immersion/EMF", targetFolder, prunePaths=filterPath)
             else:
-                pushFolder("VIET_Immersion/vanilla", targetFolder)
+                pushFolder("VIET_Immersion/vanilla", targetFolder, prunePaths=filterPath)
+
+            if SWMH:
+                pushFolder("Immersion + SWMH", targetFolder)
+
             dbg.pop()
 
         if CPR:
