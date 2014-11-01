@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 14,
+version = {'major': 1, 'minor': 7, 'patch': 15,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -256,21 +256,21 @@ def rmTree(directory, traceMsg=None):
     if traceMsg:
         dbg.trace(traceMsg)
     if os.path.exists(directory):
-        dbg.trace("rmdir({})".format(quoteIfWS(directory)))
+        dbg.trace("rmdir('{}')".format(directory))
         shutil.rmtree(directory)
 
 
 def rmFile(f, traceMsg=None):
     if traceMsg:
         dbg.trace(traceMsg)
-    dbg.trace('rm({})'.format(quoteIfWS(f)))
+    dbg.trace('rm("{}")'.format(f))
     os.remove(f)
 
 
 def mkTree(d, traceMsg=None):
     if traceMsg:
         dbg.trace(traceMsg)
-    dbg.trace("mkdir({})".format(quoteIfWS(d)))
+    dbg.trace("mkdir('{}')".format(d))
     os.makedirs(d)
 
 
@@ -288,23 +288,23 @@ def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None):
     srcFolder = os.path.join('modules', folder)
 
     if not os.path.exists(srcFolder):
-        dbg.trace("MODULE_NOT_FOUND({})".format(quoteIfWS(folder)))
+        dbg.trace("MODULE_NOT_FOUND('{}')".format(folder))
         return
 
-    dbg.push('push_module({})'.format(quoteIfWS(srcFolder)))
+    dbg.push('push_module("{}")'.format(srcFolder))
 
     ignoreFiles = {os.path.join(srcFolder, os.path.normpath(x)) for x in ignoreFiles}
     prunePaths = {os.path.join(srcFolder, os.path.normpath(x)) for x in prunePaths}
 
     for x in ignoreFiles:
-        dbg.trace('file_filter({})'.format(quoteIfWS(x)))
+        dbg.trace('file_filter("{}")'.format(x))
 
     for x in prunePaths:
-        dbg.trace('path_filter({})'.format(quoteIfWS(x)))
+        dbg.trace('path_filter("{}")'.format(x))
 
     for root, dirs, files in os.walk(srcFolder):
         newRoot = root.replace(srcFolder, targetFolder)
-        dbg.push('push_dir({})'.format(quoteIfWS(root)))
+        dbg.push('push_dir("{}")'.format(root))
 
         # Prune the source directory walk in-place according to prunePaths option,
         # and, of course, don't create pruned directories (none of the files in
@@ -315,7 +315,7 @@ def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None):
             srcPath = os.path.join(root, directory)
 #           dbg.trace('dir({})'.format(quoteIfWS(srcPath)))
             if srcPath in prunePaths:
-                dbg.trace('filtered_dir({})'.format(quoteIfWS(srcPath)))
+                dbg.trace('filtered_dir("{}")'.format(srcPath))
             else:
                 prunedDirs.append(directory)
                 newDir = os.path.join(newRoot, directory)
@@ -329,7 +329,7 @@ def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None):
             dst = os.path.join(newRoot, f)
 
             if src in ignoreFiles:  # Selective ignore filter for individual files
-                dbg.trace('filtered_file({})'.format(quoteIfWS(src)))
+                dbg.trace('filtered_file("{}")'.format(src))
                 continue
 
 #           dbg.trace(quoteIfWS(dst) + ' <= ' + quoteIfWS(src))
@@ -346,14 +346,14 @@ def popFile(f, targetFolder):
     f = os.path.normpath(f)
     p = os.path.join(targetFolder, f)
     if p in targetSrc:
-        dbg.trace("pop_file({})".format(quoteIfWS(p)))
+        dbg.trace("pop_file('{}')".format(p))
         del targetSrc[p]
 
 
 def popTree(d, targetFolder):
     d = os.path.normpath(d)
     t = os.path.join(targetFolder, d)
-    dbg.push("pop_path_prefix({})".format(quoteIfWS(t)))
+    dbg.push("pop_path_prefix('{}')".format(t))
     for p in [p for p in targetSrc.keys() if p.startswith(t)]:
         dbg.trace(p)
         del targetSrc[p]
@@ -409,7 +409,7 @@ def cleanUserDir(userDir):
     #if platform != 'mac':
     #    print('Clearing cache in ' + quoteIfWS(userDir))
 
-    dbg.push('clean_userdir({})'.format(quoteIfWS(userDir)))
+    dbg.push('clean_userdir("{}")'.format(userDir))
     for d in [os.path.join(userDir, e) for e in ['gfx', 'map', 'interface', 'logs']]:
         rmTree(d)
     dbg.pop()
@@ -527,7 +527,7 @@ def getPkgVersions(modDirs):
             versions[mod] = unicode(open(f).readline().strip())
         else:
             versions[mod] = u'no version'
-        dbg.trace("version(%s => '%s')" % (mod, versions[mod]))
+        dbg.trace("version('%s' => '%s')" % (mod, versions[mod]))
     dbg.pop()
 
 
@@ -589,7 +589,7 @@ def getInstallOptions():
         targetFolder = defaultFolder
     else:
         pass  # TODO: verify it contains no illegal characters
-    dbg.trace('target_folder({})'.format(quoteIfWS(targetFolder)))
+    dbg.trace('target_folder("{}")'.format(targetFolder))
 
     return targetFolder
 
@@ -601,7 +601,7 @@ def getSteamGameFolder(appID, variantID):
     keyPath = r'SOFTWARE{}\Microsoft\Windows\CurrentVersion\Uninstall\Steam App {}'.format(pathVariant[variantID],
                                                                                            appID)
 
-    dbg.push('search_winreg_key({})'.format(keyPath))
+    dbg.push('search_winreg_key("{}")'.format(keyPath))
 
     # TODO!!
     # _winreg import will fail on Python 3, so a check against the Python major version and subsequent conditional
@@ -626,7 +626,7 @@ def getSteamGameFolder(appID, variantID):
         if not folder:
             raise EnvironmentError()
 
-        dbg.trace('winreg_key_found(InstallLocation => {})'.format(quoteIfWS(folder[0])))
+        dbg.trace('winreg_key_found(InstallLocation => "{}")'.format(folder[0]))
 
         hKey.Close()
         hReg.Close()
@@ -703,9 +703,10 @@ def scaffoldMod(baseFolder, targetFolder, modBasename, modName, modPath, modUser
         print(u"> Removing preexisting '%s' ..." % targetFolder)
         sys.stdout.flush()
         startTime = time.time()
-        rmTree(targetFolder, 'target folder preexists. removing...')
+        rmTree(targetFolder, 'rm_preexisting_mod("{}")'.format(targetFolder))
         endTime = time.time()
         print(u'> Removed (%0.1f sec).\n' % (endTime - startTime))
+        sys.stdout.flush()
 
     mkTree(targetFolder)
 
@@ -719,7 +720,7 @@ def scaffoldMod(baseFolder, targetFolder, modBasename, modName, modPath, modUser
     modFilename = os.path.join(baseFolder, modFilename)
 
     # Generate a new .mod file...
-    dbg.trace('write_dot_mod({})'.format(quoteIfWS(modFilename)))
+    dbg.trace('write_dot_mod("{}")'.format(modFilename))
 
     with open(modFilename, "w") as modFile:
         modFile.write('name = "{}"  # Name to use as a dependency if making a sub-mod\n'.format(modName))
@@ -883,12 +884,14 @@ def main():
                 CPR = enableModDefaultNo(u"CPR ({})".format(versions['CPR']), compat=True)
 
         VIETimmersion = False
+        VIETtraits2 = False
 
         if betaMode:
             VIETimmersion = enableMod(u"BETA: VIET Immersion ({})".format(versions['VIET']))
+            VIETtraits2 = enableMod(u"BETA: VIET Traits ({})".format(versions['VIET']))
 
         VIETevents = True if (VIETimmersion or steamMode) else enableMod(u"VIET Events ({})".format(versions['VIET']))
-        VIETtraits = False if (PB or EMF) else enableMod(u"VIET Traits ({})".format(versions['VIET']))
+        VIETtraits = False if (PB or EMF or VIETtraits2) else enableMod(u"VIET Traits ({})".format(versions['VIET']))
         VIET = (VIETtraits or VIETevents or VIETimmersion)
 
         HIP = EMF or PB or VIETimmersion or VIETevents  # HIP_Common (Isis, e_hip, our event picture stash, etc.)
@@ -982,6 +985,12 @@ def main():
             dbg.push("merge('VIET Traits')")
             moduleOutput.append("VIET Traits (%s)\n" % versions['VIET'])
             pushFolder("VIET_Traits", targetFolder)
+            dbg.pop()
+
+        if VIETtraits2:
+            dbg.push("merge('VIET Traits BETA')")
+            moduleOutput.append("VIET Traits BETA (%s)\n" % versions['VIET'])
+            pushFolder("VIET_Traits2", targetFolder)
             dbg.pop()
 
         if VIETevents:
