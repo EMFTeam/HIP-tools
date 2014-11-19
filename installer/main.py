@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 15,
+version = {'major': 1, 'minor': 7, 'patch': 17,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -819,7 +819,7 @@ def main():
 
         if (not steamMode) and not fastMode:
             print(u"\nNOTE: The SWMH map does net yet include India and will never include the 769\n"
-                  u"bookmark. However, SWMH does support all Charlemagne mechancs in 867. If you'd\n"
+                  u"bookmark. However, SWMH does support all Charlemagne mechanics in 867. If you'd\n"
                   u"like to play with the vanilla map instead, simply type 'n' or 'no' for SWMH.\n")
 
         SWMH = False if steamMode else enableMod(u'SWMH ({})'.format(versions['SWMH']))
@@ -1064,13 +1064,14 @@ def main():
                       'e_spain.txt',
                       'e_tartaria.txt',
                       'india.txt']:
-                popFile(os.path.join('common/landed_titles/', f), targetFolder)
+                popFile(os.path.join('common/landed_titles', f), targetFolder)
 
             if not SWMH:
                 popTree('history/technology', targetFolder)
                 popFile('history/titles/d_saxony.txt', targetFolder)
+                popFile('history/titles/k_bohemia.txt', targetFolder)
 
-            popFile('history/titles/k_bohemia.txt', targetFolder)
+            popFile('gfx/flags/k_coptic.tga', targetFolder)
             popFile('decisions/indian_empire_decision.txt', targetFolder)
 
             dbg.pop()
