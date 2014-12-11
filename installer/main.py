@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 17,
+version = {'major': 1, 'minor': 7, 'patch': 18,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -410,7 +410,7 @@ def cleanUserDir(userDir):
     #    print('Clearing cache in ' + quoteIfWS(userDir))
 
     dbg.push('clean_userdir("{}")'.format(userDir))
-    for d in [os.path.join(userDir, e) for e in ['gfx', 'map', 'interface', 'logs']]:
+    for d in [os.path.join(userDir, e) for e in ['gfx', 'map']]:
         rmTree(d)
     dbg.pop()
 
