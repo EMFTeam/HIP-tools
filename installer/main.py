@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 18,
+version = {'major': 1, 'minor': 7, 'patch': 19,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -921,7 +921,7 @@ def main():
                                         'HIP_Converter',
                                         'HIP Converter Support',
                                         euSubfolder,
-                                        eu4Version='1.8')
+                                        eu4Version='1.9')
 
         # Install...
         global targetSrc
