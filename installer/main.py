@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 20,
+version = {'major': 1, 'minor': 7, 'patch': 21,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -817,22 +817,6 @@ def main():
             else:
                 PB = enableMod(u"Project Balance ({})".format(versions['PB']))
 
-        if (not steamMode) and not fastMode:
-            print(u"\nNOTE: The SWMH map does net yet include India and will never include the 769\n"
-                  u"bookmark. However, SWMH does support all Charlemagne mechanics in 867. If you'd\n"
-                  u"like to play with the vanilla map instead, simply type 'n' or 'no' for SWMH.\n")
-
-        SWMH = False if steamMode else enableMod(u'SWMH ({})'.format(versions['SWMH']))
-        SWMHnative = True
-
-        if SWMH:
-            SWMHnative = True if (steamMode or fastMode) else enableMod(localise('SWMH_NATIVE'))
-
-        if platform == 'win':
-            NBRT = True if (steamMode or fastMode) else enableMod(u"NBRT+ ({})".format(versions['NBRT']))
-        else:
-            NBRT = False if steamMode else enableModDefaultNo(u"NBRT+ ({})".format(versions['NBRT']))
-
         ARKOCoA = True if steamMode \
             else enableMod(u"ARKOpack Armoiries (coats of arms) ({})".format(versions['ARKO']))
 
@@ -893,6 +877,31 @@ def main():
         VIETevents = True if (VIETimmersion or steamMode) else enableMod(u"VIET Events ({})".format(versions['VIET']))
         VIETtraits = False if (PB or EMF or VIETtraits2) else enableMod(u"VIET Traits ({})".format(versions['VIET']))
         VIET = (VIETtraits or VIETevents or VIETimmersion)
+
+        SWMH = False
+        SWMHnative = False
+
+        if False:
+            if (not steamMode) and not fastMode:
+                print(u"\nNOTE: The SWMH map does net yet include India and will never include the 769\n"
+                      u"bookmark. However, SWMH does support all Charlemagne mechanics in 867. If you'd\n"
+                      u"like to play with the vanilla map instead, simply type 'n' or 'no' for SWMH.\n")
+
+            SWMH = False if steamMode else enableMod(u'SWMH ({})'.format(versions['SWMH']))
+            SWMHnative = True
+
+        if SWMH:
+            SWMHnative = True if (steamMode or fastMode) else enableMod(localise('SWMH_NATIVE'))
+
+        print(u"\nNOTE: The SWMH map is temporarily unavailable due to issues with patch 2.3.\n"
+              u"      We are working hard to identify the cause of the issues, but we don't yet\n"
+              u"      have an ETA for its return. In the interim, enjoy a game on the vanilla\n"
+              u"      map instead (with NBRT+ if possible).\n"
+
+        if platform == 'win':
+            NBRT = True if (steamMode or fastMode) else enableMod(u"NBRT+ ({})".format(versions['NBRT']))
+        else:
+            NBRT = False if steamMode else enableModDefaultNo(u"NBRT+ ({})".format(versions['NBRT']))
 
         HIP = EMF or PB or VIETimmersion or VIETevents  # HIP_Common (Isis, e_hip, our event picture stash, etc.)
         Converter = (EMF or PB or VIETimmersion) and not SWMH  # Vanilla EUIV Converter
