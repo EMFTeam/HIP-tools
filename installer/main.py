@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 19,
+version = {'major': 1, 'minor': 7, 'patch': 20,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -836,7 +836,7 @@ def main():
         ARKOCoA = True if steamMode \
             else enableMod(u"ARKOpack Armoiries (coats of arms) ({})".format(versions['ARKO']))
 
-        ARKOInt = False if (steamMode or fastMode) \
+        ARKOInt = False if (True or steamMode or fastMode) \
             else enableMod(u"ARKOpack Interface ({})".format(versions['ARKO']))
 
         CPR = False
