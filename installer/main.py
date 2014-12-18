@@ -896,7 +896,7 @@ def main():
         print(u"\nNOTE: The SWMH map is temporarily unavailable due to issues with patch 2.3.\n"
               u"      We are working hard to identify the cause of the issues, but we don't yet\n"
               u"      have an ETA for its return. In the interim, enjoy a game on the vanilla\n"
-              u"      map instead (with NBRT+ if possible).\n"
+              u"      map instead (with NBRT+ if possible).\n")
 
         if platform == 'win':
             NBRT = True if (steamMode or fastMode) else enableMod(u"NBRT+ ({})".format(versions['NBRT']))
