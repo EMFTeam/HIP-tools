@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 21,
+version = {'major': 1, 'minor': 7, 'patch': 22,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -881,7 +881,7 @@ def main():
         SWMH = False
         SWMHnative = False
 
-        if False:
+        if True:
             if (not steamMode) and not fastMode:
                 print(u"\nNOTE: The SWMH map does net yet include India and will never include the 769\n"
                       u"bookmark. However, SWMH does support all Charlemagne mechanics in 867. If you'd\n"
@@ -893,10 +893,11 @@ def main():
         if SWMH:
             SWMHnative = True if (steamMode or fastMode) else enableMod(localise('SWMH_NATIVE'))
 
-        print(u"\nNOTE: The SWMH map is temporarily unavailable due to issues with patch 2.3.\n"
-              u"      We are working hard to identify the cause of the issues, but we don't yet\n"
-              u"      have an ETA for its return. In the interim, enjoy a game on the vanilla\n"
-              u"      map instead (with NBRT+ if possible).\n")
+        if False:
+            print(u"\nNOTE: The SWMH map is temporarily unavailable due to issues with patch 2.3.\n"
+                  u"      We are working hard to identify the cause of the issues, but we don't yet\n"
+                  u"      have an ETA for its return. In the interim, enjoy a game on the vanilla\n"
+                  u"      map instead (with NBRT+ if possible).\n")
 
         if platform == 'win':
             NBRT = True if (steamMode or fastMode) else enableMod(u"NBRT+ ({})".format(versions['NBRT']))
@@ -962,7 +963,8 @@ def main():
         if PB:
             dbg.push("merge(PB)")
             moduleOutput.append("Project Balance (%s)\n" % versions['PB'])
-            pushFolder("ProjectBalance", targetFolder)
+            filter = set(['history/provinces', 'common/landed_titles']) if EMF else set()
+            pushFolder("ProjectBalance", targetFolder, prunePaths=filter)
             dbg.pop()
 
         if SWMH:
@@ -974,7 +976,8 @@ def main():
                 moduleOutput.append("SWMH - English localisation (%s)\n" % versions['SWMH'])
                 pushFolder("English SWMH", targetFolder)
             if PB:
-                pushFolder("PB + SWMH", targetFolder)
+                filter = set(['history/provinces', 'common/landed_titles']) if EMF else set()
+                pushFolder("PB + SWMH", targetFolder, prunePaths=filter)
             pushFolder("SWMH_Logic", targetFolder)
             dbg.pop()
 
@@ -1048,41 +1051,21 @@ def main():
             dbg.push('merge(EMF)')
             moduleOutput.append("EMF: Extended Mechanics & Flavor (%s)\n" % versions['EMF'])
 
-            filteredFiles = set(['common/landed_titles/landed_titles.txt']) if SWMH else set()
+            filteredFiles = set(['common/landed_titles/landed_titles.txt',
+                                 'history/titles/k_shiite.txt']) if SWMH else set()
             pushFolder('EMF', targetFolder, ignoreFiles=filteredFiles)
 
             if SWMH:
                 pushFolder('EMF+SWMH', targetFolder)
-
             if VIETevents:
                 pushFolder('EMF+VEvents', targetFolder)
-
-            for f in ['e_arabia.txt',
-                      'e_britannia.txt',
-                      'e_byzantium.txt',
-                      'e_carpathia.txt',
-                      'e_ethiopia.txt',
-                      'e_france.txt',
-                      'e_hre.txt',
-                      'e_italy.txt',
-                      'e_mali.txt',
-                      'e_persia.txt',
-                      'e_poland_lithuania.txt',
-                      'e_russia.txt',
-                      'e_scandinavia.txt',
-                      'e_spain.txt',
-                      'e_tartaria.txt',
-                      'india.txt']:
-                popFile(os.path.join('common/landed_titles', f), targetFolder)
 
             if not SWMH:
                 popTree('history/technology', targetFolder)
                 popFile('history/titles/d_saxony.txt', targetFolder)
                 popFile('history/titles/k_bohemia.txt', targetFolder)
 
-            popFile('gfx/flags/k_coptic.tga', targetFolder)
             popFile('decisions/indian_empire_decision.txt', targetFolder)
-
             dbg.pop()
 
         if Converter:
