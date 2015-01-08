@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 22,
+version = {'major': 1, 'minor': 7, 'patch': 23,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -579,18 +579,21 @@ def getInstallOptions():
     # Determine installation target folder...
     global defaultFolder
     defaultFolder = 'Historical Immersion Project'
+    targetFolder = ''
+
+    useCustomFolder = isYesDefaultNo(promptUser('Do you want to install to a custom folder / name? [no] '))
+
+    if useCustomFolder:
 
     # Note that we use the case-preserving form of promptUser for the target folder (also determines name in launcher)
 
-    targetFolder = '' if (steamMode or fastMode) \
-        else promptUser(localise('TARGET_FOLDER').format(unicode(defaultFolder)), lc=False)
+        targetFolder = '' if (steamMode or fastMode) \
+            else promptUser(localise('TARGET_FOLDER').format(unicode(defaultFolder)), lc=False)
 
     if targetFolder == '':
         targetFolder = defaultFolder
-    else:
-        pass  # TODO: verify it contains no illegal characters
-    dbg.trace('target_folder("{}")'.format(targetFolder))
 
+    dbg.trace('target_folder("{}")'.format(targetFolder))
     return targetFolder
 
 
@@ -716,6 +719,8 @@ def scaffoldMod(baseFolder, targetFolder, modBasename, modName, modPath, modUser
     # CKII.exe by the launcher)
     if '-' in modFilename:
         modFilename = modFilename.replace('-', '__')
+    if ' ' in modFilename:
+        modFilename = modFilename.replace(' ', '+')
 
     modFilename = os.path.join(baseFolder, modFilename)
 
@@ -808,19 +813,21 @@ def main():
         # Determine module combination...
 
         EMF = True if steamMode else enableMod(u"EMF ({})".format(versions['EMF']))
-        PB = True
+        PB = EMF
 
-        if not steamMode:
-            if EMF:
-                if not fastMode:
-                    print(u"[ Automatically including shared files from Project Balance ... ]")
-            else:
-                PB = enableMod(u"Project Balance ({})".format(versions['PB']))
+# PB needs to update PB+SWMH, amongst other things, to work correctly on its own right now.
+#
+#        if not steamMode:
+#            if EMF:
+#                if not fastMode:
+#                    print(u"[ Automatically including shared files from Project Balance ... ]")
+#            else:
+#                PB = enableMod(u"Project Balance ({})".format(versions['PB']))
 
         ARKOCoA = True if steamMode \
-            else enableMod(u"ARKOpack Armoiries (coats of arms) ({})".format(versions['ARKO']))
+            else enableMod(u"ARKOpack Armoiries [CoA] ({})".format(versions['ARKO']))
 
-        ARKOInt = False if (True or steamMode or fastMode) \
+        ARKOInt = False if (steamMode or fastMode) \
             else enableMod(u"ARKOpack Interface ({})".format(versions['ARKO']))
 
         CPR = False
