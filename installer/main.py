@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 23,
+version = {'major': 1, 'minor': 7, 'patch': 24,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -650,7 +650,10 @@ cprReqDLCNames = {'dlc/dlc013.dlc': 'African Portraits',
                   'dlc/dlc020.dlc': 'Norse Portraits',
                   'dlc/dlc016.dlc': 'Russian Portraits',
                   'dlc/dlc041.dlc': 'Turkish Portraits',
-                  'dlc/dlc044.dlc': 'Persian Portraits'}
+                  'dlc/dlc044.dlc': 'Persian Portraits',
+                  'dlc/dlc046.dlc': 'Early Western Clothing Pack',
+                  'dlc/dlc047.dlc': 'Early Eastern Clothing Pack',
+                  'dlc/dlc052.dlc': 'Iberian Portraits'}
 
 
 # Determine whether the DLCs required for CPR are installed in the active game folder.
