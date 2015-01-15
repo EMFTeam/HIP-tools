@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 24,
+version = {'major': 1, 'minor': 7, 'patch': 25,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -581,7 +581,7 @@ def getInstallOptions():
     defaultFolder = 'Historical Immersion Project'
     targetFolder = ''
 
-    useCustomFolder = isYesDefaultNo(promptUser('Do you want to install to a custom folder / name? [no] '))
+    useCustomFolder = isYesDefaultNo(promptUser('Do you want to install to a custom folder / mod name? [no]'))
 
     if useCustomFolder:
 
