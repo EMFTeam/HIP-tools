@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 25,
+version = {'major': 1, 'minor': 7, 'patch': 26,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'Meneth    <hip@meneth.com>'}
 
@@ -973,8 +973,12 @@ def main():
         if PB:
             dbg.push("merge(PB)")
             moduleOutput.append("Project Balance (%s)\n" % versions['PB'])
-            filter = set(['history/provinces', 'common/landed_titles']) if EMF else set()
-            pushFolder("ProjectBalance", targetFolder, prunePaths=filter)
+            pathFilter = set()
+            if EMF:
+                pathFilter.add('history/provinces')
+                pathFilter.add('history/titles')
+                pathFilter.add('common/landed_titles')
+            pushFolder("ProjectBalance", targetFolder, prunePaths=pathFilter)
             dbg.pop()
 
         if SWMH:
@@ -986,8 +990,12 @@ def main():
                 moduleOutput.append("SWMH - English localisation (%s)\n" % versions['SWMH'])
                 pushFolder("English SWMH", targetFolder)
             if PB:
-                filter = set(['history/provinces', 'common/landed_titles']) if EMF else set()
-                pushFolder("PB + SWMH", targetFolder, prunePaths=filter)
+                pathFilter = set()
+                if EMF:
+                    pathFilter.add('history/provinces')
+                    pathFilter.add('history/titles')
+                    pathFilter.add('common/landed_titles')
+                    pushFolder("PB + SWMH", targetFolder, prunePaths=pathFilter)
             pushFolder("SWMH_Logic", targetFolder)
             dbg.pop()
 
@@ -1072,8 +1080,8 @@ def main():
 
             if not SWMH:
                 popTree('history/technology', targetFolder)
-                popFile('history/titles/d_saxony.txt', targetFolder)
-                popFile('history/titles/k_bohemia.txt', targetFolder)
+                # popFile('history/titles/d_saxony.txt', targetFolder)
+                # popFile('history/titles/k_bohemia.txt', targetFolder)
 
             popFile('decisions/indian_empire_decision.txt', targetFolder)
             dbg.pop()
