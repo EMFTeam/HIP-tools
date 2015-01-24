@@ -9,9 +9,9 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 7, 'patch': 26,
+version = {'major': 1, 'minor': 8, 'patch': 0,
            'Developer':       'zijistark <zijistark@gmail.com>',
-           'Release Manager': 'Meneth    <hip@meneth.com>'}
+           'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
 
 # noinspection PyPep8
@@ -26,9 +26,11 @@ def initLocalisation():
                     'es': u"Esta vercion de Historical Immersion Project fecha del {}.\n"
                           u"Escribe 's' o 'si' para aceptar, o deja el campo en blanco. Cualquier otro\n"
                           u"caso sera considerado un 'no'.\n",
-                    'en': u"This version of the Historical Immersion Project was released {}.\n"
-                          u"To confirm a prompt, respond with 'y' or 'yes' (sans quotes) or simply hit\n"
-                          u"ENTER. Besides a blank line, anything else will be interpreted as 'no.'\n\n"
+                    'en': u"\nHIP version: {}\n\n"
+                          u"All prompts require a yes/no answer. The default answer for any particular\n"
+                          u"prompt is shown in brackets directly following it (e.g, '[yes]' or '[no]').\n"
+                          u"To answer yes, enter 'y' or 'yes'. To answer no, enter 'n' or 'no'. For the\n"
+                          u"default, simply hit ENTER.\n\n"
                           u"If at any time you wish to abort the installation, press Ctrl+C.\n",
                 },
             'ENABLE_MOD':
@@ -104,7 +106,7 @@ def initLocalisation():
                           u"[oui]",
                     'es': u"?Esta seguro?\n"
                           u"?Quieres eliminar el paquete despuès de la instalaciòn? [si]",
-                    'en': u"Are you sure?\n"
+                    'en': u"\nAre you sure?\n"
                           u"Do you want to delete the package after installation? [yes]",
                 },
             'TARGET_FOLDER':
@@ -581,7 +583,8 @@ def getInstallOptions():
     defaultFolder = 'Historical Immersion Project'
     targetFolder = ''
 
-    useCustomFolder = isYesDefaultNo(promptUser('Do you want to install to a custom folder / mod name? [no]'))
+    useCustomFolder = False if (steamMode or fastMode) else \
+        isYesDefaultNo(promptUser(u'Do you want to install to a custom folder / mod name? [no]'))
 
     if useCustomFolder:
 
