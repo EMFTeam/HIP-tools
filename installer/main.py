@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 8, 'patch': 0,
+version = {'major': 1, 'minor': 8, 'patch': 1,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -963,19 +963,18 @@ def main():
             dbg.push("merge('ARKO Interface')")
             moduleOutput.append("ARKO Interface (%s)\n" % versions['ARKO'])
             pushFolder("ARKOpack_Interface", targetFolder)
-            if HIP:
-                popTree("gfx/event_pictures", targetFolder)
             dbg.pop()
-
-        if HIP:
-            pushFolder("HIP_Common", targetFolder)
 
         if VIET:
             pushFolder("VIET_Assets", targetFolder)
 
+        if HIP:
+            pushFolder("HIP_Common", targetFolder)
+
         if PB:
             dbg.push("merge(PB)")
-            moduleOutput.append("Project Balance (%s)\n" % versions['PB'])
+# Causing too much confusion at this point
+#            moduleOutput.append("Project Balance (%s)\n" % versions['PB'])
             pathFilter = set()
             if EMF:
                 pathFilter.add('history/provinces')
@@ -992,6 +991,8 @@ def main():
             else:
                 moduleOutput.append("SWMH - English localisation (%s)\n" % versions['SWMH'])
                 pushFolder("English SWMH", targetFolder)
+            if ARKOInt:
+                pushFolder("SWMH+ArkoInterface", targetFolder)
             if PB:
                 pathFilter = set()
                 if EMF:
