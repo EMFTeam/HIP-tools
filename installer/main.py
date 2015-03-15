@@ -887,7 +887,12 @@ def main():
             VIETimmersion = enableMod(u"BETA: VIET Immersion ({})".format(versions['VIET']))
             VIETtraits2 = enableMod(u"BETA: VIET Traits ({})".format(versions['VIET']))
 
-        VIETevents = True if (VIETimmersion or steamMode) else enableMod(u"VIET Events ({})".format(versions['VIET']))
+        VIETevents = False
+        if steamMode:
+            VIETevents = True
+        elif not fastMode:
+            VIETevents = enableMod(u"VIET Events ({})".format(versions['VIET']))
+
         VIETtraits = False if (PB or EMF or VIETtraits2) else enableMod(u"VIET Traits ({})".format(versions['VIET']))
         VIET = (VIETtraits or VIETevents or VIETimmersion)
 
@@ -944,7 +949,7 @@ def main():
                                         'HIP_Converter',
                                         'HIP Converter Support',
                                         euSubfolder,
-                                        eu4Version='1.9')
+                                        eu4Version='1.10')
 
         # Install...
         global targetSrc
@@ -963,6 +968,8 @@ def main():
             dbg.push("merge('ARKO Interface')")
             moduleOutput.append("ARKO Interface (%s)\n" % versions['ARKO'])
             pushFolder("ARKOpack_Interface", targetFolder)
+            if HIP:
+                popTree('gfx/event_pictures', targetFolder)
             dbg.pop()
 
         if VIET:
