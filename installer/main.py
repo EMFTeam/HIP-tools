@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 8, 'patch': 1,
+version = {'major': 1, 'minor': 8, 'patch': 2,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -1062,20 +1062,6 @@ def main():
 
             dbg.pop()
 
-        if CPR:
-            dbg.push('merge(CPR)')
-            moduleOutput.append("Cultures and Portaits Revamp (%s)\n" % versions['CPR'])
-            pushFolder('Cultures and Portraits Revamp/common', targetFolder)
-            if SWMH:
-                pushFolder('Cultures and Portraits Revamp/SWMH', targetFolder)
-            elif VIETimmersion:
-                pushFolder('Cultures and Portraits Revamp/VIET', targetFolder)
-            elif PB:
-                pushFolder('Cultures and Portraits Revamp/PB', targetFolder)
-            else:
-                pushFolder('Cultures and Portraits Revamp/Vanilla', targetFolder)
-            dbg.pop()
-
         if EMF:
             dbg.push('merge(EMF)')
             moduleOutput.append("EMF: Extended Mechanics & Flavor (%s)\n" % versions['EMF'])
@@ -1095,6 +1081,20 @@ def main():
                 # popFile('history/titles/k_bohemia.txt', targetFolder)
 
             popFile('decisions/indian_empire_decision.txt', targetFolder)
+            dbg.pop()
+
+        if CPR:
+            dbg.push('merge(CPR)')
+            moduleOutput.append("Cultures and Portaits Revamp (%s)\n" % versions['CPR'])
+            pushFolder('Cultures and Portraits Revamp/common', targetFolder)
+            if SWMH:
+                pushFolder('Cultures and Portraits Revamp/SWMH', targetFolder)
+            elif VIETimmersion:
+                pushFolder('Cultures and Portraits Revamp/VIET', targetFolder)
+            elif PB:
+                pushFolder('Cultures and Portraits Revamp/PB', targetFolder)
+            else:
+                pushFolder('Cultures and Portraits Revamp/Vanilla', targetFolder)
             dbg.pop()
 
         if Converter:
