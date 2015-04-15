@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 8, 'patch': 2,
+version = {'major': 1, 'minor': 8, 'patch': 3,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -1074,6 +1074,8 @@ def main():
                 pushFolder('EMF+SWMH', targetFolder)
             if VIETevents:
                 pushFolder('EMF+VEvents', targetFolder)
+            if ARKOCoA:
+                pushFolder('EMF+ArkoCoA', targetFolder)
 
             if not SWMH:
                 popTree('history/technology', targetFolder)
