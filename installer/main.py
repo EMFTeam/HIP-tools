@@ -806,6 +806,7 @@ def main():
                    'ARKO': 'ARKOpack_Armoiries',
                    'CPR': 'Cultures and Portraits Revamp',
                    'EMF': 'EMF',
+                   'ArumbaKS': 'ArumbaKS',
         }
 
         getPkgVersions(modDirs)
@@ -833,8 +834,18 @@ def main():
         ARKOCoA = True if steamMode \
             else enableMod(u"ARKOpack Armoiries [CoA] ({})".format(versions['ARKO']))
 
+        if (not steamMode) and not fastMode:
+            print(u"\nNOTE: Arumba's Keyboard Shortcuts and ARKOpack Interface are incompatible.\n"
+                  u"      ARKOpack doesn't provide shortcuts. You may only select one of the two:\n")
+
         ARKOInt = False if (steamMode or fastMode) \
             else enableMod(u"ARKOpack Interface ({})".format(versions['ARKO']))
+
+        ArumbaKS = False
+
+        if not ARKOInt:
+            ArumbaKS = True if (steamMode or fastMode) \
+                else enableMod(u"Arumba's Keyboard Shortcuts ({})".format(versions['ArumbaKS']))
 
         CPR = False
 
@@ -943,13 +954,13 @@ def main():
                                   targetFolder,
                                   modBasename)
 
-        if Converter:
-            euModFilename = scaffoldMod(euFolderBase,
-                                        euFolder,
-                                        'HIP_Converter',
-                                        'HIP Converter Support',
-                                        euSubfolder,
-                                        eu4Version='1.10')
+#        if Converter:
+#            euModFilename = scaffoldMod(euFolderBase,
+#                                        euFolder,
+#                                        'HIP_Converter',
+#                                        'HIP Converter Support',
+#                                        euSubfolder,
+#                                        eu4Version='1.10')
 
         # Install...
         global targetSrc
@@ -970,6 +981,12 @@ def main():
             pushFolder("ARKOpack_Interface", targetFolder)
             if HIP:
                 popTree('gfx/event_pictures', targetFolder)
+            dbg.pop()
+
+        if ArumbaKS:
+            dbg.push('merge(ArumbaKS)')
+            moduleOutput.append("Arumba's Keyboard Shortcuts (%s)\n" % versions['ArumbaKS'])
+            pushFolder('ArumbaKS', targetFolder)
             dbg.pop()
 
         if VIET:
@@ -1078,11 +1095,11 @@ def main():
                 pushFolder('EMF+ArkoCoA', targetFolder)
 
             if not SWMH:
-                popTree('history/technology', targetFolder)
+                popTree('history/technology', targetFolder) # PB thing
                 # popFile('history/titles/d_saxony.txt', targetFolder)
                 # popFile('history/titles/k_bohemia.txt', targetFolder)
 
-            popFile('decisions/indian_empire_decision.txt', targetFolder)
+            popFile('decisions/indian_empire_decision.txt', targetFolder) # PB thing
             dbg.pop()
 
         if CPR:
@@ -1099,9 +1116,9 @@ def main():
                 pushFolder('Cultures and Portraits Revamp/Vanilla', targetFolder)
             dbg.pop()
 
-        if Converter:
-            pushFolder("Converter/Vanilla", targetFolder)
-            pushFolder("Converter/Extra", euFolder)
+#        if Converter:
+#            pushFolder("Converter/Vanilla", targetFolder)
+#            pushFolder("Converter/Extra", euFolder)
 
         dbg.pop("merge_done")
 
