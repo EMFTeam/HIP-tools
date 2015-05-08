@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 8, 'patch': 3,
+version = {'major': 1, 'minor': 8, 'patch': 4,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -556,7 +556,8 @@ def getInstallOptions():
         print(localise('INTRO').format(versions['pkg']))
 
     global move
-    move = False if (steamMode or fastMode) else isYes(promptUser(localise('MOVE_VS_COPY')))
+    #move = False if (steamMode or fastMode) else isYes(promptUser(localise('MOVE_VS_COPY')))
+    move = False
 
     # Confirm. "User studies" now "prove" this default is questionable (i.e.,
     # copy not being default), but I think the move method should remain the
@@ -588,7 +589,7 @@ def getInstallOptions():
 
     if useCustomFolder:
 
-    # Note that we use the case-preserving form of promptUser for the target folder (also determines name in launcher)
+        # Note that we use the case-preserving form of promptUser (also determines name in launcher)
 
         targetFolder = '' if (steamMode or fastMode) \
             else promptUser(localise('TARGET_FOLDER').format(unicode(defaultFolder)), lc=False)
@@ -969,6 +970,9 @@ def main():
         moduleOutput = ["[HIP %s]\nEnabled HIP modules:\n" % versions['pkg']]
         dbg.push('merge_all')
 
+        if EMF:
+            moduleOutput.append("EMF: Extended Mechanics & Flavor (%s)\n" % versions['EMF'])
+
         if ARKOCoA:
             dbg.push("merge('ARKO CoA')")
             moduleOutput.append("ARKO Armoiries (%s)\n" % versions['ARKO'])
@@ -1081,7 +1085,6 @@ def main():
 
         if EMF:
             dbg.push('merge(EMF)')
-            moduleOutput.append("EMF: Extended Mechanics & Flavor (%s)\n" % versions['EMF'])
 
             filteredFiles = set(['common/landed_titles/landed_titles.txt',
                                  'history/titles/k_shiite.txt']) if SWMH else set()

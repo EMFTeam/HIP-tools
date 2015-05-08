@@ -7,8 +7,8 @@ import traceback
 import argparse
 import re
 
-DEFAULT_VANILLA_DIR = "D:/SteamLibrary/steamapps/common/Crusader Kings II/common/landed_titles"
-DEFAULT_VANILLA_HISTORY_DIR = "D:/SteamLibrary/steamapps/common/Crusader Kings II/history/titles"
+DEFAULT_VANILLA_DIR = "/cygdrive/d/SteamLibrary/steamapps/common/Crusader Kings II/common/landed_titles"
+DEFAULT_VANILLA_HISTORY_DIR = "/cygdrive/d/SteamLibrary/steamapps/common/Crusader Kings II/history/titles"
 p_title_all = re.compile(r'\W([cdek]_[\w_\-]+)')
 p_title = re.compile(r'^[cdek]_[\w_\-]+')
 p_txt_file = re.compile(r'^(.+?)\.txt$')
@@ -82,19 +82,19 @@ def main():
 
         base_title_set -= mod_title_set
 
-        #for t in base_title_set:
-        #    print(t)
+        for t in sorted(base_title_set):
+            print(t)
 
-        for t in history_set:
-            if t in base_title_set:
-                f = t + '.txt'
-                f = os.path.join(args.history, f)
-                if os.path.exists(f):
-                    print("WARN: Title '{}' has no definition in mod but a modded history file".format(t))
-                else:
-                    of = open(f, 'w')
-                    of.write("#BLOCKED: vanilla history file for vanilla title without SWMH definition\n")
-                    of.close()
+        # for t in history_set:
+        #     if t in base_title_set:
+        #         f = t + '.txt'
+        #         f = os.path.join(args.history, f)
+        #         if os.path.exists(f):
+        #             print("WARN: Title '{}' has no definition in mod but a modded history file".format(t))
+        #         else:
+        #             of = open(f, 'w')
+        #             of.write("#BLOCKED: vanilla history file for vanilla title without SWMH definition\n")
+        #             of.close()
 
         return 0
 
