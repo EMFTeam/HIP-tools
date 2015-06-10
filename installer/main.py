@@ -850,7 +850,7 @@ def main():
 
         CPR = False
 
-        if not steamMode:
+        if not steamMode and False:  # CPR disabled for SWMH EE testing
             cprMissingDLCNames = detectCPRMissingDLCs()
 
             if cprMissingDLCNames is None:  # DLC auto-detection failed
@@ -1108,7 +1108,7 @@ def main():
             popFile('decisions/indian_empire_decision.txt', targetFolder) # PB thing
             dbg.pop()
 
-        if CPR and False: # CPR disabled for SWMH EE testing
+        if CPR:
             dbg.push('merge(CPR)')
             moduleOutput.append("Cultures and Portaits Revamp (%s)\n" % versions['CPR'])
             pushFolder('Cultures and Portraits Revamp/common', targetFolder)
