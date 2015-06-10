@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 8, 'patch': 5,
+version = {'major': 1, 'minor': 8, 'patch': 6,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -1035,11 +1035,11 @@ def main():
             dbg.push("merge(NBRT)")
             moduleOutput.append("NBRT+ (%s)\n" % versions['NBRT'])
             pushFolder("NBRT+", targetFolder)
-            if SWMH and platform == "win":
+            if SWMH and platform == "win" and False:  # Disabled for SWMH EE testing
                 pushFolder("NBRT+SWMH", targetFolder)
             if ARKOCoA:
                 pushFolder("NBRT+ARKO", targetFolder)
-            if not SWMH:
+            if not SWMH or True:  # Enabled for SWMH EE testing
                 popFile('gfx/FX/pdxmap.fxh', targetFolder)  # Z: 2.2 compatch for NBRT+ Light (and Mac/Linux compatch)
             dbg.pop()
 
@@ -1108,7 +1108,7 @@ def main():
             popFile('decisions/indian_empire_decision.txt', targetFolder) # PB thing
             dbg.pop()
 
-        if CPR:
+        if CPR and False: # CPR disabled for SWMH EE testing
             dbg.push('merge(CPR)')
             moduleOutput.append("Cultures and Portaits Revamp (%s)\n" % versions['CPR'])
             pushFolder('Cultures and Portraits Revamp/common', targetFolder)
