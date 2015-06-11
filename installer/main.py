@@ -1019,7 +1019,7 @@ def main():
             else:
                 moduleOutput.append("SWMH - English localisation (%s)\n" % versions['SWMH'])
                 pushFolder("English SWMH", targetFolder)
-            if ARKOInt:
+            if ARKOInt and False:  # Disabled for SWMH EE testing
                 pushFolder("SWMH+ArkoInterface", targetFolder)
             if PB:
                 pathFilter = set()
