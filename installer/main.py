@@ -800,14 +800,13 @@ def main():
         # comprehension if a few corresponding changes were made to the
         # mod-selection code and the code which uses those vars.
         modDirs = {'pkg': '',
-                   'VIET': 'VIET_Assets',
-                   'PB': 'ProjectBalance',
-                   'SWMH': 'SWMH',
+#                   'VIET': 'VIET_Assets',
+#                   'SWMH': 'SWMH',
                    'NBRT': 'NBRT+',
-                   'ARKO': 'ARKOpack_Armoiries',
-                   'CPR': 'Cultures and Portraits Revamp',
+#                   'ARKO': 'ARKOpack_Armoiries',
+#                   'CPR': 'Cultures and Portraits Revamp',
                    'EMF': 'EMF',
-                   'ArumbaKS': 'ArumbaKS',
+#                   'ArumbaKS': 'ArumbaKS',
         }
 
         getPkgVersions(modDirs)
@@ -821,32 +820,22 @@ def main():
         # Determine module combination...
 
         EMF = True if steamMode else enableMod(u"EMF ({})".format(versions['EMF']))
-        PB = EMF
 
-# PB needs to update PB+SWMH, amongst other things, to work correctly on its own right now.
-#
-#        if not steamMode:
-#            if EMF:
-#                if not fastMode:
-#                    print(u"[ Automatically including shared files from Project Balance ... ]")
-#            else:
-#                PB = enableMod(u"Project Balance ({})".format(versions['PB']))
-
-        ARKOCoA = True if steamMode \
-            else enableMod(u"ARKOpack Armoiries [CoA] ({})".format(versions['ARKO']))
-
-        if (not steamMode) and not fastMode:
-            print(u"\nNOTE: Arumba's Keyboard Shortcuts and ARKOpack Interface are incompatible.\n"
-                  u"      ARKOpack doesn't provide shortcuts. You may only select one of the two:\n")
-
-        ARKOInt = False if (steamMode or fastMode) \
-            else enableMod(u"ARKOpack Interface ({})".format(versions['ARKO']))
+        # ARKOCoA = True if steamMode \
+        #     else enableMod(u"ARKOpack Armoiries [CoA] ({})".format(versions['ARKO']))
+        #
+        # if (not steamMode) and not fastMode:
+        #     print(u"\nNOTE: Arumba's Keyboard Shortcuts and ARKOpack Interface are incompatible.\n"
+        #           u"      ARKOpack doesn't provide shortcuts. You may only select one of the two:\n")
+        #
+        # ARKOInt = False if (steamMode or fastMode) \
+        #     else enableMod(u"ARKOpack Interface ({})".format(versions['ARKO']))
 
         ArumbaKS = False
 
-        if not ARKOInt:
-            ArumbaKS = True if (steamMode or fastMode) \
-                else enableMod(u"Arumba's Keyboard Shortcuts ({})".format(versions['ArumbaKS']))
+        # if not ARKOInt:
+        #     ArumbaKS = True if (steamMode or fastMode) \
+        #         else enableMod(u"Arumba's Keyboard Shortcuts ({})".format(versions['ArumbaKS']))
 
         CPR = False
 
@@ -892,36 +881,29 @@ def main():
                     print(u"[ Required portrait DLCs for CPR auto-detected OK... ]")
                 CPR = enableModDefaultNo(u"CPR ({})".format(versions['CPR']), compat=True)
 
-        VIETimmersion = False
-        VIETtraits2 = False
-
-        if betaMode:
-            VIETimmersion = enableMod(u"BETA: VIET Immersion ({})".format(versions['VIET']))
-            VIETtraits2 = enableMod(u"BETA: VIET Traits ({})".format(versions['VIET']))
-
         VIETevents = False
-        if steamMode:
-            VIETevents = True
-        elif not fastMode:
-            VIETevents = enableMod(u"VIET Events ({})".format(versions['VIET']))
+        # if steamMode:
+        #     VIETevents = True
+        # elif not fastMode:
+        #     VIETevents = enableMod(u"VIET Events ({})".format(versions['VIET']))
 
-        VIETtraits = False if (PB or EMF or VIETtraits2) else enableMod(u"VIET Traits ({})".format(versions['VIET']))
-        VIET = (VIETtraits or VIETevents or VIETimmersion)
+        VIETtraits = False if EMF else enableMod(u"VIET Traits ({})".format(versions['VIET']))
+        VIET = (VIETtraits or VIETevents)
 
         SWMH = False
         SWMHnative = False
 
-        if True:
-            if (not steamMode) and not fastMode:
-                print(u"\nNOTE: The SWMH map does net yet include India and will never include the 769\n"
-                      u"bookmark. However, SWMH does support all Charlemagne mechanics in 867. If you'd\n"
-                      u"like to play with the vanilla map instead, simply type 'n' or 'no' for SWMH.\n")
-
-            SWMH = False if steamMode else enableMod(u'SWMH ({})'.format(versions['SWMH']))
-            SWMHnative = True
-
-        if SWMH:
-            SWMHnative = True if (steamMode or fastMode) else enableMod(localise('SWMH_NATIVE'))
+        # if True:
+        #     if (not steamMode) and not fastMode:
+        #         print(u"\nNOTE: The SWMH map does net yet include India and will never include the 769\n"
+        #               u"bookmark. However, SWMH does support all Charlemagne mechanics in 867. If you'd\n"
+        #               u"like to play with the vanilla map instead, simply type 'n' or 'no' for SWMH.\n")
+        #
+        #     SWMH = False if steamMode else enableMod(u'SWMH ({})'.format(versions['SWMH']))
+        #     SWMHnative = True
+        #
+        # if SWMH:
+        #     SWMHnative = True if (steamMode or fastMode) else enableMod(localise('SWMH_NATIVE'))
 
         if False:
             print(u"\nNOTE: The SWMH map is temporarily unavailable due to issues with patch 2.3.\n"
@@ -934,8 +916,8 @@ def main():
         else:
             NBRT = False if steamMode else enableModDefaultNo(u"NBRT+ ({})".format(versions['NBRT']))
 
-        HIP = EMF or PB or VIETimmersion or VIETevents  # HIP_Common (Isis, e_hip, our event picture stash, etc.)
-        Converter = (EMF or PB or VIETimmersion) and not SWMH  # Vanilla EUIV Converter
+        HIP = EMF or VIETevents  # HIP_Common (Isis, e_hip, our event picture stash, etc.)
+        # Converter = EMF and not SWMH  # Vanilla EUIV Converter
 
         euFolderBase = '../eu4_export/mod'
         euSubfolder = 'HIP_Converter'
@@ -973,19 +955,19 @@ def main():
         if EMF:
             moduleOutput.append("EMF: Extended Mechanics & Flavor (%s)\n" % versions['EMF'])
 
-        if ARKOCoA:
-            dbg.push("merge('ARKO CoA')")
-            moduleOutput.append("ARKO Armoiries (%s)\n" % versions['ARKO'])
-            pushFolder("ARKOpack_Armoiries", targetFolder)
-            dbg.pop()
-
-        if ARKOInt:
-            dbg.push("merge('ARKO Interface')")
-            moduleOutput.append("ARKO Interface (%s)\n" % versions['ARKO'])
-            pushFolder("ARKOpack_Interface", targetFolder)
-            if HIP:
-                popTree('gfx/event_pictures', targetFolder)
-            dbg.pop()
+        # if ARKOCoA:
+        #     dbg.push("merge('ARKO CoA')")
+        #     moduleOutput.append("ARKO Armoiries (%s)\n" % versions['ARKO'])
+        #     pushFolder("ARKOpack_Armoiries", targetFolder)
+        #     dbg.pop()
+        #
+        # if ARKOInt:
+        #     dbg.push("merge('ARKO Interface')")
+        #     moduleOutput.append("ARKO Interface (%s)\n" % versions['ARKO'])
+        #     pushFolder("ARKOpack_Interface", targetFolder)
+        #     if HIP:
+        #         popTree('gfx/event_pictures', targetFolder)
+        #     dbg.pop()
 
         if ArumbaKS:
             dbg.push('merge(ArumbaKS)')
@@ -999,18 +981,6 @@ def main():
         if HIP:
             pushFolder("HIP_Common", targetFolder)
 
-        if PB:
-            dbg.push("merge(PB)")
-# Causing too much confusion at this point
-#            moduleOutput.append("Project Balance (%s)\n" % versions['PB'])
-            pathFilter = set()
-            if EMF:
-                pathFilter.add('history/provinces')
-                pathFilter.add('history/titles')
-                pathFilter.add('common/landed_titles')
-            pushFolder("ProjectBalance", targetFolder, prunePaths=pathFilter)
-            dbg.pop()
-
         if SWMH:
             dbg.push("merge(SWMH)")
             pushFolder("SWMH", targetFolder)
@@ -1019,16 +989,8 @@ def main():
             else:
                 moduleOutput.append("SWMH - English localisation (%s)\n" % versions['SWMH'])
                 pushFolder("English SWMH", targetFolder)
-            if ARKOInt and False:  # Disabled for SWMH EE testing
-                pushFolder("SWMH+ArkoInterface", targetFolder)
-            if PB:
-                pathFilter = set()
-                if EMF:
-                    pathFilter.add('history/provinces')
-                    pathFilter.add('history/titles')
-                    pathFilter.add('common/landed_titles')
-                    pushFolder("PB + SWMH", targetFolder, prunePaths=pathFilter)
-            pushFolder("SWMH_Logic", targetFolder)
+            # if ARKOInt and False:  # Disabled for SWMH EE testing
+            #     pushFolder("SWMH+ArkoInterface", targetFolder)
             dbg.pop()
 
         if NBRT:
@@ -1037,8 +999,8 @@ def main():
             pushFolder("NBRT+", targetFolder)
             if SWMH and platform == "win" and False:  # Disabled for SWMH EE testing
                 pushFolder("NBRT+SWMH", targetFolder)
-            if ARKOCoA:
-                pushFolder("NBRT+ARKO", targetFolder)
+            # if ARKOCoA:
+            #     pushFolder("NBRT+ARKO", targetFolder)
             if not SWMH or True:  # Enabled for SWMH EE testing
                 popFile('gfx/FX/pdxmap.fxh', targetFolder)  # Z: 2.2 compatch for NBRT+ Light (and Mac/Linux compatch)
             dbg.pop()
@@ -1049,38 +1011,12 @@ def main():
             pushFolder("VIET_Traits", targetFolder)
             dbg.pop()
 
-        if VIETtraits2:
-            dbg.push("merge('VIET Traits BETA')")
-            moduleOutput.append("VIET Traits BETA (%s)\n" % versions['VIET'])
-            pushFolder("VIET_Traits2", targetFolder)
-            dbg.pop()
-
         if VIETevents:
             dbg.push("merge('VIET Events')")
             moduleOutput.append("VIET Events (%s)\n" % versions['VIET'])
             pushFolder("VIET_Events", targetFolder)
             if PB:
                 pushFolder("PB_VIET_Events", targetFolder)
-            dbg.pop()
-
-        if VIETimmersion:
-            dbg.push("merge('VIET Immersion')")
-            moduleOutput.append("VIET Immersion (%s)\n" % versions['VIET'])
-
-            filterPath = set(['history']) if SWMH else set()
-
-            pushFolder("VIET_Immersion/common", targetFolder, prunePaths=filterPath)
-
-            if PB:
-                pushFolder("VIET_Immersion/PB", targetFolder, prunePaths=filterPath)
-                if EMF:
-                    pushFolder("VIET_Immersion/EMF", targetFolder, prunePaths=filterPath)
-            else:
-                pushFolder("VIET_Immersion/vanilla", targetFolder, prunePaths=filterPath)
-
-            if SWMH:
-                pushFolder("Immersion + SWMH", targetFolder)
-
             dbg.pop()
 
         if EMF:
@@ -1097,15 +1033,8 @@ def main():
 
             if VIETevents:
                 pushFolder('EMF+VEvents', targetFolder)
-            if ARKOCoA:
-                pushFolder('EMF+ArkoCoA', targetFolder)
-
-            if not SWMH:
-                popTree('history/technology', targetFolder) # PB thing
-                # popFile('history/titles/d_saxony.txt', targetFolder)
-                # popFile('history/titles/k_bohemia.txt', targetFolder)
-
-            popFile('decisions/indian_empire_decision.txt', targetFolder) # PB thing
+            # if ARKOCoA:
+            #     pushFolder('EMF+ArkoCoA', targetFolder)
             dbg.pop()
 
         if CPR:
@@ -1116,7 +1045,7 @@ def main():
                 pushFolder('Cultures and Portraits Revamp/SWMH', targetFolder)
             elif VIETimmersion:
                 pushFolder('Cultures and Portraits Revamp/VIET', targetFolder)
-            elif PB:
+            elif EMF:
                 pushFolder('Cultures and Portraits Revamp/PB', targetFolder)
             else:
                 pushFolder('Cultures and Portraits Revamp/Vanilla', targetFolder)
