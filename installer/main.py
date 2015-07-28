@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 8, 'patch': 6,
+version = {'major': 1, 'minor': 9, 'patch': 0,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -26,7 +26,7 @@ def initLocalisation():
                     'es': u"Esta vercion de Historical Immersion Project fecha del {}.\n"
                           u"Escribe 's' o 'si' para aceptar, o deja el campo en blanco. Cualquier otro\n"
                           u"caso sera considerado un 'no'.\n",
-                    'en': u"\nHIP version: {}\n\n"
+                    'en': u"\nEMF beta installer version: {}\n\n"  # FIXME
                           u"All prompts require a yes/no answer. The default answer for any particular\n"
                           u"prompt is shown in brackets directly following it (e.g, '[yes]' or '[no]').\n"
                           u"To answer yes, enter 'y' or 'yes'. To answer no, enter 'n' or 'no'. For the\n"
@@ -581,11 +581,13 @@ def getInstallOptions():
 
     # Determine installation target folder...
     global defaultFolder
-    defaultFolder = 'Historical Immersion Project'
+    defaultFolder = 'EMF 4.0 Beta'
     targetFolder = ''
 
-    useCustomFolder = False if (steamMode or fastMode) else \
-        isYesDefaultNo(promptUser(u'Do you want to install to a custom folder / mod name? [no]'))
+    # useCustomFolder = False if (steamMode or fastMode) else \
+    #     isYesDefaultNo(promptUser(u'Do you want to install to a custom folder / mod name? [no]'))
+
+    useCustomFolder = False
 
     if useCustomFolder:
 
@@ -800,7 +802,7 @@ def main():
         # comprehension if a few corresponding changes were made to the
         # mod-selection code and the code which uses those vars.
         modDirs = {'pkg': '',
-#                   'VIET': 'VIET_Assets',
+                   'VIET': 'VIET_Assets',
 #                   'SWMH': 'SWMH',
                    'NBRT': 'NBRT+',
 #                   'ARKO': 'ARKOpack_Armoiries',
@@ -819,7 +821,9 @@ def main():
 
         # Determine module combination...
 
-        EMF = True if steamMode else enableMod(u"EMF ({})".format(versions['EMF']))
+        # EMF = True if steamMode else enableMod(u"EMF ({})".format(versions['EMF']))
+
+        EMF = True
 
         # ARKOCoA = True if steamMode \
         #     else enableMod(u"ARKOpack Armoiries [CoA] ({})".format(versions['ARKO']))
@@ -881,11 +885,10 @@ def main():
                     print(u"[ Required portrait DLCs for CPR auto-detected OK... ]")
                 CPR = enableModDefaultNo(u"CPR ({})".format(versions['CPR']), compat=True)
 
-        VIETevents = False
-        # if steamMode:
-        #     VIETevents = True
-        # elif not fastMode:
-        #     VIETevents = enableMod(u"VIET Events ({})".format(versions['VIET']))
+        if steamMode:
+            VIETevents = True
+        elif not fastMode:
+            VIETevents = enableMod(u"VIET Events ({})".format(versions['VIET']))
 
         VIETtraits = False if EMF else enableMod(u"VIET Traits ({})".format(versions['VIET']))
         VIET = (VIETtraits or VIETevents)
@@ -926,9 +929,9 @@ def main():
         # Prepare for installation...
 
         if targetFolder != defaultFolder:
-            modBasename = 'HIP_' + targetFolder
+            modBasename = 'EMF_' + targetFolder
         else:
-            modBasename = 'HIP'
+            modBasename = 'EMF'
 
         modFilename = scaffoldMod('.',
                                   targetFolder,
@@ -949,7 +952,7 @@ def main():
         global targetSrc
         targetSrc = {}
 
-        moduleOutput = ["[HIP %s]\nEnabled HIP modules:\n" % versions['pkg']]
+        moduleOutput = ["[EMF 4.0 Beta %s]\nEnabled HIP modules:\n" % versions['pkg']]
         dbg.push('merge_all')
 
         if EMF:
@@ -1015,8 +1018,6 @@ def main():
             dbg.push("merge('VIET Events')")
             moduleOutput.append("VIET Events (%s)\n" % versions['VIET'])
             pushFolder("VIET_Events", targetFolder)
-            if PB:
-                pushFolder("PB_VIET_Events", targetFolder)
             dbg.pop()
 
         if EMF:
