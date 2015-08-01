@@ -26,11 +26,11 @@ def encryptFile(path):
     with open(path, 'rb') as fsrc:
         with open(tmpPath, 'wb') as fdst:
             while 1:
-                len = fsrc.readinto(buf)
-                if len == 0:
+                length = fsrc.readinto(buf)
+                if length == 0:
                     break
-                encrypt(buf, len)
-                fdst.write(mv_buf[:len])
+                encrypt(buf, length)
+                fdst.write(mv_buf[:length])
     os.unlink(path)
     os.rename(tmpPath, path)
 
