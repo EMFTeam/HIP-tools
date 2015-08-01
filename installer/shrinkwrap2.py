@@ -29,7 +29,7 @@ def encryptFile(path):
                 len = fsrc.readinto(buf)
                 if len == 0:
                     break
-                encrypt(mv_buf[:len], len)
+                encrypt(buf, len)
                 fdst.write(mv_buf[:len])
     os.unlink(path)
     os.rename(tmpPath, path)
