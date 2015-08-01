@@ -6,6 +6,7 @@ k = '"The enemy of a good plan is the dream of a perfect plan" - Carl von Clause
 
 import os
 import sys
+import time
 
 
 kN = len(k)
@@ -22,13 +23,12 @@ if not os.path.exists(os.path.join(wrapFolder, 'no_shrinkwrap.txt')):
     sys.stderr.write('already shrinkwrapped: {}\n'.format(wrapFolder))
     sys.exit(2)
 
+start = time.time()
 
 for root, dirs, files in os.walk(wrapFolder):
-    print('dir("{}")'.format(root))
 
     for i in files:
         path = os.path.join(root, i)
-        print('file("{}")'.format(path))
 
         f = open(path, 'rb')
         data = f.read()
@@ -40,5 +40,9 @@ for root, dirs, files in os.walk(wrapFolder):
         f = open(path, 'wb')
         encrypt(data, f)
         f.close()
+
+end = time.time()
+
+print("Elapsed: %0.1fsec" % (end - start))
 
 sys.exit(0)
