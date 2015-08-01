@@ -655,11 +655,13 @@ cprReqDLCNames = {'dlc/dlc013.dlc': 'African Portraits',
                   'dlc/dlc002.dlc': 'Mongol Face Pack',
                   'dlc/dlc020.dlc': 'Norse Portraits',
                   'dlc/dlc016.dlc': 'Russian Portraits',
+                  'dlc/dlc039.dlc': 'Rajas of India',
                   'dlc/dlc041.dlc': 'Turkish Portraits',
                   'dlc/dlc044.dlc': 'Persian Portraits',
                   'dlc/dlc046.dlc': 'Early Western Clothing Pack',
                   'dlc/dlc047.dlc': 'Early Eastern Clothing Pack',
-                  'dlc/dlc052.dlc': 'Iberian Portraits'}
+                  'dlc/dlc052.dlc': 'Iberian Portraits',
+                  'dlc/dlc057.dlc': 'Cuman Portraits'}
 
 
 # Determine whether the DLCs required for CPR are installed in the active game folder.
@@ -803,10 +805,10 @@ def main():
         # mod-selection code and the code which uses those vars.
         modDirs = {'pkg': '',
                    'VIET': 'VIET_Assets',
-#                   'SWMH': 'SWMH',
+                   'SWMH': 'SWMH',
                    'NBRT': 'NBRT+',
 #                   'ARKO': 'ARKOpack_Armoiries',
-#                   'CPR': 'Cultures and Portraits Revamp',
+                   'CPR': 'CPRplus',
                    'EMF': 'EMF',
 #                   'ArumbaKS': 'ArumbaKS',
         }
@@ -816,14 +818,14 @@ def main():
         # Prompt user for options related to this install
         targetFolder = getInstallOptions()
 
-        if (not steamMode) and not fastMode:
-            sys.stdout.write('\n')
+        # if (not steamMode) and not fastMode:
+        #     sys.stdout.write('\n')
 
         # Determine module combination...
 
         # EMF = True if steamMode else enableMod(u"EMF ({})".format(versions['EMF']))
 
-        EMF = True
+        EMF = True if not betaMode else enableMod(u"EMF ({})".format(versions['EMF']))
 
         # ARKOCoA = True if steamMode \
         #     else enableMod(u"ARKOpack Armoiries [CoA] ({})".format(versions['ARKO']))
@@ -843,7 +845,7 @@ def main():
 
         CPR = False
 
-        if not steamMode and False:  # CPR disabled for SWMH EE testing
+        if not steamMode:
             cprMissingDLCNames = detectCPRMissingDLCs()
 
             if cprMissingDLCNames is None:  # DLC auto-detection failed
@@ -851,29 +853,27 @@ def main():
                     # It is treated as a special case to still draw some visibility to
                     # the problem.
                     if not fastMode:
-                        print(u"\n\nNOTE: The HIP installer could not successfully determine your active CKII\n"
-                              u"game folder. Thus, it cannot auto-detect whether you meet all the portrait DLC\n"
-                              u"prerequisites of CPR. You may still install CPR, but expect the game to crash\n"
-                              u"with reckless abandon if you don't have all of the following DLCs enabled:\n")
+                        print(u"\nOOPS: The HIP installer could NOT successfully determine your active CKII\n"
+                              u"game folder! Thus, it cannot auto-detect whether you meet all the portrait DLC\n"
+                              u"prerequisites for CPRplus. All _other_ HIP modules can be installed, but you'll\n"
+                              u"need manual permission to install CPRplus (see: CPRplus thread).\n")
 
                         printCPRReqDLCNames()
-
-                    CPR = enableModDefaultNo(u"CPR ({})".format(versions['CPR']), compat=True)
 
                 else:  # No auto-detection supported on mac/lin, so allow the user to choose CPR w/ zero fuss.
                     if not fastMode:
-                        print(u"\n\nNOTE: Cultures and Portraits Revamp (CPR) requires ALL of the\n"
-                              u"portrait packs to run without crashing. Portrait DLCs required for CPR:\n")
+                        print(u"\nNOTE: Portrait DLC auto-detection is not supported on Mac/Linux!\n"
+                              u"Due to Paradox's DLC policy, if you want to install CPRplus, you will need\n"
+                              u"to post in the CPRplus thread. CPRplus requires ALL of the following\n"
+                              u"portrait DLCs to run without crashing:\n")
 
                         printCPRReqDLCNames()
 
-                    CPR = enableModDefaultNo(u"CPR ({})".format(versions['CPR']), compat=True)
-
             elif len(cprMissingDLCNames) > 0:  # DLC auto-detection succeeded, but there were missing DLCs.
                 if not fastMode:
-                    print(u"\n\nCultures and Portraits Revamp (CPR) requires portrait pack DLCs which you,\n"
-                          u"unforunately, are lacking. If you want to use CPR, you'll need to install the\n"
-                          u"following DLCs first:\n")
+                    print(u"\n\nCPRplus (portrait upgrade mod) requires portrait pack DLCs which you,\n"
+                          u"unforunately, are lacking. If you want to use CPRplus, you'll need to install\n"
+                          u"the following DLCs first:\n")
 
                     for name in sorted(cprMissingDLCNames):
                         print(u"+ {}".format(name))
@@ -881,9 +881,10 @@ def main():
                     sys.stdout.write('\n')
 
             else:  # DLC auto-detection succeeded, and CPR is clear for take-off. However, we still default to No.
-                if not fastMode:
-                    print(u"[ Required portrait DLCs for CPR auto-detected OK... ]")
-                CPR = enableModDefaultNo(u"CPR ({})".format(versions['CPR']), compat=True)
+                # if not fastMode:
+                #     print(u"[ Required portrait DLCs for CPR auto-detected OK... ]")
+                # CPR = enableModDefaultNo(u"CPR Flavors Plus ({})".format(versions['CPR']), compat=True)
+                CPR = enableMod(u"CPRplus ({})".format(versions['CPR']))
 
         if steamMode:
             VIETevents = True
@@ -902,11 +903,11 @@ def main():
         #               u"bookmark. However, SWMH does support all Charlemagne mechanics in 867. If you'd\n"
         #               u"like to play with the vanilla map instead, simply type 'n' or 'no' for SWMH.\n")
         #
-        #     SWMH = False if steamMode else enableMod(u'SWMH ({})'.format(versions['SWMH']))
-        #     SWMHnative = True
-        #
-        # if SWMH:
-        #     SWMHnative = True if (steamMode or fastMode) else enableMod(localise('SWMH_NATIVE'))
+        if betaMode:
+            SWMH = False if steamMode else enableMod(u'SWMH ({})'.format(versions['SWMH']))
+
+        if SWMH:
+            SWMHnative = True if (steamMode or fastMode) else enableMod(localise('SWMH_NATIVE'))
 
         if False:
             print(u"\nNOTE: The SWMH map is temporarily unavailable due to issues with patch 2.3.\n"
@@ -1023,8 +1024,7 @@ def main():
         if EMF:
             dbg.push('merge(EMF)')
 
-            filteredFiles = set(['common/landed_titles/landed_titles.txt',
-                                 'history/titles/k_shiite.txt']) if SWMH else set()
+            filteredFiles = set(['common/landed_titles/landed_titles.txt']) if SWMH else set()
             pushFolder('EMF', targetFolder, ignoreFiles=filteredFiles)
 
             if SWMH:
@@ -1040,16 +1040,12 @@ def main():
 
         if CPR:
             dbg.push('merge(CPR)')
-            moduleOutput.append("Cultures and Portaits Revamp (%s)\n" % versions['CPR'])
-            pushFolder('Cultures and Portraits Revamp/common', targetFolder)
+            moduleOutput.append("CPRplus (%s)\n" % versions['CPR'])
+            pushFolder('CPRplus', targetFolder)
             if SWMH:
-                pushFolder('Cultures and Portraits Revamp/SWMH', targetFolder)
-            elif VIETimmersion:
-                pushFolder('Cultures and Portraits Revamp/VIET', targetFolder)
+                pushFolder('CPRplus-compatch/SWMH', targetFolder)
             elif EMF:
-                pushFolder('Cultures and Portraits Revamp/PB', targetFolder)
-            else:
-                pushFolder('Cultures and Portraits Revamp/Vanilla', targetFolder)
+                pushFolder('CPRplus-compatch/EMF', targetFolder)
             dbg.pop()
 
 #        if Converter:
