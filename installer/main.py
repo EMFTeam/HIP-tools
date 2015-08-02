@@ -353,6 +353,9 @@ def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None, wrapped=
             src = os.path.join(root, f)
             dst = os.path.join(newRoot, f)
 
+            if not isFileWanted(src):
+                dbg.trace('unwanted_file("{}")'.format(src))
+                continue
             if src in ignoreFiles:  # Selective ignore filter for individual files
                 dbg.trace('filtered_file("{}")'.format(src))
                 continue
