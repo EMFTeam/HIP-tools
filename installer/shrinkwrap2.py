@@ -14,8 +14,8 @@ kN = len(k)
 
 
 def is_binary(path):
-    _, extension = os.path.splitext(i)
-    return extension in ['.dds', '.tga', '.pda']
+    _, extension = os.path.splitext(path)
+    return extension in ['.dds', '.tga', '.pdn']
 
 
 def encrypt(buf, length):
