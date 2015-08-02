@@ -364,7 +364,7 @@ def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None, wrapped=
 
             wrapType = WRAP_NONE
 
-            if wrapped:
+            if wrapped and not src.endswith('version.txt'):
                 wrapType = WRAP_QUICK if isFileQuickUnwrapped(src) else WRAP_TOTAL
 
             g_targetSrc[dst] = TargetSource(folder, src, wrap=wrapType)
@@ -435,7 +435,7 @@ def compileTarget(mapFilename):
         for n, dstPath in enumerate(sorted(g_targetSrc)):
 
             if n % x == 0:
-                print(u"{}%".format((n // x * 20)))
+                print(u"{}%".format((n // x * 5)))
                 sys.stdout.flush()
 
             src = g_targetSrc[dstPath]

@@ -51,6 +51,9 @@ start_time = time.time()
 
 for root, dirs, files in os.walk(folder):
     for i in files:
+        if i.endswith('version.txt'):
+            continue
+            
         path = os.path.join(root, i)
         encrypt_file(path, header_only=is_binary(path))
 
