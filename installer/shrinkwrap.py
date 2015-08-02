@@ -1,7 +1,8 @@
 #!/usr/bin/python
 
-wrapFolder = "/home/ziji/build/modules/CPRplus"
-k = '"The enemy of a good plan is the dream of a perfect plan" - Carl von Clausewitz'
+folder = "/home/ziji/build/modules/CPRplus"
+k = bytearray(b'"The enemy of a good plan is the dream of a perfect plan" - Carl von Clausewitz')
+header_len = 1 << 12
 
 
 import os
@@ -9,40 +10,51 @@ import sys
 import time
 
 
+def is_binary(path):
+    _, extension = os.path.splitext(path)
+    return extension in ['.dds', '.tga', '.pdn', '.DDS', '.TGA', '.PDN']
+
+
 kN = len(k)
 
 
-def encrypt(msg, out):
-    i = 0
-    for c in msg:
-        out.write(chr(ord(c) ^ ord(k[i % kN])))
-        i += 1
+def encrypt(buf, length):
+    for i in xrange(length):
+        buf[i] ^= k[i % kN]
 
 
-if not os.path.exists(os.path.join(wrapFolder, 'no_shrinkwrap.txt')):
-    sys.stderr.write('already shrinkwrapped: {}\n'.format(wrapFolder))
+def encrypt_file(path, header_only=False):
+    tmp_path = path + '.tmp'
+    with open(path, 'rb') as fsrc, open(tmp_path, 'wb') as fdst:
+        length = os.path.getsize(path)
+        buf = bytearray(length)
+        fsrc.readinto(buf)
+        if header_only:
+            length = min(header_len, length)
+        encrypt(buf, length)
+        fdst.write(buf)
+    os.unlink(path)
+    os.rename(tmp_path, path)
+
+
+sentinel_path = os.path.join(folder, 'no_shrinkwrap.txt')
+
+if not os.path.exists(sentinel_path):
+    sys.stderr.write('already shrinkwrapped: {}\n'.format(folder))
     sys.exit(2)
 
-start = time.time()
+start_time = time.time()
 
-for root, dirs, files in os.walk(wrapFolder):
-
+for root, dirs, files in os.walk(folder):
     for i in files:
         path = os.path.join(root, i)
+        encrypt_file(path, header_only=is_binary(path))
 
-        f = open(path, 'rb')
-        data = f.read()
-        f.close()
+end_time = time.time()
 
-        if len(data) == 0:
-            continue
+# Remove encryption sentinel
+os.unlink(sentinel_path)
 
-        f = open(path, 'wb')
-        encrypt(data, f)
-        f.close()
-
-end = time.time()
-
-print("Elapsed: %0.1fsec" % (end - start))
+print("shrinkwrapped: %0.1fs" % (end_time - start_time))
 
 sys.exit(0)
