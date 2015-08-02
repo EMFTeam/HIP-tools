@@ -203,18 +203,34 @@ class DebugTrace(NullDebugTrace):
             self.trace(s)
 
 
+WRAP_NONE  = 0
+WRAP_QUICK = 1
+WRAP_TOTAL = 2
+
+
 class TargetSource:
-    def __init__(self, folder, srcPath, isDir=False):
+    def __init__(self, folder, srcPath, isDir=False, wrap=WRAP_NONE):
         self.folder = folder
         self.srcPath = srcPath
         self.isDir = isDir
+        self.wrap = wrap
 
 
-def promptUser(prompt, lc=True):
-    sys.stdout.write(prompt + u' ')
-    sys.stdout.flush()
-    response = sys.stdin.readline().strip()  # TODO: broken if diff locales use non-ASCII chars in response
-    return response.lower() if lc else response
+g_bannedFileExt = ['.pdn', '.psd', '.xcf', '.bak', '.tmp', '.rar', '.zip', \
+                   '.7z', '.gz', '.tgz', '.xz', '.bz2', '.tar', '.ignore', \
+                   '.xls', '.xlsx', '.xlsm', '.db']
+
+
+def isFileWanted(path):
+    root, extension = os.path.splitext(path)
+    return (extension.lower() not in g_bannedFileExt   and \
+            not os.path.basename(root).startswith('.') and \
+            not path.endswith('~'))
+
+
+def isFileQuickUnwrapped(path):
+    _, extension = os.path.splitext(path)
+    return extension.lower() in ['.dds', '.tga']
 
 
 def isYes(answer):
@@ -229,6 +245,13 @@ def isYesDefaultNo(answer):
               'es': ('s', 'si'),
               'en': ('y', 'yes')}
     return answer in yesSet[language]
+
+
+def promptUser(prompt, lc=True):
+    sys.stdout.write(prompt + u' ')
+    sys.stdout.flush()
+    response = sys.stdin.readline().strip()  # TODO: broken if diff locales use non-ASCII chars in response
+    return response.lower() if lc else response
 
 
 def enableMod(name):
@@ -276,7 +299,7 @@ def mkTree(d, traceMsg=None):
     os.makedirs(d)
 
 
-def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None):
+def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None, wrapped=False):
     if ignoreFiles is None:
         ignoreFiles = set()
     if prunePaths is None:
@@ -321,7 +344,7 @@ def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None):
             else:
                 prunedDirs.append(directory)
                 newDir = os.path.join(newRoot, directory)
-                targetSrc[newDir] = TargetSource(folder, srcPath, isDir=True)
+                g_targetSrc[newDir] = TargetSource(folder, srcPath, isDir=True)
 
         dirs[:] = prunedDirs  # Filter subdirectories into which we should recurse on next os.walk()
         nPushed = 0
@@ -336,7 +359,12 @@ def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None):
 
 #           dbg.trace(quoteIfWS(dst) + ' <= ' + quoteIfWS(src))
 
-            targetSrc[dst] = TargetSource(folder, src)
+            wrapType = WRAP_NONE
+
+            if wrapped:
+                wrapType = WRAP_QUICK if isFileQuickUnwrapped(src) else WRAP_TOTAL
+
+            g_targetSrc[dst] = TargetSource(folder, src, wrap=wrapType)
             nPushed += 1
 
         dbg.trace('num_files_pushed({})'.format(nPushed))
@@ -347,23 +375,25 @@ def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None):
 def popFile(f, targetFolder):
     f = os.path.normpath(f)
     p = os.path.join(targetFolder, f)
-    if p in targetSrc:
+    if p in g_targetSrc:
         dbg.trace("pop_file('{}')".format(p))
-        del targetSrc[p]
+        del g_targetSrc[p]
 
 
 def popTree(d, targetFolder):
     d = os.path.normpath(d)
     t = os.path.join(targetFolder, d)
     dbg.push("pop_path_prefix('{}')".format(t))
-    for p in [p for p in targetSrc.keys() if p.startswith(t)]:
+    for p in [p for p in g_targetSrc.keys() if p.startswith(t)]:
         dbg.trace(p)
-        del targetSrc[p]
+        del g_targetSrc[p]
     dbg.pop()
 
 
 def stripPathHead(path):
     i = path.find('/')
+    if i == -1:
+        i = path.find(r'\\')
     if i == -1:
         i = path.find('\\')
     if i == -1:
@@ -372,28 +402,52 @@ def stripPathHead(path):
     return path[newStart:]
 
 
+g_k  = bytearray(br'"The enemy of a good plan is the dream of a perfect plan" - Carl von Clausewitz')
+g_kN = len(g_k)
+
+
+def unwrapBuffer(buf, length):
+    for i in xrange(length):
+        buf[i] ^= g_k[i % g_kN]
+
+
+def unwrapToFile(src, dst, quickMode=False):
+    length = os.path.getsize(src)
+    buf = bytearray(length)
+    with open(src, 'rb') as fsrc, open(dst, 'wb') as fdst:
+        fsrc.readinto(buf)
+        if quickMode:
+            length = min(1 << 12, length)
+        unwrapBuffer(buf, length)
+        fdst.write(buf)
+
+
 def compileTarget(mapFilename):
     print(localise('COMPILING'))
     sys.stdout.flush()
 
-    x = len(targetSrc) // 10
+    x = len(g_targetSrc) // 20
 
     with open(mapFilename, "w") as mapFile:
-        for n, dstPath in enumerate(sorted(targetSrc)):
+        for n, dstPath in enumerate(sorted(g_targetSrc)):
 
             if n % x == 0:
-                print(u"{}%".format((n // x * 10)))
+                print(u"{}%".format((n // x * 20)))
                 sys.stdout.flush()
 
-            src = targetSrc[dstPath]
+            src = g_targetSrc[dstPath]
             mapFile.write('%s <= [%s]\n' % (stripPathHead(dstPath), src.folder))
 
             if src.isDir:
                 mkTree(dstPath)
-            elif move:
+            elif move and src.wrap == WRAP_NONE:
                 shutil.move(src.srcPath, dstPath)
-            else:
+            elif src.wrap == WRAP_NONE:
                 shutil.copy(src.srcPath, dstPath)
+            elif src.wrap == WRAP_QUICK:
+                unwrapToFile(src.srcPath, dstPath, quickMode=True)
+            elif src.wrap == WRAP_TOTAL:
+                unwrapToFile(src.srcPath, dstPath)
 
 
 def detectPlatform():
@@ -950,8 +1004,8 @@ def main():
 #                                        eu4Version='1.10')
 
         # Install...
-        global targetSrc
-        targetSrc = {}
+        global g_targetSrc
+        g_targetSrc = {}
 
         moduleOutput = ["[EMF 4.0 Beta %s]\nEnabled HIP modules:\n" % versions['pkg']]
         dbg.push('merge_all')
@@ -1041,7 +1095,7 @@ def main():
         if CPR:
             dbg.push('merge(CPR)')
             moduleOutput.append("CPRplus (%s)\n" % versions['CPR'])
-            pushFolder('CPRplus', targetFolder)
+            pushFolder('CPRplus', targetFolder, wrapped=True)
             if SWMH:
                 pushFolder('CPRplus-compatch/SWMH', targetFolder)
             elif EMF:

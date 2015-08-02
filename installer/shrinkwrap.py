@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 folder = "/home/ziji/build/modules/CPRplus"
-k = bytearray(b'"The enemy of a good plan is the dream of a perfect plan" - Carl von Clausewitz')
+k = bytearray(br'"The enemy of a good plan is the dream of a perfect plan" - Carl von Clausewitz')
 header_len = 1 << 12
 
 
@@ -35,6 +35,10 @@ def encrypt_file(path, header_only=False):
         fdst.write(buf)
     os.unlink(path)
     os.rename(tmp_path, path)
+
+if not os.path.exists(folder):
+    sys.stderr.write('invalid shrinkwrap folder: {}\n'.format(folder))
+    sys.exit(1)
 
 # Check for the encryption sentinel first
 sentinel_path = os.path.join(folder, 'no_shrinkwrap.txt')
