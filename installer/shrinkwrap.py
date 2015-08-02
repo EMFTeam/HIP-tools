@@ -12,7 +12,7 @@ import time
 
 def is_binary(path):
     _, extension = os.path.splitext(path)
-    return extension in ['.dds', '.tga', '.pdn', '.DDS', '.TGA', '.PDN']
+    return extension.lower() in ['.dds', '.tga', '.pdn', '.psd', '.xcf']
 
 
 kN = len(k)
@@ -36,12 +36,12 @@ def encrypt_file(path, header_only=False):
     os.unlink(path)
     os.rename(tmp_path, path)
 
-
+# Check for the encryption sentinel first
 sentinel_path = os.path.join(folder, 'no_shrinkwrap.txt')
 
 if not os.path.exists(sentinel_path):
     sys.stderr.write('already shrinkwrapped: {}\n'.format(folder))
-    sys.exit(2)
+    sys.exit(0)
 
 start_time = time.time()
 
@@ -55,6 +55,5 @@ end_time = time.time()
 # Remove encryption sentinel
 os.unlink(sentinel_path)
 
-print("shrinkwrapped: %0.1fs" % (end_time - start_time))
-
+sys.stderr.write("shrinkwrapped: %0.1fs\n" % (end_time - start_time))
 sys.exit(0)
