@@ -2,7 +2,7 @@ import os
 import re
 
 characteridregex = re.compile('^([0-9]+) ?=', re.MULTILINE)
-path = "D:\\GitHub\\SWMH\\SWMH\\history\\characters\\"
+path = "D:\\g\\SWMH-BETA\\SWMH\\history\\characters\\"
 filestoaddto = os.listdir(path);
 vanillapath = "D:\\SteamLibrary\\SteamApps\\common\\Crusader Kings II\\history\\characters\\"
 filestostealfrom = os.listdir(vanillapath);
