@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 1, 'minor': 9, 'patch': 0,
+version = {'major': 2, 'minor': 0, 'patch': 1,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -747,7 +747,11 @@ def detectCPRMissingDLCs():
 
     dlcFolder = os.path.join(gameFolder, 'dlc')
     if not os.path.isdir(dlcFolder):
-        return None
+        # Try one more common path
+        gameFolder = os.path.normpath("D:/SteamLibrary/steamapps/common/Crusader Kings II")
+        dlcFolder = os.path.join(gameFolder, 'dlc')
+        if not os.path.isdir(dlcFolder):
+            return None # Give up
 
     for f in [os.path.join('dlc', e) for e in os.listdir(dlcFolder)]:
         if f in reqDLCNames:
