@@ -783,7 +783,7 @@ def scaffoldMod(baseFolder, targetFolder, modBasename, modName, modPath, modUser
         modFile.write('path = "mod/{}"\n'.format(modPath))
         if modUserDir is not None:
             modFile.write('user_dir = "%s"  '
-                          '# Ensure we get our own g_versions of the gfx/map caches and savegames\n' %
+                          '# Ensure we get our own versions of the gfx/map caches and savegames\n' %
                           modBasename)
         if eu4Version is not None:
             modFile.write('supported_version = {}\n'.format(eu4Version))
