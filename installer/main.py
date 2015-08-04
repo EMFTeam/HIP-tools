@@ -9,7 +9,7 @@ import traceback
 import time
 
 
-version = {'major': 2, 'minor': 0, 'patch': 1,
+version = {'major': 2, 'minor': 1, 'patch': 0,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -79,7 +79,7 @@ def initLocalisation():
                 {
                     'fr': u"SWMH avec les noms culturels locaux, plutôt qu'en anglais ou francisés",
                     'es': u"SWMH con localizacion nativa para culturas y titulos, en lugar de ingles",
-                    'en': u"SWMH with native localisation for cultures and titles, rather than English",
+                    'en': u"SWMH with native localisation for cultures/titles, rather than English",
                 },
             'MOVE_VS_COPY':
                 {
@@ -131,7 +131,7 @@ def initLocalisation():
 
 
 def localise(key):
-    return i18n[key][language]
+    return i18n[key][g_language]
 
 
 class InstallerException(Exception):
@@ -237,14 +237,14 @@ def isYes(answer):
     yesSet = {'fr': ('', 'o', 'oui'),
               'es': ('', 's', 'si'),
               'en': ('', 'y', 'yes')}
-    return answer in yesSet[language]
+    return answer in yesSet[g_language]
 
 
 def isYesDefaultNo(answer):
     yesSet = {'fr': ('o', 'oui'),
               'es': ('s', 'si'),
               'en': ('y', 'yes')}
-    return answer in yesSet[language]
+    return answer in yesSet[g_language]
 
 
 def promptUser(prompt, lc=True):
@@ -279,23 +279,23 @@ def quoteIfWS(s):
 
 def rmTree(directory, traceMsg=None):
     if traceMsg:
-        dbg.trace(traceMsg)
+        g_dbg.trace(traceMsg)
     if os.path.exists(directory):
-        dbg.trace("rmdir('{}')".format(directory))
+        g_dbg.trace("rmdir('{}')".format(directory))
         shutil.rmtree(directory)
 
 
 def rmFile(f, traceMsg=None):
     if traceMsg:
-        dbg.trace(traceMsg)
-    dbg.trace('rm("{}")'.format(f))
+        g_dbg.trace(traceMsg)
+    g_dbg.trace('rm("{}")'.format(f))
     os.remove(f)
 
 
 def mkTree(d, traceMsg=None):
     if traceMsg:
-        dbg.trace(traceMsg)
-    dbg.trace("mkdir('{}')".format(d))
+        g_dbg.trace(traceMsg)
+    g_dbg.trace("mkdir('{}')".format(d))
     os.makedirs(d)
 
 
@@ -313,23 +313,23 @@ def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None, wrapped=
     srcFolder = os.path.join('modules', folder)
 
     if not os.path.exists(srcFolder):
-        dbg.trace("MODULE_NOT_FOUND('{}')".format(folder))
+        g_dbg.trace("MODULE_NOT_FOUND('{}')".format(folder))
         return
 
-    dbg.push('push_module("{}")'.format(srcFolder))
+    g_dbg.push('push_module("{}")'.format(srcFolder))
 
     ignoreFiles = {os.path.join(srcFolder, os.path.normpath(x)) for x in ignoreFiles}
     prunePaths = {os.path.join(srcFolder, os.path.normpath(x)) for x in prunePaths}
 
     for x in ignoreFiles:
-        dbg.trace('file_filter("{}")'.format(x))
+        g_dbg.trace('file_filter("{}")'.format(x))
 
     for x in prunePaths:
-        dbg.trace('path_filter("{}")'.format(x))
+        g_dbg.trace('path_filter("{}")'.format(x))
 
     for root, dirs, files in os.walk(srcFolder):
         newRoot = root.replace(srcFolder, targetFolder)
-        dbg.push('push_dir("{}")'.format(root))
+        g_dbg.push('push_dir("{}")'.format(root))
 
         # Prune the source directory walk in-place according to prunePaths option,
         # and, of course, don't create pruned directories (none of the files in
@@ -338,9 +338,9 @@ def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None, wrapped=
 
         for directory in dirs:
             srcPath = os.path.join(root, directory)
-#           dbg.trace('dir({})'.format(quoteIfWS(srcPath)))
+#           g_dbg.trace('dir({})'.format(quoteIfWS(srcPath)))
             if srcPath in prunePaths:
-                dbg.trace('filtered_dir("{}")'.format(srcPath))
+                g_dbg.trace('filtered_dir("{}")'.format(srcPath))
             else:
                 prunedDirs.append(directory)
                 newDir = os.path.join(newRoot, directory)
@@ -354,13 +354,13 @@ def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None, wrapped=
             dst = os.path.join(newRoot, f)
 
             if not isFileWanted(src):
-                dbg.trace('unwanted_file("{}")'.format(src))
+                g_dbg.trace('unwanted_file("{}")'.format(src))
                 continue
             if src in ignoreFiles:  # Selective ignore filter for individual files
-                dbg.trace('filtered_file("{}")'.format(src))
+                g_dbg.trace('filtered_file("{}")'.format(src))
                 continue
 
-#           dbg.trace(quoteIfWS(dst) + ' <= ' + quoteIfWS(src))
+#           g_dbg.trace(quoteIfWS(dst) + ' <= ' + quoteIfWS(src))
 
             wrapType = WRAP_NONE
 
@@ -370,27 +370,27 @@ def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None, wrapped=
             g_targetSrc[dst] = TargetSource(folder, src, wrap=wrapType)
             nPushed += 1
 
-        dbg.trace('num_files_pushed({})'.format(nPushed))
-        dbg.pop()
-    dbg.pop()
+        g_dbg.trace('num_files_pushed({})'.format(nPushed))
+        g_dbg.pop()
+    g_dbg.pop()
 
 
 def popFile(f, targetFolder):
     f = os.path.normpath(f)
     p = os.path.join(targetFolder, f)
     if p in g_targetSrc:
-        dbg.trace("pop_file('{}')".format(p))
+        g_dbg.trace("pop_file('{}')".format(p))
         del g_targetSrc[p]
 
 
 def popTree(d, targetFolder):
     d = os.path.normpath(d)
     t = os.path.join(targetFolder, d)
-    dbg.push("pop_path_prefix('{}')".format(t))
+    g_dbg.push("pop_path_prefix('{}')".format(t))
     for p in [p for p in g_targetSrc.keys() if p.startswith(t)]:
-        dbg.trace(p)
+        g_dbg.trace(p)
         del g_targetSrc[p]
-    dbg.pop()
+    g_dbg.pop()
 
 
 def stripPathHead(path):
@@ -443,7 +443,7 @@ def compileTarget(mapFilename):
 
             if src.isDir:
                 mkTree(dstPath)
-            elif move and src.wrap == WRAP_NONE:
+            elif g_move and src.wrap == WRAP_NONE:
                 shutil.move(src.srcPath, dstPath)
             elif src.wrap == WRAP_NONE:
                 shutil.copy(src.srcPath, dstPath)
@@ -465,20 +465,20 @@ def detectPlatform():
 
 
 def cleanUserDir(userDir):
-    #if platform != 'mac':
+    #if g_platform != 'mac':
     #    print('Clearing cache in ' + quoteIfWS(userDir))
 
-    dbg.push('clean_userdir("{}")'.format(userDir))
+    g_dbg.push('clean_userdir("{}")'.format(userDir))
     for d in [os.path.join(userDir, e) for e in ['gfx', 'map']]:
         rmTree(d)
-    dbg.pop()
+    g_dbg.pop()
 
 
 def resetCaches():
-    if platform == 'mac':
+    if g_platform == 'mac':
         print(u'Clearing preexisting CKII gfx/map cache')
         cleanUserDir('..')  # TODO: Find out if the user_dir changes with the new 2.1.5 launcher
-    elif platform == 'win':
+    elif g_platform == 'win':
         print(u'Clearing preexisting HIP-related CKII gfx/map caches ...')
 
         # Match *all* userdirs in CKII user directory which include 'HIP' in their
@@ -505,15 +505,15 @@ def resetCaches():
 # magically be in the right working directory before touching any files.
 def normalizeCwd():
     # All but the final step was done in initVersionEnvInfo() already.
-    d = os.path.dirname(programPath)
+    d = os.path.dirname(g_programPath)
     if d != '':
         os.chdir(d)
 
 
 # noinspection PyDictCreation
 def initVersionEnvInfo():
-    global version
-    version['Version'] = '{}.{}.{}'.format(version['major'], version['minor'], version['patch'])
+    global g_version
+    g_version['Version'] = '{}.{}.{}'.format(g_version['major'], g_version['minor'], g_version['patch'])
 
     ## if 'Commit-ID' in version:
     ## versionStr += '.git~' + version['Commit-ID'][0:7]
@@ -522,23 +522,19 @@ def initVersionEnvInfo():
     # ordered from semantic 'earlier' to 'later' in all cases, including variable
     # numbers of digits in any of the components.
 
-    # Resolve the installer's own absolute path. Needs to be tested with a py2exe
-    # rebuild, hence the exception-raising case below.
-
     # We have a relative or absolute path in sys.argv[0] (in either case, it may
     # still be the right directory, but we'll have to find out).
 
     if len(sys.argv) == 0 or sys.argv[0] == '':
         raise InstallerEmptyArgvError()
 
-    global programPath
+    global g_programPath
 
     # Resolve any symbolic links in path elements and canonicalize it
-    programPath = os.path.realpath(sys.argv[0])
+    g_programPath = os.path.realpath(sys.argv[0])
 
     # Make sure it's normalized and absolute with respect to platform conventions
-    programPath = os.path.abspath(programPath)
-    return
+    g_programPath = os.path.abspath(g_programPath)
 
 
 def printVersionEnvInfo():
@@ -550,10 +546,10 @@ def printVersionEnvInfo():
     extKeys = ['Version', 'Commit ID', 'Primary Developer', 'Developer', 'Release Manager']
 
     # Resolve optional keys to found keys
-    extKeys = [k for k in extKeys if k in version]
+    extKeys = [k for k in extKeys if k in g_version]
 
     if extKeys:
-        extVals = [version[k] for k in extKeys]
+        extVals = [g_version[k] for k in extKeys]
         extKeys = [k + ': ' for k in extKeys]
         maxKeyWidth = len(max(extKeys, key=len))
         for k, v in zip(extKeys, extVals):
@@ -561,7 +557,7 @@ def printVersionEnvInfo():
         sys.stdout.write('\n')
 
     print(u'HIP Installer Path: ')
-    print(unicode(programPath + '\n'))
+    print(unicode(g_programPath + '\n'))
 
     # Print the OS version/build info
     import platform as p
@@ -577,72 +573,57 @@ def printVersionEnvInfo():
 
 
 def getPkgVersions(modDirs):
-    global versions
-    versions = {}
-    dbg.push("read_versions")
+    global g_versions
+    g_versions = {}
+    g_dbg.push("read_versions")
     for mod in modDirs.keys():
         f = os.path.join("modules", modDirs[mod], "version.txt")
         if os.path.exists(f):
-            versions[mod] = unicode(open(f).readline().strip())
+            g_versions[mod] = unicode(open(f).readline().strip())
         else:
-            versions[mod] = u'no version'
-        dbg.trace("version('%s' => '%s')" % (mod, versions[mod]))
-    dbg.pop()
+            g_versions[mod] = u'no version'
+        g_dbg.trace("version('%s' => '%s')" % (mod, g_versions[mod]))
+    g_dbg.pop()
 
 
 def getInstallOptions():
-    # Determine user language for installation
-    global language
-    global betaMode
+    # Determine user g_language for installation
+    global g_language
+    global g_betaMode
 
-    language = '' if (steamMode or fastMode) else promptUser(u"For English, hit ENTER. En français, taper 'f'. Para "
-                                                             u"español, presiona 'e'.")
+    g_language = '' if (g_steamMode or g_fastMode) else promptUser(u"For English, hit ENTER. En français, taper 'f'. Para "
+                                                               u"español, presiona 'e'.")
 
-    if language.startswith('B') or language.startswith('b'):
-        language = 'en'
-        betaMode = True
-    elif language == 'f':
-        language = 'fr'
-    elif language == 'e':
-        language = 'es'
+    if g_language.startswith('B') or g_language.startswith('b'):
+        g_language = 'en'
+        g_betaMode = True
+    elif g_language == 'f':
+        g_language = 'fr'
+    elif g_language == 'e':
+        g_language = 'es'
     else:
-        language = 'en'
+        g_language = 'en'
 
     # Show HIP installer version & explain interactive prompting
-    if not (steamMode or fastMode):
-        print(localise('INTRO').format(versions['pkg']))
+    if not (g_steamMode or g_fastMode):
+        print(localise('INTRO').format(g_versions['pkg']))
 
-    global move
-    #move = False if (steamMode or fastMode) else isYes(promptUser(localise('MOVE_VS_COPY')))
-    move = False
+    global g_move
+    #g_move = False if (g_steamMode or g_fastMode) else isYes(promptUser(localise('MOVE_VS_COPY')))
+    g_move = False
 
-    # Confirm. "User studies" now "prove" this default is questionable (i.e.,
-    # copy not being default), but I think the move method should remain the
-    # default if you hit ENTER to everything. Not because of speed. Not only are
-    # all the package data files freshly primed in the OS filesystem cache due
-    # to the installer archive extraction done previously, but the installer's
-    # compilation logic will soon be overhauled for single-pass compilation,
-    # thus dramatically reducing the number of file operations while merging to
-    # the minimum possible required.
-
-    # The reason MOVE ought to be default is simply that most users *should*
-    # have their source package deleted after use (as they can simply unzip
-    # again, worst-case). It avoids scenarios where users forget to delete a
-    # preexisting modules/, unzip a new HIP release that deleted or renamed some
-    # files into the mod folder, and then have multiple or old, extranneous
-    # versions of files mixed into the new release.
-
-    if move:
-        move = isYes(promptUser(localise('MOVE_CONFIRM')))
-    dbg.trace('move_instead_of_copy({})'.format(move))
+    if g_move:
+        g_move = isYes(promptUser(localise('MOVE_CONFIRM')))
+    g_dbg.trace('move_instead_of_copy({})'.format(g_move))
 
     # Determine installation target folder...
-    global defaultFolder
-    defaultFolder = 'EMF 4.0 Beta'
+    global g_defaultFolder
+    g_defaultFolder = 'EMF 4.0 Beta'  # FIXME
     targetFolder = ''
 
-    # useCustomFolder = False if (steamMode or fastMode) else \
-    #     isYesDefaultNo(promptUser(u'Do you want to install to a custom folder / mod name? [no]'))
+    # FIXME: `or not betaMode` is only for the EMF 4 Beta Installer
+    useCustomFolder = False if (g_steamMode or g_fastMode or not betaMode) else \
+         isYesDefaultNo(promptUser(u'Do you want to install to a custom folder / mod name? [no]'))
 
     useCustomFolder = False
 
@@ -650,13 +631,13 @@ def getInstallOptions():
 
         # Note that we use the case-preserving form of promptUser (also determines name in launcher)
 
-        targetFolder = '' if (steamMode or fastMode) \
-            else promptUser(localise('TARGET_FOLDER').format(unicode(defaultFolder)), lc=False)
+        targetFolder = '' if (g_steamMode or g_fastMode) \
+            else promptUser(localise('TARGET_FOLDER').format(unicode(g_defaultFolder)), lc=False)
 
     if targetFolder == '':
-        targetFolder = defaultFolder
+        targetFolder = g_defaultFolder
 
-    dbg.trace('target_folder("{}")'.format(targetFolder))
+    g_dbg.trace('target_folder("{}")'.format(targetFolder))
     return targetFolder
 
 
@@ -667,7 +648,7 @@ def getSteamGameFolder(appID, variantID):
     keyPath = r'SOFTWARE{}\Microsoft\Windows\CurrentVersion\Uninstall\Steam App {}'.format(pathVariant[variantID],
                                                                                            appID)
 
-    dbg.push('search_winreg_key("{}")'.format(keyPath))
+    g_dbg.push('search_winreg_key("{}")'.format(keyPath))
 
     # TODO!!
     # _winreg import will fail on Python 3, so a check against the Python major version and subsequent conditional
@@ -692,7 +673,7 @@ def getSteamGameFolder(appID, variantID):
         if not folder:
             raise EnvironmentError()
 
-        dbg.trace('winreg_key_found(InstallLocation => "{}")'.format(folder[0]))
+        g_dbg.trace('winreg_key_found(InstallLocation => "{}")'.format(folder[0]))
 
         hKey.Close()
         hReg.Close()
@@ -703,7 +684,7 @@ def getSteamGameFolder(appID, variantID):
         return None
 
     finally:
-        dbg.pop()
+        g_dbg.pop()
 
 
 cprReqDLCNames = {'dlc/dlc013.dlc': 'African Portraits',
@@ -772,7 +753,7 @@ def scaffoldMod(baseFolder, targetFolder, modBasename, modName, modPath, modUser
     # Remove preexisting target folder...
     if os.path.exists(targetFolder):
 
-        if not steamMode:
+        if not g_steamMode:
             sys.stdout.write('\n')
 
         print(u"> Removing preexisting '%s' ..." % targetFolder)
@@ -797,14 +778,14 @@ def scaffoldMod(baseFolder, targetFolder, modBasename, modName, modPath, modUser
     modFilename = os.path.join(baseFolder, modFilename)
 
     # Generate a new .mod file...
-    dbg.trace('write_dot_mod("{}")'.format(modFilename))
+    g_dbg.trace('write_dot_mod("{}")'.format(modFilename))
 
     with open(modFilename, "w") as modFile:
         modFile.write('name = "{}"  # Name to use as a dependency if making a sub-mod\n'.format(modName))
         modFile.write('path = "mod/{}"\n'.format(modPath))
         if modUserDir is not None:
             modFile.write('user_dir = "%s"  '
-                          '# Ensure we get our own versions of the gfx/map caches and savegames\n' %
+                          '# Ensure we get our own g_versions of the gfx/map caches and savegames\n' %
                           modBasename)
         if eu4Version is not None:
             modFile.write('supported_version = {}\n'.format(eu4Version))
@@ -818,16 +799,16 @@ def main():
         initLocalisation()
         initVersionEnvInfo()
 
-        dbgMode = (len(sys.argv) > 1 and '-D' in sys.argv[1:])
+        g_dbgMode = (len(sys.argv) > 1 and '-D' in sys.argv[1:])
         versionMode = (len(sys.argv) > 1 and '-V' in sys.argv[1:])
 
-        global steamMode
-        global fastMode
-        steamMode = (len(sys.argv) > 1 and '-S' in sys.argv[1:])
-        fastMode = (len(sys.argv) > 1 and '-Z' in sys.argv[1:])
+        global g_steamMode
+        global g_fastMode
+        g_steamMode = (len(sys.argv) > 1 and '-S' in sys.argv[1:])
+        g_fastMode = (len(sys.argv) > 1 and '-Z' in sys.argv[1:])
 
-        global betaMode
-        betaMode = False
+        global g_betaMode
+        g_betaMode = False
 
         # The debug tracer's file object is unbuffered (always flushes all writes
         # to disk/pipe immediately), and it lives until the end of the program, so
@@ -835,12 +816,12 @@ def main():
         # exception), because it will be closed by the OS on program exit, and all
         # trace data will have already had its __write() syscalls queued to the OS.
 
-        global dbg
-        dbg = DebugTrace(open('HIP_debug.log', 'w'), prefix='') if dbgMode else NullDebugTrace()
+        global g_dbg
+        g_dbg = DebugTrace(open('HIP_debug.log', 'w'), prefix='') if g_dbgMode else NullDebugTrace()
 
-        global platform
-        platform = detectPlatform()
-        dbg.trace('platform({})'.format(platform))
+        global g_platform
+        g_platform = detectPlatform()
+        g_dbg.trace('platform({})'.format(g_platform))
 
         if versionMode:
             printVersionEnvInfo()
@@ -879,41 +860,41 @@ def main():
         # Prompt user for options related to this install
         targetFolder = getInstallOptions()
 
-        # if (not steamMode) and not fastMode:
+        # if (not g_steamMode) and not g_fastMode:
         #     sys.stdout.write('\n')
 
         # Determine module combination...
 
-        # EMF = True if steamMode else enableMod(u"EMF ({})".format(versions['EMF']))
+        # EMF = True if g_steamMode else enableMod(u"EMF ({})".format(g_versions['EMF']))
 
-        EMF = True if not betaMode else enableMod(u"EMF ({})".format(versions['EMF']))
+        EMF = True if not g_betaMode else enableMod(u"EMF ({})".format(g_versions['EMF']))
 
-        # ARKOCoA = True if steamMode \
-        #     else enableMod(u"ARKOpack Armoiries [CoA] ({})".format(versions['ARKO']))
+        # ARKOCoA = True if g_steamMode \
+        #     else enableMod(u"ARKOpack Armoiries [CoA] ({})".format(g_versions['ARKO']))
         #
-        # if (not steamMode) and not fastMode:
+        # if (not g_steamMode) and not g_fastMode:
         #     print(u"\nNOTE: Arumba's Keyboard Shortcuts and ARKOpack Interface are incompatible.\n"
         #           u"      ARKOpack doesn't provide shortcuts. You may only select one of the two:\n")
         #
-        # ARKOInt = False if (steamMode or fastMode) \
-        #     else enableMod(u"ARKOpack Interface ({})".format(versions['ARKO']))
+        # ARKOInt = False if (g_steamMode or g_fastMode) \
+        #     else enableMod(u"ARKOpack Interface ({})".format(g_versions['ARKO']))
 
         ArumbaKS = False
 
         # if not ARKOInt:
-        #     ArumbaKS = True if (steamMode or fastMode) \
-        #         else enableMod(u"Arumba's Keyboard Shortcuts ({})".format(versions['ArumbaKS']))
+        #     ArumbaKS = True if (g_steamMode or g_fastMode) \
+        #         else enableMod(u"Arumba's Keyboard Shortcuts ({})".format(g_versions['ArumbaKS']))
 
         CPR = False
 
-        if not steamMode:
+        if not g_steamMode:
             cprMissingDLCNames = detectCPRMissingDLCs()
 
             if cprMissingDLCNames is None:  # DLC auto-detection failed
-                if platform == 'win':  # While unlikely, this happens with the current auto-detection code.
+                if g_platform == 'win':  # While unlikely, this happens with the current auto-detection code.
                     # It is treated as a special case to still draw some visibility to
                     # the problem.
-                    if not fastMode:
+                    if not g_fastMode:
                         print(u"\nOOPS: The HIP installer could NOT successfully determine your active CKII\n"
                               u"game folder! Thus, it cannot auto-detect whether you meet all the portrait DLC\n"
                               u"prerequisites for CPRplus. All _other_ HIP modules can be installed, but you'll\n"
@@ -922,7 +903,7 @@ def main():
                         printCPRReqDLCNames()
 
                 else:  # No auto-detection supported on mac/lin, so allow the user to choose CPR w/ zero fuss.
-                    if not fastMode:
+                    if not g_fastMode:
                         print(u"\nNOTE: Portrait DLC auto-detection is not supported on Mac/Linux!\n"
                               u"Due to Paradox's DLC policy, if you want to install CPRplus, you will need\n"
                               u"to post in the CPRplus thread. CPRplus requires ALL of the following\n"
@@ -931,7 +912,7 @@ def main():
                         printCPRReqDLCNames()
 
             elif len(cprMissingDLCNames) > 0:  # DLC auto-detection succeeded, but there were missing DLCs.
-                if not fastMode:
+                if not g_fastMode:
                     print(u"\n\nCPRplus (portrait upgrade mod) requires portrait pack DLCs which you,\n"
                           u"unforunately, are lacking. If you want to use CPRplus, you'll need to install\n"
                           u"the following DLCs first:\n")
@@ -942,33 +923,32 @@ def main():
                     sys.stdout.write('\n')
 
             else:  # DLC auto-detection succeeded, and CPR is clear for take-off. However, we still default to No.
-                # if not fastMode:
+                # if not g_fastMode:
                 #     print(u"[ Required portrait DLCs for CPR auto-detected OK... ]")
-                # CPR = enableModDefaultNo(u"CPR Flavors Plus ({})".format(versions['CPR']), compat=True)
-                CPR = enableMod(u"CPRplus ({})".format(versions['CPR']))
+                # CPR = enableModDefaultNo(u"CPR Flavors Plus ({})".format(g_versions['CPR']), compat=True)
+                CPR = enableMod(u"CPRplus ({})".format(g_versions['CPR']))
 
-        if steamMode:
+        if g_steamMode:
             VIETevents = True
-        elif not fastMode:
-            VIETevents = enableMod(u"VIET Events ({})".format(versions['VIET']))
+        elif not g_fastMode:
+            VIETevents = enableMod(u"VIET Events ({})".format(g_versions['VIET']))
 
-        VIETtraits = False if EMF else enableMod(u"VIET Traits ({})".format(versions['VIET']))
+        VIETtraits = False if EMF else enableMod(u"VIET Traits ({})".format(g_versions['VIET']))
         VIET = (VIETtraits or VIETevents)
 
         SWMH = False
         SWMHnative = False
 
-        # if True:
-        #     if (not steamMode) and not fastMode:
-        #         print(u"\nNOTE: The SWMH map does net yet include India and will never include the 769\n"
-        #               u"bookmark. However, SWMH does support all Charlemagne mechanics in 867. If you'd\n"
-        #               u"like to play with the vanilla map instead, simply type 'n' or 'no' for SWMH.\n")
-        #
-        if betaMode:
-            SWMH = False if steamMode else enableMod(u'SWMH ({})'.format(versions['SWMH']))
+        if (not g_steamMode) and not g_fastMode:
+            print(u"\nNOTE: The SWMH map will never include the 769 bookmark. However, SWMH does\n"
+                  u"support all Charlemagne DLC mechanics in 867 and beyond. If you'd like to play\n"
+                  u"with the vanilla map instead, simply type 'n' or 'no' for SWMH.\n")
+        
+        if g_betaMode:
+            SWMH = False if g_steamMode else enableMod(u'SWMH ({})'.format(g_versions['SWMH']))
 
         if SWMH:
-            SWMHnative = True if (steamMode or fastMode) else enableMod(localise('SWMH_NATIVE'))
+            SWMHnative = True if (g_steamMode or g_fastMode) else enableMod(localise('SWMH_NATIVE'))
 
         if False:
             print(u"\nNOTE: The SWMH map is temporarily unavailable due to issues with patch 2.3.\n"
@@ -976,10 +956,10 @@ def main():
                   u"      have an ETA for its return. In the interim, enjoy a game on the vanilla\n"
                   u"      map instead (with NBRT+ if possible).\n")
 
-        if platform == 'win':
-            NBRT = True if (steamMode or fastMode) else enableMod(u"NBRT+ ({})".format(versions['NBRT']))
+        if g_platform == 'win':
+            NBRT = True if (g_steamMode or g_fastMode) else enableMod(u"NBRT+ ({})".format(g_versions['NBRT']))
         else:
-            NBRT = False if steamMode else enableModDefaultNo(u"NBRT+ ({})".format(versions['NBRT']))
+            NBRT = False if g_steamMode else enableModDefaultNo(u"NBRT+ ({})".format(g_versions['NBRT']))
 
         HIP = EMF or VIETevents  # HIP_Common (Isis, e_hip, our event picture stash, etc.)
         # Converter = EMF and not SWMH  # Vanilla EUIV Converter
@@ -990,10 +970,10 @@ def main():
 
         # Prepare for installation...
 
-        if targetFolder != defaultFolder:
-            modBasename = 'EMF_' + targetFolder
+        if targetFolder != g_defaultFolder:
+            modBasename = 'EMF_' + targetFolder  # FIXME
         else:
-            modBasename = 'EMF'
+            modBasename = 'EMF'  # FIXME
 
         modFilename = scaffoldMod('.',
                                   targetFolder,
@@ -1014,31 +994,31 @@ def main():
         global g_targetSrc
         g_targetSrc = {}
 
-        moduleOutput = ["[EMF 4.0 Beta %s]\nEnabled HIP modules:\n" % versions['pkg']]
-        dbg.push('merge_all')
+        moduleOutput = ["[EMF 4.0 Beta %s]\nEnabled HIP modules:\n" % g_versions['pkg']]
+        g_dbg.push('merge_all')
 
         if EMF:
-            moduleOutput.append("EMF: Extended Mechanics & Flavor (%s)\n" % versions['EMF'])
+            moduleOutput.append("EMF: Extended Mechanics & Flavor (%s)\n" % g_versions['EMF'])
 
         # if ARKOCoA:
-        #     dbg.push("merge('ARKO CoA')")
-        #     moduleOutput.append("ARKO Armoiries (%s)\n" % versions['ARKO'])
+        #     g_dbg.push("merge('ARKO CoA')")
+        #     moduleOutput.append("ARKO Armoiries (%s)\n" % g_versions['ARKO'])
         #     pushFolder("ARKOpack_Armoiries", targetFolder)
-        #     dbg.pop()
+        #     g_dbg.pop()
         #
         # if ARKOInt:
-        #     dbg.push("merge('ARKO Interface')")
-        #     moduleOutput.append("ARKO Interface (%s)\n" % versions['ARKO'])
+        #     g_dbg.push("merge('ARKO Interface')")
+        #     moduleOutput.append("ARKO Interface (%s)\n" % g_versions['ARKO'])
         #     pushFolder("ARKOpack_Interface", targetFolder)
         #     if HIP:
         #         popTree('gfx/event_pictures', targetFolder)
-        #     dbg.pop()
+        #     g_dbg.pop()
 
         if ArumbaKS:
-            dbg.push('merge(ArumbaKS)')
-            moduleOutput.append("Arumba's Keyboard Shortcuts (%s)\n" % versions['ArumbaKS'])
+            g_dbg.push('merge(ArumbaKS)')
+            moduleOutput.append("Arumba's Keyboard Shortcuts (%s)\n" % g_versions['ArumbaKS'])
             pushFolder('ArumbaKS', targetFolder)
-            dbg.pop()
+            g_dbg.pop()
 
         if VIET:
             pushFolder("VIET_Assets", targetFolder)
@@ -1047,43 +1027,43 @@ def main():
             pushFolder("HIP_Common", targetFolder)
 
         if SWMH:
-            dbg.push("merge(SWMH)")
+            g_dbg.push("merge(SWMH)")
             pushFolder("SWMH", targetFolder)
             if SWMHnative:
-                moduleOutput.append("SWMH - Native localisation (%s)\n" % versions['SWMH'])
+                moduleOutput.append("SWMH - Native localisation (%s)\n" % g_versions['SWMH'])
             else:
-                moduleOutput.append("SWMH - English localisation (%s)\n" % versions['SWMH'])
+                moduleOutput.append("SWMH - English localisation (%s)\n" % g_versions['SWMH'])
                 pushFolder("English SWMH", targetFolder)
             # if ARKOInt and False:  # Disabled for SWMH EE testing
             #     pushFolder("SWMH+ArkoInterface", targetFolder)
-            dbg.pop()
+            g_dbg.pop()
 
         if NBRT:
-            dbg.push("merge(NBRT)")
-            moduleOutput.append("NBRT+ (%s)\n" % versions['NBRT'])
+            g_dbg.push("merge(NBRT)")
+            moduleOutput.append("NBRT+ (%s)\n" % g_versions['NBRT'])
             pushFolder("NBRT+", targetFolder)
-            if SWMH and platform == "win" and False:  # Disabled for SWMH EE testing
+            if SWMH and g_platform == "win" and False:  # Disabled for SWMH EE testing
                 pushFolder("NBRT+SWMH", targetFolder)
             # if ARKOCoA:
             #     pushFolder("NBRT+ARKO", targetFolder)
             if not SWMH or True:  # Enabled for SWMH EE testing
                 popFile('gfx/FX/pdxmap.fxh', targetFolder)  # Z: 2.2 compatch for NBRT+ Light (and Mac/Linux compatch)
-            dbg.pop()
+            g_dbg.pop()
 
         if VIETtraits:
-            dbg.push("merge('VIET Traits')")
-            moduleOutput.append("VIET Traits (%s)\n" % versions['VIET'])
+            g_dbg.push("merge('VIET Traits')")
+            moduleOutput.append("VIET Traits (%s)\n" % g_versions['VIET'])
             pushFolder("VIET_Traits", targetFolder)
-            dbg.pop()
+            g_dbg.pop()
 
         if VIETevents:
-            dbg.push("merge('VIET Events')")
-            moduleOutput.append("VIET Events (%s)\n" % versions['VIET'])
+            g_dbg.push("merge('VIET Events')")
+            moduleOutput.append("VIET Events (%s)\n" % g_versions['VIET'])
             pushFolder("VIET_Events", targetFolder)
-            dbg.pop()
+            g_dbg.pop()
 
         if EMF:
-            dbg.push('merge(EMF)')
+            g_dbg.push('merge(EMF)')
 
             filteredFiles = set(['common/landed_titles/landed_titles.txt']) if SWMH else set()
             pushFolder('EMF', targetFolder, ignoreFiles=filteredFiles)
@@ -1097,23 +1077,23 @@ def main():
                 pushFolder('EMF+VEvents', targetFolder)
             # if ARKOCoA:
             #     pushFolder('EMF+ArkoCoA', targetFolder)
-            dbg.pop()
+            g_dbg.pop()
 
         if CPR:
-            dbg.push('merge(CPR)')
-            moduleOutput.append("CPRplus (%s)\n" % versions['CPR'])
+            g_dbg.push('merge(CPR)')
+            moduleOutput.append("CPRplus (%s)\n" % g_versions['CPR'])
             pushFolder('CPRplus', targetFolder, wrapped=True)
             if SWMH:
                 pushFolder('CPRplus-compatch/SWMH', targetFolder)
             elif EMF:
                 pushFolder('CPRplus-compatch/EMF', targetFolder)
-            dbg.pop()
+            g_dbg.pop()
 
 #        if Converter:
 #            pushFolder("Converter/Vanilla", targetFolder)
 #            pushFolder("Converter/Extra", euFolder)
 
-        dbg.pop("merge_done")
+        g_dbg.pop("merge_done")
 
         # Where to dump a mapping of all the compiled files to their source modules (will include stuff from outside
         # targetFolder for now too if such stuff is pushed on to the virtual filesystem)
@@ -1124,23 +1104,23 @@ def main():
         # do all the actual compilation (file I/O)
         compileTarget(mapFilename)
 
-        if move:
+        if g_move:
             rmTree("modules")  # Cleanup
 
         endTime = time.time()
         print(u'> Compiled (%0.1f sec).\n' % (endTime - startTime))
 
-        if not steamMode:
+        if not g_steamMode:
             print(u"Mapping of all compiled mod files to their HIP source modules:")
             print(unicode(mapFilename + '\n'))
 
-        # Dump modules selected and their respective versions to <mod>/version.txt
+        # Dump modules selected and their respective g_versions to <mod>/version.txt
         versionFilename = os.path.join(targetFolder, "version.txt")
 
         with open(versionFilename, "w") as output:
             output.write("".join(moduleOutput))
 
-        print(u"Summarized mod combination/versions (INCLUDE FILE CONTENTS IN BUG REPORTS):")
+        print(u"Summarized mod combination/g_versions (INCLUDE FILE CONTENTS IN BUG REPORTS):")
         print(unicode(versionFilename + "\n"))
 
         # Reset all gfx/map/interface/logs cache for every instance of a preexisting
@@ -1148,7 +1128,7 @@ def main():
         resetCaches()
 
         # Installation complete
-        dbg.trace("install_done")
+        g_dbg.trace("install_done")
         promptUser(localise('INSTALL_DONE'))
 
         return 0  # Return success code to OS
