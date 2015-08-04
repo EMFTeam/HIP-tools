@@ -621,8 +621,8 @@ def getInstallOptions():
     g_defaultFolder = 'EMF 4.0 Beta'  # FIXME
     targetFolder = ''
 
-    # FIXME: `or not betaMode` is only for the EMF 4 Beta Installer
-    useCustomFolder = False if (g_steamMode or g_fastMode or not betaMode) else \
+    # FIXME: `or not g_betaMode` is only for the EMF 4 Beta Installer
+    useCustomFolder = False if (g_steamMode or g_fastMode or not g_betaMode) else \
          isYesDefaultNo(promptUser(u'Do you want to install to a custom folder / mod name? [no]'))
 
     if useCustomFolder:
