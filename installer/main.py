@@ -591,8 +591,8 @@ def getInstallOptions():
     global g_language
     global g_betaMode
 
-    g_language = '' if (g_steamMode or g_fastMode) else promptUser(u"For English, hit ENTER. En français, taper 'f'. Para "
-                                                               u"español, presiona 'e'.")
+    g_language = '' if (g_steamMode or g_fastMode) else promptUser(u"For English, hit ENTER. En français, taper 'f'. "
+                                                                   u"Para español, presiona 'e'.")
 
     if g_language.startswith('B') or g_language.startswith('b'):
         g_language = 'en'
@@ -624,8 +624,6 @@ def getInstallOptions():
     # FIXME: `or not betaMode` is only for the EMF 4 Beta Installer
     useCustomFolder = False if (g_steamMode or g_fastMode or not betaMode) else \
          isYesDefaultNo(promptUser(u'Do you want to install to a custom folder / mod name? [no]'))
-
-    useCustomFolder = False
 
     if useCustomFolder:
 
