@@ -623,13 +623,11 @@ def getInstallOptions():
     targetFolder = ''
 
     # FIXME: `or not g_betaMode` is only for the EMF 4 Beta Installer
-    useCustomFolder = False if (g_steamMode or g_fastMode or not g_betaMode) else \
+    useCustomFolder = False if (g_steamMode or g_fastMode) else \
          isYesDefaultNo(promptUser(u'Do you want to install to a custom folder / mod name? [no]'))
 
     if useCustomFolder:
-
         # Note that we use the case-preserving form of promptUser (also determines name in launcher)
-
         targetFolder = '' if (g_steamMode or g_fastMode) \
             else promptUser(localise('TARGET_FOLDER').format(unicode(g_defaultFolder)), lc=False)
 
@@ -898,8 +896,7 @@ def main():
         # Determine module combination...
 
         # EMF...
-        # EMF = True if g_steamMode else enableMod(u"EMF ({})".format(g_versions['EMF']))
-        EMF = True if not g_betaMode else enableMod(u"EMF ({})".format(g_versions['EMF']))  # FIXME
+        EMF = True if g_steamMode else enableMod(u"EMF ({})".format(g_versions['EMF']))
 
         # ARKOpack...
         # ARKOCoA = True if g_steamMode \
