@@ -969,8 +969,8 @@ def main():
 
         # SED...
         SED = False
-        if SWMH and not (g_steamMode or g_fastMode):
-            SED = enableModDefaultNo(u'SED: English Localisation for SWMH ({})'.format(g_versions['SED']))
+        if SWMH and not g_steamMode:
+            SED = True if g_fastMode else enableModDefaultNo(u'SED: English Localisation for SWMH ({})'.format(g_versions['SED']))
 
         # NBRT+...
         if g_platform == 'win':
