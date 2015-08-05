@@ -10,7 +10,7 @@ import time
 import re
 
 
-version = {'major': 2, 'minor': 1, 'patch': 0,
+g_version = {'major': 2, 'minor': 1, 'patch': 0,
            'Developer':       'zijistark <zijistark@gmail.com>',
            'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
