@@ -642,10 +642,10 @@ def getInstallOptions():
 
 # Find Steam master folder by checking the Windows Registry (32-bit mode and 64-bit mode are separate invocations)
 def getSteamMasterFolderFromRegistry(x64Mode=True):
-    g_dbg.push('search_winreg_key("{}")'.format(keyPath))
-
     pathVariant = r'\Wow6432Node' if x64Mode else ''
     keyPath = r'SOFTWARE{}\Valve\Steam'.format(pathVariant)
+
+    g_dbg.push('search_winreg_key("{}")'.format(keyPath))
 
     # TODO:
     # _winreg import will fail on Python 3, so a check against the Python major version and subsequent conditional
