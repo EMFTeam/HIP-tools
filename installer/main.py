@@ -466,9 +466,6 @@ def detectPlatform():
 
 
 def cleanUserDir(userDir):
-    #if g_platform != 'mac':
-    #    print('Clearing cache in ' + quoteIfWS(userDir))
-
     g_dbg.push('clean_userdir("{}")'.format(userDir))
     for d in [os.path.join(userDir, e) for e in ['gfx', 'map']]:
         rmTree(d)
@@ -684,16 +681,22 @@ def getSteamMasterFolderFallbackCygwin():
                   'SteamLibrary',
                   'Games/Steam']
 
+    g_dbg.push('find_steam_master_cygwin("{}")'.format(cygdrive))
+
     for d in os.listdir(cygdrive):
         for maybePath in maybePaths:
             masterFolder = os.path.join(cygdrive, d, maybePath, 'steamapps')
+            g_dbg.trace('search("{}")'.format(masterFolder))
             if os.path.exists(os.path.join(masterFolder, 'libraryfolders.vdf')):
+                g_dbg.pop()
                 return masterFolder
 
+    g_dbg.pop()
     return None
 
 
 def getSteamMasterFolder():
+    g_dbg.push('find_steam_master')
     folder = None
     if g_platform == 'mac':
         folder = os.path.expanduser('~/Library/Application Support/Steam/SteamApps')
@@ -701,46 +704,60 @@ def getSteamMasterFolder():
         folder = os.path.expanduser('~/.steam/steam/SteamApps')
     elif g_platform == 'win':
         if sys.platform.startswith('cyg'):
-            return getSteamMasterFolderFallbackCygwin()
+            folder = getSteamMasterFolderFallbackCygwin()
         else:
             folder = getSteamMasterFolderFromRegistry()
             if folder is None:
                 folder = getSteamMasterFolderFromRegistry(x64Mode=False)  # Try the 32-bit registry key
 
     if folder and os.path.exists(folder):
+        g_dbg.pop('steam_master("{}")'.format(folder))
         return folder
     else:
+        g_dbg.pop('steam_master(NOT_FOUND)')
         return None
 
 
 def readSteamLibraryFolders(dbPath):
+    g_dbg.push('read_steam_master_library_db("{}")'.format(dbPath))
     p_library = re.compile(r'^\s*"\d+"\s+"([^"]+)"\s*$')
     folders = []
     with open(dbPath, 'rb') as f:
         while True:
             line = f.readline()
             if len(line) == 0:
+                g_dbg.pop("num_external_libraries_found({})".format(len(folders)))
                 return folders
             line = line.rstrip('\r\n')
             m = p_library.match(line)
             if m:
-                path = os.path.join(os.path.normpath(m.group(1)), 'steamapps')
+                p = m.group(1).replace(r'\\', '/')
+                if sys.platform.startswith('cyg'):
+                    i = p.find(':/')
+                    if i == 1:
+                        drive = p[:1]
+                        p = p.replace(drive + ':', '/cygdrive/' + drive.lower(), 1)
+                path = os.path.join(os.path.normpath(p), 'steamapps')
+                g_dbg.trace('external_library("{}")'.format(path))
                 if os.path.exists(path):
                     folders.append(path)
 
 
-def getSteamGameFolder(masterFolder, gameName):
+def getSteamGameFolder(masterFolder, gameName, magicFile):
     path = os.path.join(masterFolder, 'common', gameName)
-    if os.path.exists(path):
+    g_dbg.trace('potential_game_folder("{}")'.format(path))
+    if os.path.exists(os.path.join(path, magicFile)):
         return path
 
     libraryDBPath = os.path.join(masterFolder, 'libraryfolders.vdf')
     if not os.path.exists(libraryDBPath):
+        g_dbg.trace('steam_master_library_db(NOT_FOUND)')
         return None
 
     for f in readSteamLibraryFolders(libraryDBPath):
         path = os.path.join(f, 'common', gameName)
-        if os.path.exists(path):
+        g_dbg.trace('potential_game_folder("{}")'.format(path))
+        if os.path.exists(os.path.join(path, magicFile)):
             return path
 
     return None
@@ -768,10 +785,13 @@ def detectCPRMissingDLCs():
     # Normalize path keys denormReqDLCNames, platform-specific (varies even between cygwin and win32)
     reqDLCNames = {os.path.normpath(f): cprReqDLCNames[f] for f in cprReqDLCNames.keys()}
 
-    gameFolder = getSteamGameFolder(getSteamMasterFolder(), 'Cruader Kings II')
+    gameFolder = getSteamGameFolder(getSteamMasterFolder(), 'Crusader Kings II', 'CK2game.exe')
 
     if not gameFolder:
+        g_dbg.trace('game_folder(NOT_FOUND)')
         return None
+
+    g_dbg.trace('game_folder("{}")'.format(gameFolder))
 
     dlcFolder = os.path.join(gameFolder, 'dlc')
     if not os.path.isdir(dlcFolder):
