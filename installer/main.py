@@ -847,9 +847,10 @@ def main():
                    'VIET': 'VIET_Assets',
                    'SWMH': 'SWMH',
                    'NBRT': 'NBRT+',
-#                   'ARKO': 'ARKOpack_Armoiries',
                    'CPR': 'CPRplus',
                    'EMF': 'EMF',
+                   'SED': 'SED2',
+#                   'ARKO': 'ARKOpack_Armoiries',
 #                   'ArumbaKS': 'ArumbaKS',
         }
 
@@ -863,10 +864,11 @@ def main():
 
         # Determine module combination...
 
+        # EMF...
         # EMF = True if g_steamMode else enableMod(u"EMF ({})".format(g_versions['EMF']))
+        EMF = True if not g_betaMode else enableMod(u"EMF ({})".format(g_versions['EMF']))  # FIXME
 
-        EMF = True if not g_betaMode else enableMod(u"EMF ({})".format(g_versions['EMF']))
-
+        # ARKOpack...
         # ARKOCoA = True if g_steamMode \
         #     else enableMod(u"ARKOpack Armoiries [CoA] ({})".format(g_versions['ARKO']))
         #
@@ -877,12 +879,14 @@ def main():
         # ARKOInt = False if (g_steamMode or g_fastMode) \
         #     else enableMod(u"ARKOpack Interface ({})".format(g_versions['ARKO']))
 
+        # Arumba's Keyboard Shortcuts...
         ArumbaKS = False
 
         # if not ARKOInt:
         #     ArumbaKS = True if (g_steamMode or g_fastMode) \
         #         else enableMod(u"Arumba's Keyboard Shortcuts ({})".format(g_versions['ArumbaKS']))
 
+        # CPRplus...
         CPR = False
 
         if not g_steamMode:
@@ -926,6 +930,7 @@ def main():
                 # CPR = enableModDefaultNo(u"CPR Flavors Plus ({})".format(g_versions['CPR']), compat=True)
                 CPR = enableMod(u"CPRplus ({})".format(g_versions['CPR']))
 
+        ## VIET ...
         if g_steamMode:
             VIETevents = True
         elif not g_fastMode:
@@ -934,26 +939,22 @@ def main():
         VIETtraits = False if EMF else enableMod(u"VIET Traits ({})".format(g_versions['VIET']))
         VIET = (VIETtraits or VIETevents)
 
+        # SWMH...
         SWMH = False
-        SWMHnative = False
-
-        if (not g_steamMode) and not g_fastMode:
-            print(u"\nNOTE: The SWMH map will never include the 769 bookmark. However, SWMH does\n"
-                  u"support all Charlemagne DLC mechanics in 867 and beyond. If you'd like to play\n"
-                  u"with the vanilla map instead, simply type 'n' or 'no' for SWMH.\n")
         
         if g_betaMode:
+            if (not g_steamMode) and not g_fastMode:
+                print(u"\nNOTE: The SWMH map will never include the 769 bookmark. However, SWMH does\n"
+                      u"support all Charlemagne DLC mechanics in 867 and beyond. If you'd like to play\n"
+                      u"with the vanilla map instead, simply type 'n' or 'no' for SWMH.\n")
             SWMH = False if g_steamMode else enableMod(u'SWMH ({})'.format(g_versions['SWMH']))
 
-        if SWMH:
-            SWMHnative = True if (g_steamMode or g_fastMode) else enableMod(localise('SWMH_NATIVE'))
+        # SED...
+        SED = False
+        if SWMH and not (g_steamMode or g_fastMode):
+            SED = enableModDefaultNo(u'SED: English Localisation for SWMH ({})'.format(g_versions['SED']))
 
-        if False:
-            print(u"\nNOTE: The SWMH map is temporarily unavailable due to issues with patch 2.3.\n"
-                  u"      We are working hard to identify the cause of the issues, but we don't yet\n"
-                  u"      have an ETA for its return. In the interim, enjoy a game on the vanilla\n"
-                  u"      map instead (with NBRT+ if possible).\n")
-
+        # NBRT+...
         if g_platform == 'win':
             NBRT = True if (g_steamMode or g_fastMode) else enableMod(u"NBRT+ ({})".format(g_versions['NBRT']))
         else:
@@ -988,7 +989,7 @@ def main():
 #                                        euSubfolder,
 #                                        eu4Version='1.10')
 
-        # Install...
+        # Prepare file mappings...
         global g_targetSrc
         g_targetSrc = {}
 
@@ -1026,14 +1027,14 @@ def main():
 
         if SWMH:
             g_dbg.push("merge(SWMH)")
+            moduleOutput.append("SWMH (%s)\n" % g_versions['SWMH'])
             pushFolder("SWMH", targetFolder)
-            if SWMHnative:
-                moduleOutput.append("SWMH - Native localisation (%s)\n" % g_versions['SWMH'])
-            else:
-                moduleOutput.append("SWMH - English localisation (%s)\n" % g_versions['SWMH'])
-                pushFolder("English SWMH", targetFolder)
-            # if ARKOInt and False:  # Disabled for SWMH EE testing
-            #     pushFolder("SWMH+ArkoInterface", targetFolder)
+            g_dbg.pop()
+
+        if SED:
+            g_dbg.push("merge(SED)")
+            moduleOutput.append("SED: English Localisation for SWMH (%s)\n" % g_versions['SED'])
+            pushFolder("SED2", targetFolder)
             g_dbg.pop()
 
         if NBRT:
