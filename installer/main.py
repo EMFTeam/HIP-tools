@@ -925,26 +925,14 @@ def main():
         if not g_steamMode:
             cprMissingDLCNames = detectCPRMissingDLCs()
 
-            if cprMissingDLCNames is None:  # DLC auto-detection failed
-                if g_platform == 'win':  # While unlikely, this happens with the current auto-detection code.
-                    # It is treated as a special case to still draw some visibility to
-                    # the problem.
-                    if not g_fastMode:
-                        print(u"\nOOPS: The HIP installer could NOT successfully determine your active CKII\n"
-                              u"game folder! Thus, it cannot auto-detect whether you meet all the portrait DLC\n"
-                              u"prerequisites for CPRplus. All _other_ HIP modules can be installed, but you'll\n"
-                              u"need manual permission to install CPRplus (see: CPRplus thread).\n")
+            if cprMissingDLCNames is None:  # Failed to auto-detect game folder
+                if not g_fastMode:
+                    print(u"\nOOPS: The HIP installer could NOT successfully determine your active CKII\n"
+                          u"game folder! Thus, it cannot auto-detect whether you meet all the portrait DLC\n"
+                          u"prerequisites for CPRplus. All _other_ HIP modules can be installed, but you'll\n"
+                          u"need manual permission to install CPRplus (see: CPRplus thread).\n")
 
-                        printCPRReqDLCNames()
-
-                else:  # No auto-detection supported on mac/lin, so allow the user to choose CPR w/ zero fuss.
-                    if not g_fastMode:
-                        print(u"\nNOTE: Portrait DLC auto-detection is not supported on Mac/Linux!\n"
-                              u"Due to Paradox's DLC policy, if you want to install CPRplus, you will need\n"
-                              u"to post in the CPRplus thread. CPRplus requires ALL of the following\n"
-                              u"portrait DLCs to run without crashing:\n")
-
-                        printCPRReqDLCNames()
+                    printCPRReqDLCNames()
 
             elif len(cprMissingDLCNames) > 0:  # DLC auto-detection succeeded, but there were missing DLCs.
                 if not g_fastMode:
@@ -957,10 +945,7 @@ def main():
 
                     sys.stdout.write('\n')
 
-            else:  # DLC auto-detection succeeded, and CPR is clear for take-off. However, we still default to No.
-                # if not g_fastMode:
-                #     print(u"[ Required portrait DLCs for CPR auto-detected OK... ]")
-                # CPR = enableModDefaultNo(u"CPR Flavors Plus ({})".format(g_versions['CPR']), compat=True)
+            else:  # DLC verification succeeded, and CPR is clear for take-off.
                 CPR = enableMod(u"CPRplus ({})".format(g_versions['CPR']))
 
         ## VIET ...
