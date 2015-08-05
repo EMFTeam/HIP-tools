@@ -7,6 +7,7 @@ import sys
 import shutil
 import traceback
 import time
+import re
 
 
 version = {'major': 2, 'minor': 1, 'patch': 0,
@@ -406,12 +407,12 @@ def stripPathHead(path):
 
 
 g_k  = bytearray(br'"The enemy of a good plan is the dream of a perfect plan" - Carl von Clausewitz')
-g_kN = len(g_k)
 
 
 def unwrapBuffer(buf, length):
+    kN = len(g_k)
     for i in xrange(length):
-        buf[i] ^= g_k[i % g_kN]
+        buf[i] ^= g_k[i % kN]
 
 
 def unwrapToFile(src, dst, quickMode=False):
@@ -639,25 +640,18 @@ def getInstallOptions():
     return targetFolder
 
 
-# Find installation location for a Steam game with the given Steam AppID with the methodology variant denoted
-# by variantID, where variantID is currently either 0 or 1.
-def getSteamGameFolder(appID, variantID):
-    pathVariant = [r'\Wow6432Node', '']
-    keyPath = r'SOFTWARE{}\Microsoft\Windows\CurrentVersion\Uninstall\Steam App {}'.format(pathVariant[variantID],
-                                                                                           appID)
-
+# Find Steam master folder by checking the Windows Registry (32-bit mode and 64-bit mode are separate invocations)
+def getSteamMasterFolderFromRegistry(x64Mode=True):
     g_dbg.push('search_winreg_key("{}")'.format(keyPath))
 
-    # TODO!!
+    pathVariant = r'\Wow6432Node' if x64Mode else ''
+    keyPath = r'SOFTWARE{}\Valve\Steam'.format(pathVariant)
+
+    # TODO:
     # _winreg import will fail on Python 3, so a check against the Python major version and subsequent conditional
     # import of 'winreg' instead of '_winreg' in that case *should* make this part of the script v2/v3-safe.
 
-    # NOTE: Also need to either check for cygwin and remind the user that they need to invoke the standard python (via
-    # cygwin still) to be able to support auto-detection since the cygwin platform python distribution doesn't include
-    # any Windows registry libraries at all. At the moment it just crashes as a reminder to me to properly handle this,
-    # since I think it'd be in the best interests of all if all installed and used cygwin as the standard platform
-    # for HIP tools of all kinds. [Indeed almost all those that exist have it as a pre-req, though usually only due to
-    # default config values.]
+    # NOTE: cygwin Python lacks _winreg
 
     import _winreg
     from _winreg import HKEY_LOCAL_MACHINE
@@ -666,23 +660,92 @@ def getSteamGameFolder(appID, variantID):
         hReg = _winreg.ConnectRegistry(None, HKEY_LOCAL_MACHINE)
         hKey = _winreg.OpenKey(hReg, keyPath)
 
-        folder = _winreg.QueryValueEx(hKey, 'InstallLocation')
+        folder = _winreg.QueryValueEx(hKey, 'InstallPath')
 
         if not folder:
             raise EnvironmentError()
 
-        g_dbg.trace('winreg_key_found(InstallLocation => "{}")'.format(folder[0]))
+        g_dbg.trace('winreg_key_found(InstallPath => "{}")'.format(folder[0]))
 
         hKey.Close()
         hReg.Close()
 
-        return folder[0]
+        return os.path.join(folder[0], 'steamapps')
 
     except EnvironmentError:
         return None
 
     finally:
         g_dbg.pop()
+
+
+def getSteamMasterFolderFallbackCygwin():
+    cygdrive = '/cygdrive'
+    maybePaths = ['Program Files (x86)/Steam',
+                  'Program Files/Steam'
+                  'SteamLibrary',
+                  'Games/Steam']
+
+    for d in os.listdir(cygdrive):
+        for maybePath in maybePaths:
+            masterFolder = os.path.join(cygdrive, d, maybePath, 'steamapps')
+            if os.path.exists(os.path.join(masterFolder, 'libraryfolders.vdf')):
+                return masterFolder
+
+    return None
+
+
+def getSteamMasterFolder():
+    folder = None
+    if g_platform == 'mac':
+        folder = os.path.expanduser('~/Library/Application Support/Steam/SteamApps')
+    elif g_platform == 'lin':
+        folder = os.path.expanduser('~/.steam/steam/SteamApps')
+    elif g_platform == 'win':
+        if sys.platform.startswith('cyg'):
+            return getSteamMasterFolderFallbackCygwin()
+        else:
+            folder = getSteamMasterFolderFromRegistry()
+            if folder is None:
+                folder = getSteamMasterFolderFromRegistry(x64Mode=False)  # Try the 32-bit registry key
+
+    if folder and os.path.exists(folder):
+        return folder
+    else:
+        return None
+
+
+def readSteamLibraryFolders(dbPath):
+    p_library = re.compile(r'^\s*"\d+"\s+"([^"]+)"\s*$')
+    folders = []
+    with open(dbPath, 'rb') as f:
+        while True:
+            line = f.readline()
+            if len(line) == 0:
+                return folders
+            line = line.rstrip('\r\n')
+            m = p_library.match(line)
+            if m:
+                path = os.path.join(os.path.normpath(m.group(1)), 'steamapps')
+                if os.path.exists(path):
+                    folders.append(path)
+
+
+def getSteamGameFolder(masterFolder, gameName):
+    path = os.path.join(masterFolder, 'common', gameName)
+    if os.path.exists(path):
+        return path
+
+    libraryDBPath = os.path.join(masterFolder, 'libraryfolders.vdf')
+    if not os.path.exists(libraryDBPath):
+        return None
+
+    for f in readSteamLibraryFolders(libraryDBPath):
+        path = os.path.join(f, 'common', gameName)
+        if os.path.exists(path):
+            return path
+
+    return None
 
 
 cprReqDLCNames = {'dlc/dlc013.dlc': 'African Portraits',
@@ -707,30 +770,14 @@ def detectCPRMissingDLCs():
     # Normalize path keys denormReqDLCNames, platform-specific (varies even between cygwin and win32)
     reqDLCNames = {os.path.normpath(f): cprReqDLCNames[f] for f in cprReqDLCNames.keys()}
 
-    # Method currently only works on Windows (and probably only Win7 and Win8), so quit
-    # now if we're not at least running a Windows platform (win32, win64, or cygwin).
-    if platform != 'win' or sys.platform.startswith('cyg'):
-        return None
-
-    gameFolder = None
-
-    # Try up to every method known to acquire the game install location
-    for methodID in range(2):
-        gameFolder = getSteamGameFolder(203770, methodID)  # Crusader Kings II is 203770
-        if gameFolder:
-            break
+    gameFolder = getSteamGameFolder(getSteamMasterFolder(), 'Cruader Kings II')
 
     if not gameFolder:
-        # Get really desperate now and just try to see if the default game folder is a valid one.
-        gameFolder = os.path.normpath("C:/Program Files (x86)/Steam/SteamApps/common/Crusader Kings II")
+        return None
 
     dlcFolder = os.path.join(gameFolder, 'dlc')
     if not os.path.isdir(dlcFolder):
-        # Try one more common path
-        gameFolder = os.path.normpath("D:/SteamLibrary/steamapps/common/Crusader Kings II")
-        dlcFolder = os.path.join(gameFolder, 'dlc')
-        if not os.path.isdir(dlcFolder):
-            return None # Give up
+        return None
 
     for f in [os.path.join('dlc', e) for e in os.listdir(dlcFolder)]:
         if f in reqDLCNames:
