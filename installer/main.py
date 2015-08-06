@@ -11,8 +11,8 @@ import re
 
 
 g_version = {'major': 2, 'minor': 1, 'patch': 0,
-           'Developer':       'zijistark <zijistark@gmail.com>',
-           'Release Manager': 'zijistark <zijistark@gmail.com>'}
+             'Developer':       'zijistark <zijistark@gmail.com>',
+             'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
 
 # noinspection PyPep8
@@ -589,7 +589,7 @@ def getInstallOptions():
     global g_language
     global g_betaMode
 
-    g_language = '' if (g_steamMode or g_fastMode) else promptUser(u"For English, hit ENTER. En français, taper 'f'. "
+    g_language = '' if (g_steamMode or g_zijiMode) else promptUser(u"For English, hit ENTER. En français, taper 'f'. "
                                                                    u"Para español, presiona 'e'.")
 
     if g_language.startswith('B') or g_language.startswith('b'):
@@ -603,11 +603,11 @@ def getInstallOptions():
         g_language = 'en'
 
     # Show HIP installer version & explain interactive prompting
-    if not (g_steamMode or g_fastMode):
+    if not (g_steamMode or g_zijiMode):
         print(localise('INTRO').format(g_versions['pkg']))
 
     global g_move
-    #g_move = False if (g_steamMode or g_fastMode) else isYes(promptUser(localise('MOVE_VS_COPY')))
+    #g_move = False if (g_steamMode or g_zijiMode) else isYes(promptUser(localise('MOVE_VS_COPY')))
     g_move = False
 
     if g_move:
@@ -620,12 +620,12 @@ def getInstallOptions():
     targetFolder = ''
 
     # FIXME: `or not g_betaMode` is only for the EMF 4 Beta Installer
-    useCustomFolder = False if (g_steamMode or g_fastMode) else \
+    useCustomFolder = False if (g_steamMode or g_zijiMode) else \
          isYesDefaultNo(promptUser(u'Do you want to install to a custom folder / mod name? [no]'))
 
     if useCustomFolder:
         # Note that we use the case-preserving form of promptUser (also determines name in launcher)
-        targetFolder = '' if (g_steamMode or g_fastMode) \
+        targetFolder = '' if (g_steamMode or g_zijiMode) \
             else promptUser(localise('TARGET_FOLDER').format(unicode(g_defaultFolder)), lc=False)
 
     if targetFolder == '':
@@ -679,6 +679,7 @@ def getSteamMasterFolderFallbackCygwin():
     maybePaths = ['Program Files (x86)/Steam',
                   'Program Files/Steam'
                   'SteamLibrary',
+                  'Steam',
                   'Games/Steam']
 
     g_dbg.push('find_steam_master_cygwin("{}")'.format(cygdrive))
@@ -866,9 +867,9 @@ def main():
         versionMode = (len(sys.argv) > 1 and '-V' in sys.argv[1:])
 
         global g_steamMode
-        global g_fastMode
+        global g_zijiMode
         g_steamMode = (len(sys.argv) > 1 and '-S' in sys.argv[1:])
-        g_fastMode = (len(sys.argv) > 1 and '-Z' in sys.argv[1:])
+        g_zijiMode = (len(sys.argv) > 1 and '-Z' in sys.argv[1:])
 
         global g_betaMode
         g_betaMode = False
@@ -910,7 +911,7 @@ def main():
         # Prompt user for options related to this install
         targetFolder = getInstallOptions()
 
-        # if (not g_steamMode) and not g_fastMode:
+        # if (not g_steamMode) and not g_zijiMode:
         #     sys.stdout.write('\n')
 
         # Determine module combination...
@@ -922,18 +923,18 @@ def main():
         # ARKOCoA = True if g_steamMode \
         #     else enableMod(u"ARKOpack Armoiries [CoA] ({})".format(g_versions['ARKO']))
         #
-        # if (not g_steamMode) and not g_fastMode:
+        # if (not g_steamMode) and not g_zijiMode:
         #     print(u"\nNOTE: Arumba's Keyboard Shortcuts and ARKOpack Interface are incompatible.\n"
         #           u"      ARKOpack doesn't provide shortcuts. You may only select one of the two:\n")
         #
-        # ARKOInt = False if (g_steamMode or g_fastMode) \
+        # ARKOInt = False if (g_steamMode or g_zijiMode) \
         #     else enableMod(u"ARKOpack Interface ({})".format(g_versions['ARKO']))
 
         # Arumba's Keyboard Shortcuts...
         ArumbaKS = False
 
         # if not ARKOInt:
-        #     ArumbaKS = True if (g_steamMode or g_fastMode) \
+        #     ArumbaKS = True if (g_steamMode or g_zijiMode) \
         #         else enableMod(u"Arumba's Keyboard Shortcuts ({})".format(g_versions['ArumbaKS']))
 
         # CPRplus...
@@ -943,7 +944,7 @@ def main():
             cprMissingDLCNames = detectCPRMissingDLCs()
 
             if cprMissingDLCNames is None:  # Failed to auto-detect game folder
-                if not g_fastMode:
+                if not g_zijiMode:
                     print(u"\nOOPS: The HIP installer could NOT successfully determine your active CKII\n"
                           u"game folder! Thus, it cannot auto-detect whether you meet all the portrait DLC\n"
                           u"prerequisites for CPRplus. All _other_ HIP modules can be installed, but you'll\n"
@@ -952,7 +953,7 @@ def main():
                     printCPRReqDLCNames()
 
             elif len(cprMissingDLCNames) > 0:  # DLC auto-detection succeeded, but there were missing DLCs.
-                if not g_fastMode:
+                if not g_zijiMode:
                     print(u"\n\nCPRplus (portrait upgrade mod) requires portrait pack DLCs which you,\n"
                           u"unforunately, are lacking. If you want to use CPRplus, you'll need to install\n"
                           u"the following DLCs first:\n")
@@ -968,7 +969,7 @@ def main():
         ## VIET ...
         if g_steamMode:
             VIETevents = True
-        elif not g_fastMode:
+        elif not g_zijiMode:
             VIETevents = enableMod(u"VIET Events ({})".format(g_versions['VIET']))
 
         VIETtraits = False if EMF else enableMod(u"VIET Traits ({})".format(g_versions['VIET']))
@@ -978,7 +979,7 @@ def main():
         SWMH = False
         
         if g_betaMode:
-            if (not g_steamMode) and not g_fastMode:
+            if (not g_steamMode) and not g_zijiMode:
                 print(u"\nNOTE: The SWMH map will never include the 769 bookmark. However, SWMH does\n"
                       u"support all Charlemagne DLC mechanics in 867 and beyond. If you'd like to play\n"
                       u"with the vanilla map instead, simply type 'n' or 'no' for SWMH.\n")
@@ -987,11 +988,11 @@ def main():
         # SED...
         SED = False
         if SWMH and not g_steamMode:
-            SED = True if g_fastMode else enableModDefaultNo(u'SED: English Localisation for SWMH ({})'.format(g_versions['SED']))
+            SED = True if g_zijiMode else enableModDefaultNo(u'SED: English Localisation for SWMH ({})'.format(g_versions['SED']))
 
         # NBRT+...
         if g_platform == 'win':
-            NBRT = True if (g_steamMode or g_fastMode) else enableMod(u"NBRT+ ({})".format(g_versions['NBRT']))
+            NBRT = True if (g_steamMode or g_zijiMode) else enableMod(u"NBRT+ ({})".format(g_versions['NBRT']))
         else:
             NBRT = False if g_steamMode else enableModDefaultNo(u"NBRT+ ({})".format(g_versions['NBRT']))
 
