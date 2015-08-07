@@ -967,6 +967,7 @@ def main():
                 CPR = enableMod(u"CPRplus ({})".format(g_versions['CPR']))
 
         ## VIET ...
+        VIETevents = False
         if g_steamMode:
             VIETevents = True
         elif not g_zijiMode:
