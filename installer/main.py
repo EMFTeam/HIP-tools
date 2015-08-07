@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 1, 'patch': 0,
+g_version = {'major': 2, 'minor': 1, 'patch': 1,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -435,7 +435,7 @@ def compileTarget(mapFilename):
     with open(mapFilename, "w") as mapFile:
         for n, dstPath in enumerate(sorted(g_targetSrc)):
 
-            if n % x == 0:
+            if n and n % x == 0:
                 print(u"{}%".format((n // x * 5)))
                 sys.stdout.flush()
 
