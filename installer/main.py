@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 1, 'patch': 0,
+g_version = {'major': 2, 'minor': 1, 'patch': 1,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -435,7 +435,7 @@ def compileTarget(mapFilename):
     with open(mapFilename, "w") as mapFile:
         for n, dstPath in enumerate(sorted(g_targetSrc)):
 
-            if n % x == 0:
+            if n and n % x == 0:
                 print(u"{}%".format((n // x * 5)))
                 sys.stdout.flush()
 
@@ -460,8 +460,10 @@ def detectPlatform():
         return 'mac'
     elif p.startswith('linux'):
         return 'lin'
-    elif p.startswith('win') or p.startswith('cygwin'):  # Currently no need to differentiate win(32|64) and cygwin
+    elif p.startswith('win'):
         return 'win'
+    elif p.startswith('cygwin'):
+        return 'cyg'
     raise InstallerPlatformError()
 
 
@@ -476,7 +478,7 @@ def resetCaches():
     if g_platform == 'mac':
         print(u'Clearing preexisting CKII gfx/map cache')
         cleanUserDir('..')  # TODO: Find out if the user_dir changes with the new 2.1.5 launcher
-    elif g_platform == 'win':
+    elif g_platform == 'win' or g_platform == 'cyg':
         print(u'Clearing preexisting HIP-related CKII gfx/map caches ...')
 
         # Match *all* userdirs in CKII user directory which include 'HIP' in their
@@ -703,13 +705,12 @@ def getSteamMasterFolder():
         folder = os.path.expanduser('~/Library/Application Support/Steam/SteamApps')
     elif g_platform == 'lin':
         folder = os.path.expanduser('~/.steam/steam/SteamApps')
+    elif g_platform == 'cyg':
+        folder = getSteamMasterFolderFallbackCygwin()
     elif g_platform == 'win':
-        if sys.platform.startswith('cyg'):
-            folder = getSteamMasterFolderFallbackCygwin()
-        else:
-            folder = getSteamMasterFolderFromRegistry()
-            if folder is None:
-                folder = getSteamMasterFolderFromRegistry(x64Mode=False)  # Try the 32-bit registry key
+        folder = getSteamMasterFolderFromRegistry()
+        if folder is None:
+            folder = getSteamMasterFolderFromRegistry(x64Mode=False)  # Try the 32-bit registry key
 
     if folder and os.path.exists(folder):
         g_dbg.pop('steam_master("{}")'.format(folder))
@@ -733,11 +734,11 @@ def readSteamLibraryFolders(dbPath):
             m = p_library.match(line)
             if m:
                 p = m.group(1).replace(r'\\', '/')
-                if sys.platform.startswith('cyg'):
+                if g_platform == 'cyg':
                     i = p.find(':/')
                     if i == 1:
                         drive = p[:1]
-                        p = p.replace(drive + ':', '/cygdrive/' + drive.lower(), 1)
+                        p = p.replace(p[:2], '/cygdrive/' + drive.lower(), 1)
                 path = os.path.join(os.path.normpath(p), 'steamapps')
                 g_dbg.trace('external_library("{}")'.format(path))
                 if os.path.exists(path):
@@ -967,6 +968,7 @@ def main():
                 CPR = enableMod(u"CPRplus ({})".format(g_versions['CPR']))
 
         ## VIET ...
+        VIETevents = False
         if g_steamMode:
             VIETevents = True
         elif not g_zijiMode:
@@ -991,7 +993,7 @@ def main():
             SED = True if g_zijiMode else enableModDefaultNo(u'SED: English Localisation for SWMH ({})'.format(g_versions['SED']))
 
         # NBRT+...
-        if g_platform == 'win':
+        if g_platform == 'win' or g_platform == 'cyg':
             NBRT = True if (g_steamMode or g_zijiMode) else enableMod(u"NBRT+ ({})".format(g_versions['NBRT']))
         else:
             NBRT = False if g_steamMode else enableModDefaultNo(u"NBRT+ ({})".format(g_versions['NBRT']))
@@ -1077,7 +1079,7 @@ def main():
             g_dbg.push("merge(NBRT)")
             moduleOutput.append("NBRT+ (%s)\n" % g_versions['NBRT'])
             pushFolder("NBRT+", targetFolder)
-            if SWMH and g_platform == "win" and False:  # Disabled for SWMH EE testing
+            if SWMH and (g_platform == 'win' or g_platform == 'cyg') and False:  # Disabled for SWMH EE testing
                 pushFolder("NBRT+SWMH", targetFolder)
             # if ARKOCoA:
             #     pushFolder("NBRT+ARKO", targetFolder)
