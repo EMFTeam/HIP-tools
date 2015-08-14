@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 1, 'patch': 3,
+g_version = {'major': 2, 'minor': 1, 'patch': 4,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -1036,12 +1036,6 @@ def main():
 
         if EMF:
             moduleOutput.append("EMF: Extended Mechanics & Flavor (%s)\n" % g_versions['EMF'])
-
-        if ARKOCoA:
-            g_dbg.push("merge('ARKO CoA')")
-            moduleOutput.append("ARKO Armoiries (%s)\n" % g_versions['ARKOC'])
-            pushFolder("ARKOpack_Armoiries", targetFolder)
-            g_dbg.pop()
         
         if ARKOInt:
             g_dbg.push("merge('ARKO Interface')")
@@ -1077,6 +1071,12 @@ def main():
             pushFolder("SED2", targetFolder)
             g_dbg.pop()
 
+        if ARKOCoA:
+            g_dbg.push("merge('ARKO CoA')")
+            moduleOutput.append("ARKO Armoiries (%s)\n" % g_versions['ARKOC'])
+            pushFolder("ARKOpack_Armoiries", targetFolder)
+            g_dbg.pop()
+
         if NBRT:
             g_dbg.push("merge(NBRT)")
             moduleOutput.append("NBRT+ (%s)\n" % g_versions['NBRT'])
@@ -1103,18 +1103,16 @@ def main():
 
         if EMF:
             g_dbg.push('merge(EMF)')
-
-            filteredFiles = set(['common/landed_titles/landed_titles.txt']) if SWMH else set()
-            pushFolder('EMF', targetFolder, ignoreFiles=filteredFiles)
+            pushFolder('EMF', targetFolder)
 
             if SWMH:
                 pushFolder('EMF+SWMH', targetFolder)
             else:
                 pushFolder('EMF+Vanilla', targetFolder)
-            if VIETevents:
-                pushFolder('EMF+VEvents', targetFolder)
+
             if ARKOCoA:
                 pushFolder('EMF+ArkoCoA', targetFolder)
+
             g_dbg.pop()
 
         if CPR:
