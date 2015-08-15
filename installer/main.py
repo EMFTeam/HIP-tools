@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 1, 'patch': 4,
+g_version = {'major': 2, 'minor': 1, 'patch': 5,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -948,8 +948,7 @@ def main():
                 if not g_zijiMode:
                     print(u"\nOOPS: The HIP installer could NOT successfully determine your active CKII\n"
                           u"game folder! Thus, it cannot auto-detect whether you meet all the portrait DLC\n"
-                          u"prerequisites for CPRplus. All _other_ HIP modules can be installed, but you'll\n"
-                          u"need manual permission to install CPRplus (see: CPRplus thread).\n")
+                          u"prerequisites for CPRplus. All _other_ HIP modules can be installed, however.\n")
 
                     printCPRReqDLCNames()
 
@@ -998,7 +997,7 @@ def main():
         else:
             NBRT = False if g_steamMode else enableModDefaultNo(u"NBRT+ ({})".format(g_versions['NBRT']))
 
-        HIP = EMF or VIETevents  # HIP_Common (Isis, e_hip, our event picture stash, etc.)
+        HIP = EMF or SWMH or VIETevents  # HIP_Common (Isis, e_hip, our event picture stash, etc.)
         # Converter = EMF and not SWMH  # Vanilla EUIV Converter
 
         euFolderBase = '../eu4_export/mod'
@@ -1063,6 +1062,8 @@ def main():
             pushFolder("SWMH", targetFolder)
             if ARKOInt:
                 pushFolder("SWMH+ArkoInterface", targetFolder)
+            elif ArumbaKS:
+                pushFolder("SWMH+ArumbaKS", targetFolder)
             g_dbg.pop()
 
         if SED:
@@ -1112,6 +1113,8 @@ def main():
 
             if ARKOCoA:
                 pushFolder('EMF+ArkoCoA', targetFolder)
+            if ARKOInt:
+                pushFolder("EMF+ArkoInterface", targetFolder)
 
             g_dbg.pop()
 
