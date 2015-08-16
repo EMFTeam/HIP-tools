@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 1, 'patch': 5,
+g_version = {'major': 2, 'minor': 1, 'patch': 6,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -702,8 +702,12 @@ def getSteamMasterFolder():
     folder = None
     if g_platform == 'mac':
         folder = os.path.expanduser('~/Library/Application Support/Steam/SteamApps')
+        if not os.path.exists(folder):
+            folder = os.path.expanduser('~/Library/Application Support/Steam/steamapps')
     elif g_platform == 'lin':
-        folder = os.path.expanduser('~/.steam/steam/SteamApps')
+        folder = os.path.expanduser('~/.steam/steam/steamapps')
+        if not os.path.exists(folder):
+            folder = os.path.expanduser('~/.steam/steam/SteamApps')
     elif g_platform == 'cyg':
         folder = getSteamMasterFolderFallbackCygwin()
     elif g_platform == 'win':
@@ -786,7 +790,11 @@ def detectCPRMissingDLCs():
     # Normalize path keys denormReqDLCNames, platform-specific (varies even between cygwin and win32)
     reqDLCNames = {os.path.normpath(f): cprReqDLCNames[f] for f in cprReqDLCNames.keys()}
 
-    gameFolder = getSteamGameFolder(getSteamMasterFolder(), 'Crusader Kings II', 'CK2game.exe')
+    masterFolder = getSteamMasterFolder()
+    if not masterFolder:
+        return None
+
+    gameFolder = getSteamGameFolder(masterFolder, 'Crusader Kings II', 'dlc')
 
     if not gameFolder:
         g_dbg.trace('game_folder(NOT_FOUND)')
