@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 1, 'patch': 6,
+g_version = {'major': 2, 'minor': 1, 'patch': 7,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -300,11 +300,13 @@ def mkTree(d, traceMsg=None):
     os.makedirs(d)
 
 
-def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None, wrapped=False):
+def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None, wrapPaths=None):
     if ignoreFiles is None:
         ignoreFiles = set()
     if prunePaths is None:
         prunePaths = set()
+    if wrapPaths is None:
+        wrapPaths = set()
 
     #print(localise('PUSH_FOLDER').format(unicode(quoteIfWS(folder))))
 
@@ -321,6 +323,7 @@ def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None, wrapped=
 
     ignoreFiles = {os.path.join(srcFolder, os.path.normpath(x)) for x in ignoreFiles}
     prunePaths = {os.path.join(srcFolder, os.path.normpath(x)) for x in prunePaths}
+    wrapPaths = {os.path.join(srcFolder, os.path.normpath(x)) for x in wrapPaths}
 
     for x in ignoreFiles:
         g_dbg.trace('file_filter("{}")'.format(x))
@@ -349,6 +352,12 @@ def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None, wrapped=
 
         dirs[:] = prunedDirs  # Filter subdirectories into which we should recurse on next os.walk()
         nPushed = 0
+
+        wrapped = False
+
+        for p in wrapPaths:
+            if root.startswith(p):
+                wrapped = True
 
         for f in files:
             src = os.path.join(root, f)
@@ -948,6 +957,7 @@ def main():
 
         # CPRplus...
         CPR = False
+        CPRfaces = False
 
         if not g_steamMode:
             cprMissingDLCNames = detectCPRMissingDLCs()
@@ -957,8 +967,6 @@ def main():
                     print(u"\nOOPS: The HIP installer could NOT successfully determine your active CKII\n"
                           u"game folder! Thus, it cannot auto-detect whether you meet all the portrait DLC\n"
                           u"prerequisites for CPRplus. All _other_ HIP modules can be installed, however.\n")
-
-                    printCPRReqDLCNames()
 
             elif len(cprMissingDLCNames) > 0:  # DLC auto-detection succeeded, but there were missing DLCs.
                 if not g_zijiMode:
@@ -973,6 +981,7 @@ def main():
 
             else:  # DLC verification succeeded, and CPR is clear for take-off.
                 CPR = enableMod(u"CPRplus ({})".format(g_versions['CPR']))
+                CPRfaces = enableMod(u"CPRplus's custom Western & Muslim facial art")
 
         ## VIET ...
         VIETevents = False
@@ -1129,11 +1138,16 @@ def main():
         if CPR:
             g_dbg.push('merge(CPR)')
             moduleOutput.append("CPRplus (%s)\n" % g_versions['CPR'])
-            pushFolder('CPRplus', targetFolder, wrapped=True)
+            pushFolder('CPRplus', targetFolder, wrapPaths=set(['gfx']))
+
+            if CPRfaces:
+                pushFolder('CPRplus-compatch/CustomFaces', targetFolder)
+
             if SWMH:
                 pushFolder('CPRplus-compatch/SWMH', targetFolder)
             elif EMF:
                 pushFolder('CPRplus-compatch/EMF', targetFolder)
+
             g_dbg.pop()
 
 #        if Converter:

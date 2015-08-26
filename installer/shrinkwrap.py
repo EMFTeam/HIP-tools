@@ -49,6 +49,9 @@ def encrypt_file(path, header_only=False):
 
 verbose = (len(sys.argv) > 1 and '-v' in sys.argv[1:])
 
+# CPRplus only wants its gfx/ sub-folder encrypted so that power users can play with the portrait definitions
+real_shrinkwrap_folder = os.path.join(shrinkwrap_folder, 'gfx')
+
 if not os.path.exists(module_folder):
     sys.stderr.write('invalid modules folder: {}\n'.format(module_folder))
     sys.exit(1)
@@ -56,6 +59,10 @@ if not os.path.exists(module_folder):
 if not os.path.exists(shrinkwrap_folder):
     sys.stderr.write('invalid shrinkwrap folder: {}\n'.format(shrinkwrap_folder))
     sys.exit(2)
+
+if not os.path.exists(real_shrinkwrap_folder):
+    sys.stderr.write('invalid "real" shrinkwrap folder: {}\n'.format(real_shrinkwrap_folder))
+    sys.exit(3)
 
 n_removed_files = 0
 n_removed_bytes = 0
@@ -87,7 +94,7 @@ for root, dirs, files in os.walk(module_folder):
 removed_MB = n_removed_bytes / 1000 / 1000
 final_MB = n_bytes / 1000 / 1000
 
-# Now, onward to encryption of shrinkwrap_folder...
+# Now, onward to encryption of real_shrinkwrap_folder...
 
 # We will check for the encryption sentinel first
 sentinel_path = os.path.join(shrinkwrap_folder, shrinkwrap_sentinel_file)
@@ -96,10 +103,8 @@ if not os.path.exists(sentinel_path):
     sys.stderr.write('already shrinkwrapped: {}\n'.format(shrinkwrap_folder))
 else:
     start_wrap_time = time.time()
-    for root, dirs, files in os.walk(shrinkwrap_folder):
+    for root, dirs, files in os.walk(real_shrinkwrap_folder):
         for i in files:
-            if i.endswith('version.txt'):
-                continue            
             path = os.path.join(root, i)
             encrypt_file(path, header_only=is_binary(path))
     end_wrap_time = time.time()
