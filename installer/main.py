@@ -957,6 +957,7 @@ def main():
 
         # CPRplus...
         CPR = False
+        CPRfaces = False
 
         if not g_steamMode:
             cprMissingDLCNames = detectCPRMissingDLCs()
@@ -966,8 +967,6 @@ def main():
                     print(u"\nOOPS: The HIP installer could NOT successfully determine your active CKII\n"
                           u"game folder! Thus, it cannot auto-detect whether you meet all the portrait DLC\n"
                           u"prerequisites for CPRplus. All _other_ HIP modules can be installed, however.\n")
-
-                    printCPRReqDLCNames()
 
             elif len(cprMissingDLCNames) > 0:  # DLC auto-detection succeeded, but there were missing DLCs.
                 if not g_zijiMode:
@@ -982,6 +981,7 @@ def main():
 
             else:  # DLC verification succeeded, and CPR is clear for take-off.
                 CPR = enableMod(u"CPRplus ({})".format(g_versions['CPR']))
+                CPRfaces = enableMod(u"CPRplus's custom Western & Muslim facial art")
 
         ## VIET ...
         VIETevents = False
@@ -1139,10 +1139,15 @@ def main():
             g_dbg.push('merge(CPR)')
             moduleOutput.append("CPRplus (%s)\n" % g_versions['CPR'])
             pushFolder('CPRplus', targetFolder, wrapPaths=set(['gfx']))
+
+            if CPRfaces:
+                pushFolder('CPRplus-compatch/CustomFaces', targetFolder)
+
             if SWMH:
                 pushFolder('CPRplus-compatch/SWMH', targetFolder)
             elif EMF:
                 pushFolder('CPRplus-compatch/EMF', targetFolder)
+
             g_dbg.pop()
 
 #        if Converter:
