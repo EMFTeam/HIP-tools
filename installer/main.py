@@ -981,7 +981,7 @@ def main():
 
             else:  # DLC verification succeeded, and CPR is clear for take-off.
                 CPR = enableMod(u"CPRplus ({})".format(g_versions['CPR']))
-                CPRfaces = enableMod(u"CPRplus's custom Western & Muslim facial art")
+                CPRfaces = False if not CPR else enableMod(u"CPRplus's custom western & muslim facial art")
 
         ## VIET ...
         VIETevents = False
@@ -998,8 +998,9 @@ def main():
         
         if (not g_steamMode) and not g_zijiMode:
             print(u"\nNOTE: The SWMH map will never include the 769 bookmark. However, SWMH does\n"
-                  u"support all Charlemagne DLC mechanics in 867 and beyond. If you'd like to play\n"
-                  u"with the vanilla map instead, simply type 'n' or 'no' for SWMH.\n")
+                  u"support all Charlemagne DLC mechanics in 867 and beyond. SWMH is also a very\n"
+                  u"large map (35% more provinces than vanilla), and this can deter performance.\n"
+                  u"If you want the vanilla map instead, simply type 'n' or 'no' for SWMH below:\n")
 
         SWMH = False if g_steamMode else enableMod(u'SWMH ({})'.format(g_versions['SWMH']))
 
@@ -1128,8 +1129,6 @@ def main():
             else:
                 pushFolder('EMF+Vanilla', targetFolder)
 
-            if ARKOCoA:
-                pushFolder('EMF+ArkoCoA', targetFolder)
             if ARKOInt:
                 pushFolder("EMF+ArkoInterface", targetFolder)
 
@@ -1138,7 +1137,9 @@ def main():
         if CPR:
             g_dbg.push('merge(CPR)')
             moduleOutput.append("CPRplus (%s)\n" % g_versions['CPR'])
-            pushFolder('CPRplus', targetFolder, wrapPaths=set(['gfx']))
+
+            wrappedPaths = set(['gfx'])
+            pushFolder('CPRplus', targetFolder, wrapPaths=wrappedPaths)
 
             if CPRfaces:
                 pushFolder('CPRplus-compatch/CustomFaces', targetFolder)

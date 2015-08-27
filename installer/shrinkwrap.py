@@ -3,10 +3,9 @@
 import os
 import sys
 import time
+import argparse
 
-
-module_folder = os.path.abspath("/home/ziji/build/modules")
-shrinkwrap_folder = os.path.join(module_folder, "CPRplus")
+default_module_folder = '/home/ziji/build/modules'
 shrinkwrap_sentinel_file = 'no_shrinkwrap.txt'
 k = bytearray(br'"The enemy of a good plan is the dream of a perfect plan" - Carl von Clausewitz')
 header_len = 1 << 12
@@ -47,7 +46,19 @@ def encrypt_file(path, header_only=False):
     os.rename(tmp_path, path)
 
 
-verbose = (len(sys.argv) > 1 and '-v' in sys.argv[1:])
+def get_args():
+    parser = argparse.ArgumentParser(
+        description="Prepare a HIP modules/ folder for build (remove unwanted files & shrinkwrap).")
+    parser.add_argument('--modules-dir', default=default_module_folder,
+                        help='path to modules/ folder for build')
+    parser.add_argument('--verbose', '-v', action='count', default=0,
+                        help="show verbose information about what I'm doing")
+    return parser.parse_args()
+
+
+args = get_args()
+module_folder = os.path.abspath(args.modules_dir)
+shrinkwrap_folder = os.path.join(module_folder, "CPRplus")
 
 # CPRplus only wants its gfx/ sub-folder encrypted so that power users can play with the portrait definitions
 real_shrinkwrap_folder = os.path.join(shrinkwrap_folder, 'gfx')
@@ -84,7 +95,7 @@ for root, dirs, files in os.walk(module_folder):
             n_removed_files += 1
             n_removed_bytes += size
             os.unlink(path)
-            if verbose:
+            if args.verbose > 0:
                 head, f = os.path.split(path)
                 d = head.replace(module_folder, '', 1)
                 if d == '':
