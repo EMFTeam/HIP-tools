@@ -27,7 +27,7 @@ def initLocalisation():
                     'es': u"Esta vercion de Historical Immersion Project fecha del {}.\n"
                           u"Escribe 's' o 'si' para aceptar, o deja el campo en blanco. Cualquier otro\n"
                           u"caso sera considerado un 'no'.\n",
-                    'en': u"\nEMF beta installer version: {}\n\n"  # FIXME
+                    'en': u"\nHIP release version: {}\n\n"
                           u"All prompts require a yes/no answer. The default answer for any particular\n"
                           u"prompt is shown in brackets directly following it (e.g, '[yes]' or '[no]').\n"
                           u"To answer yes, enter 'y' or 'yes'. To answer no, enter 'n' or 'no'. For the\n"
@@ -627,7 +627,7 @@ def getInstallOptions():
 
     # Determine installation target folder...
     global g_defaultFolder
-    g_defaultFolder = 'EMF 4.0 Beta'  # FIXME
+    g_defaultFolder = 'Historical Immersion Project'
     targetFolder = ''
 
     # FIXME: `or not g_betaMode` is only for the EMF 4 Beta Installer
@@ -920,8 +920,9 @@ def main():
                    'CPR': 'CPRplus',
                    'EMF': 'EMF',
                    'SED': 'SED2',
-#                   'ARKO': 'ARKOpack_Armoiries',
-#                   'ArumbaKS': 'ArumbaKS',
+                   'ARKOC': 'ARKOpack_Armoiries',
+                   'ARKOI': 'ARKOpack_Interface',
+                   'ArumbaKS': 'ArumbaKS',
         }
 
         getPkgVersions(modDirs)
@@ -929,8 +930,8 @@ def main():
         # Prompt user for options related to this install
         targetFolder = getInstallOptions()
 
-        # if (not g_steamMode) and not g_zijiMode:
-        #     sys.stdout.write('\n')
+        if (not g_steamMode) and not g_zijiMode:
+            sys.stdout.write('\n')
 
         # Determine module combination...
 
@@ -938,22 +939,22 @@ def main():
         EMF = True if g_steamMode else enableMod(u"EMF ({})".format(g_versions['EMF']))
 
         # ARKOpack...
-        # ARKOCoA = True if g_steamMode \
-        #     else enableMod(u"ARKOpack Armoiries [CoA] ({})".format(g_versions['ARKO']))
-        #
-        # if (not g_steamMode) and not g_zijiMode:
-        #     print(u"\nNOTE: Arumba's Keyboard Shortcuts and ARKOpack Interface are incompatible.\n"
-        #           u"      ARKOpack doesn't provide shortcuts. You may only select one of the two:\n")
-        #
-        # ARKOInt = False if (g_steamMode or g_zijiMode) \
-        #     else enableMod(u"ARKOpack Interface ({})".format(g_versions['ARKO']))
+        ARKOCoA = True if g_steamMode \
+            else enableMod(u"ARKOpack Armoiries [CoA] ({})".format(g_versions['ARKOC']))
+        
+        if (not g_steamMode) and not g_zijiMode:
+            print(u"\nNOTE: Arumba's Keyboard Shortcuts and ARKOpack Interface are incompatible.\n"
+                  u"      ARKOpack doesn't provide shortcuts. You may only select one of the two:\n")
+        
+        ARKOInt = False if (g_steamMode or g_zijiMode) \
+            else enableMod(u"ARKOpack Interface ({})".format(g_versions['ARKOI']))
 
         # Arumba's Keyboard Shortcuts...
         ArumbaKS = False
 
-        # if not ARKOInt:
-        #     ArumbaKS = True if (g_steamMode or g_zijiMode) \
-        #         else enableMod(u"Arumba's Keyboard Shortcuts ({})".format(g_versions['ArumbaKS']))
+        if not ARKOInt:
+            ArumbaKS = True if (g_steamMode or g_zijiMode) \
+                else enableMod(u"Arumba's Keyboard Shortcuts ({})".format(g_versions['ArumbaKS']))
 
         # CPRplus...
         CPR = False
@@ -1025,9 +1026,9 @@ def main():
         # Prepare for installation...
 
         if targetFolder != g_defaultFolder:
-            modBasename = 'EMF_' + targetFolder  # FIXME
+            modBasename = 'HIP_' + targetFolder
         else:
-            modBasename = 'EMF'  # FIXME
+            modBasename = 'HIP'
 
         modFilename = scaffoldMod('.',
                                   targetFolder,
@@ -1048,7 +1049,7 @@ def main():
         global g_targetSrc
         g_targetSrc = {}
 
-        moduleOutput = ["[EMF 4.0 Beta %s]\nEnabled HIP modules:\n" % g_versions['pkg']]
+        moduleOutput = ["[HIP Release %s]\n" % g_versions['pkg']]
         g_dbg.push('merge_all')
 
         if EMF:
@@ -1102,8 +1103,8 @@ def main():
             pushFolder("NBRT+", targetFolder)
             if SWMH and (g_platform == 'win' or g_platform == 'cyg') and False:  # Disabled for SWMH EE testing
                 pushFolder("NBRT+SWMH", targetFolder)
-            # if ARKOCoA:
-            #     pushFolder("NBRT+ARKO", targetFolder)
+            if ARKOCoA:
+                pushFolder("NBRT+ARKO", targetFolder)
             if not SWMH or True:  # Enabled for SWMH EE testing
                 popFile('gfx/FX/pdxmap.fxh', targetFolder)  # Z: 2.2 compatch for NBRT+ Light (and Mac/Linux compatch)
             g_dbg.pop()
