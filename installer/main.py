@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 1, 'patch': 7,
+g_version = {'major': 2, 'minor': 1, 'patch': 8,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -1005,7 +1005,7 @@ def main():
         SWMH = False if g_steamMode else enableMod(u'SWMH ({})'.format(g_versions['SWMH']))
 
         # SED...
-        SED = g_zijiMode
+        SED = SWMH and g_zijiMode
         if SWMH and not g_steamMode and not SED:
             SED = enableModDefaultNo(u'SED: English Localisation for SWMH ({})'.format(g_versions['SED']), compat=True)
 
