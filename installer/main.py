@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 1, 'patch': 1,
+g_version = {'major': 2, 'minor': 1, 'patch': 8,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -300,11 +300,13 @@ def mkTree(d, traceMsg=None):
     os.makedirs(d)
 
 
-def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None, wrapped=False):
+def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None, wrapPaths=None):
     if ignoreFiles is None:
         ignoreFiles = set()
     if prunePaths is None:
         prunePaths = set()
+    if wrapPaths is None:
+        wrapPaths = set()
 
     #print(localise('PUSH_FOLDER').format(unicode(quoteIfWS(folder))))
 
@@ -321,6 +323,7 @@ def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None, wrapped=
 
     ignoreFiles = {os.path.join(srcFolder, os.path.normpath(x)) for x in ignoreFiles}
     prunePaths = {os.path.join(srcFolder, os.path.normpath(x)) for x in prunePaths}
+    wrapPaths = {os.path.join(srcFolder, os.path.normpath(x)) for x in wrapPaths}
 
     for x in ignoreFiles:
         g_dbg.trace('file_filter("{}")'.format(x))
@@ -349,6 +352,12 @@ def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None, wrapped=
 
         dirs[:] = prunedDirs  # Filter subdirectories into which we should recurse on next os.walk()
         nPushed = 0
+
+        wrapped = False
+
+        for p in wrapPaths:
+            if root.startswith(p):
+                wrapped = True
 
         for f in files:
             src = os.path.join(root, f)
@@ -703,8 +712,12 @@ def getSteamMasterFolder():
     folder = None
     if g_platform == 'mac':
         folder = os.path.expanduser('~/Library/Application Support/Steam/SteamApps')
+        if not os.path.exists(folder):
+            folder = os.path.expanduser('~/Library/Application Support/Steam/steamapps')
     elif g_platform == 'lin':
-        folder = os.path.expanduser('~/.steam/steam/SteamApps')
+        folder = os.path.expanduser('~/.steam/steam/steamapps')
+        if not os.path.exists(folder):
+            folder = os.path.expanduser('~/.steam/steam/SteamApps')
     elif g_platform == 'cyg':
         folder = getSteamMasterFolderFallbackCygwin()
     elif g_platform == 'win':
@@ -787,7 +800,11 @@ def detectCPRMissingDLCs():
     # Normalize path keys denormReqDLCNames, platform-specific (varies even between cygwin and win32)
     reqDLCNames = {os.path.normpath(f): cprReqDLCNames[f] for f in cprReqDLCNames.keys()}
 
-    gameFolder = getSteamGameFolder(getSteamMasterFolder(), 'Crusader Kings II', 'CK2game.exe')
+    masterFolder = getSteamMasterFolder()
+    if not masterFolder:
+        return None
+
+    gameFolder = getSteamGameFolder(masterFolder, 'Crusader Kings II', 'dlc')
 
     if not gameFolder:
         g_dbg.trace('game_folder(NOT_FOUND)')
@@ -940,6 +957,7 @@ def main():
 
         # CPRplus...
         CPR = False
+        CPRfaces = False
 
         if not g_steamMode:
             cprMissingDLCNames = detectCPRMissingDLCs()
@@ -948,10 +966,7 @@ def main():
                 if not g_zijiMode:
                     print(u"\nOOPS: The HIP installer could NOT successfully determine your active CKII\n"
                           u"game folder! Thus, it cannot auto-detect whether you meet all the portrait DLC\n"
-                          u"prerequisites for CPRplus. All _other_ HIP modules can be installed, but you'll\n"
-                          u"need manual permission to install CPRplus (see: CPRplus thread).\n")
-
-                    printCPRReqDLCNames()
+                          u"prerequisites for CPRplus. All _other_ HIP modules can be installed, however.\n")
 
             elif len(cprMissingDLCNames) > 0:  # DLC auto-detection succeeded, but there were missing DLCs.
                 if not g_zijiMode:
@@ -966,6 +981,7 @@ def main():
 
             else:  # DLC verification succeeded, and CPR is clear for take-off.
                 CPR = enableMod(u"CPRplus ({})".format(g_versions['CPR']))
+                CPRfaces = False if not CPR else enableMod(u"CPRplus's custom western & muslim facial art")
 
         ## VIET ...
         VIETevents = False
@@ -980,17 +996,18 @@ def main():
         # SWMH...
         SWMH = False
         
-        if g_betaMode:
-            if (not g_steamMode) and not g_zijiMode:
-                print(u"\nNOTE: The SWMH map will never include the 769 bookmark. However, SWMH does\n"
-                      u"support all Charlemagne DLC mechanics in 867 and beyond. If you'd like to play\n"
-                      u"with the vanilla map instead, simply type 'n' or 'no' for SWMH.\n")
-            SWMH = False if g_steamMode else enableMod(u'SWMH ({})'.format(g_versions['SWMH']))
+        if (not g_steamMode) and not g_zijiMode:
+            print(u"\nNOTE: The SWMH map will never include the 769 bookmark. However, SWMH does\n"
+                  u"support all Charlemagne DLC mechanics in 867 and beyond. SWMH is also a very\n"
+                  u"large map (35% more provinces than vanilla), and this can deter performance.\n"
+                  u"If you want the vanilla map instead, simply type 'n' or 'no' for SWMH below:\n")
+
+        SWMH = False if g_steamMode else enableMod(u'SWMH ({})'.format(g_versions['SWMH']))
 
         # SED...
-        SED = False
-        if SWMH and not g_steamMode:
-            SED = True if g_zijiMode else enableModDefaultNo(u'SED: English Localisation for SWMH ({})'.format(g_versions['SED']))
+        SED = SWMH and g_zijiMode
+        if SWMH and not g_steamMode and not SED:
+            SED = enableModDefaultNo(u'SED: English Localisation for SWMH ({})'.format(g_versions['SED']), compat=True)
 
         # NBRT+...
         if g_platform == 'win' or g_platform == 'cyg':
@@ -998,7 +1015,7 @@ def main():
         else:
             NBRT = False if g_steamMode else enableModDefaultNo(u"NBRT+ ({})".format(g_versions['NBRT']))
 
-        HIP = EMF or VIETevents  # HIP_Common (Isis, e_hip, our event picture stash, etc.)
+        HIP = EMF or SWMH or VIETevents  # HIP_Common (Isis, e_hip, our event picture stash, etc.)
         # Converter = EMF and not SWMH  # Vanilla EUIV Converter
 
         euFolderBase = '../eu4_export/mod'
@@ -1036,20 +1053,14 @@ def main():
 
         if EMF:
             moduleOutput.append("EMF: Extended Mechanics & Flavor (%s)\n" % g_versions['EMF'])
-
-        # if ARKOCoA:
-        #     g_dbg.push("merge('ARKO CoA')")
-        #     moduleOutput.append("ARKO Armoiries (%s)\n" % g_versions['ARKO'])
-        #     pushFolder("ARKOpack_Armoiries", targetFolder)
-        #     g_dbg.pop()
-        #
-        # if ARKOInt:
-        #     g_dbg.push("merge('ARKO Interface')")
-        #     moduleOutput.append("ARKO Interface (%s)\n" % g_versions['ARKO'])
-        #     pushFolder("ARKOpack_Interface", targetFolder)
-        #     if HIP:
-        #         popTree('gfx/event_pictures', targetFolder)
-        #     g_dbg.pop()
+        
+        if ARKOInt:
+            g_dbg.push("merge('ARKO Interface')")
+            moduleOutput.append("ARKO Interface (%s)\n" % g_versions['ARKOI'])
+            pushFolder("ARKOpack_Interface", targetFolder)
+            if HIP:
+                popTree('gfx/event_pictures', targetFolder)
+            g_dbg.pop()
 
         if ArumbaKS:
             g_dbg.push('merge(ArumbaKS)')
@@ -1067,12 +1078,22 @@ def main():
             g_dbg.push("merge(SWMH)")
             moduleOutput.append("SWMH (%s)\n" % g_versions['SWMH'])
             pushFolder("SWMH", targetFolder)
+            if ARKOInt:
+                pushFolder("SWMH+ArkoInterface", targetFolder)
+            elif ArumbaKS:
+                pushFolder("SWMH+ArumbaKS", targetFolder)
             g_dbg.pop()
 
         if SED:
             g_dbg.push("merge(SED)")
             moduleOutput.append("SED: English Localisation for SWMH (%s)\n" % g_versions['SED'])
             pushFolder("SED2", targetFolder)
+            g_dbg.pop()
+
+        if ARKOCoA:
+            g_dbg.push("merge('ARKO CoA')")
+            moduleOutput.append("ARKO Armoiries (%s)\n" % g_versions['ARKOC'])
+            pushFolder("ARKOpack_Armoiries", targetFolder)
             g_dbg.pop()
 
         if NBRT:
@@ -1101,29 +1122,33 @@ def main():
 
         if EMF:
             g_dbg.push('merge(EMF)')
-
-            filteredFiles = set(['common/landed_titles/landed_titles.txt']) if SWMH else set()
-            pushFolder('EMF', targetFolder, ignoreFiles=filteredFiles)
+            pushFolder('EMF', targetFolder)
 
             if SWMH:
                 pushFolder('EMF+SWMH', targetFolder)
             else:
                 pushFolder('EMF+Vanilla', targetFolder)
 
-            if VIETevents:
-                pushFolder('EMF+VEvents', targetFolder)
-            # if ARKOCoA:
-            #     pushFolder('EMF+ArkoCoA', targetFolder)
+            if ARKOInt:
+                pushFolder("EMF+ArkoInterface", targetFolder)
+
             g_dbg.pop()
 
         if CPR:
             g_dbg.push('merge(CPR)')
             moduleOutput.append("CPRplus (%s)\n" % g_versions['CPR'])
-            pushFolder('CPRplus', targetFolder, wrapped=True)
+
+            wrappedPaths = set(['gfx'])
+            pushFolder('CPRplus', targetFolder, wrapPaths=wrappedPaths)
+
+            if CPRfaces:
+                pushFolder('CPRplus-compatch/CustomFaces', targetFolder)
+
             if SWMH:
                 pushFolder('CPRplus-compatch/SWMH', targetFolder)
             elif EMF:
                 pushFolder('CPRplus-compatch/EMF', targetFolder)
+
             g_dbg.pop()
 
 #        if Converter:

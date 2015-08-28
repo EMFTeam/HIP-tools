@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 __author__ = 'zijistark'
 VERSION = '1.0'
 
@@ -7,7 +9,7 @@ import traceback
 import argparse
 import re
 
-DEFAULT_VANILLA_DIR = "C:/Program Files (x86)/Steam/SteamApps/common/Crusader Kings II/gfx/flags"
+DEFAULT_VANILLA_DIR = "/cygdrive/d/SteamLibrary/steamapps/common/Crusader Kings II/gfx/flags"
 p_flag_file = re.compile(r'^(.*?)\.tga$')
 p_title_all = re.compile(r'\W([cdek]_[\w_\-]+)')
 p_title = re.compile(r'^[cdek]_[\w_\-]+')
