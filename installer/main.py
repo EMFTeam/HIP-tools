@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 1, 'patch': 8,
+g_version = {'major': 2, 'minor': 1, 'patch': 9,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -881,13 +881,30 @@ def main():
         initLocalisation()
         initVersionEnvInfo()
 
-        g_dbgMode = (len(sys.argv) > 1 and '-D' in sys.argv[1:])
-        versionMode = (len(sys.argv) > 1 and '-V' in sys.argv[1:])
-
+        # Not really sure if these even need to be global anymore...
+        global g_dbgMode
         global g_steamMode
         global g_zijiMode
-        g_steamMode = (len(sys.argv) > 1 and '-S' in sys.argv[1:])
-        g_zijiMode = (len(sys.argv) > 1 and '-Z' in sys.argv[1:])
+
+        g_dbgMode = False
+        g_steamMode = False
+        g_zijiMode = False
+        versionMode = False
+        swmhSelect = False
+        sedSelect = False
+
+        if len(sys.argv) > 1:
+            g_dbgMode = '-D' in sys.argv[1:] or '--debug' in sys.argv[1:]
+            versionMode = '-V' in sys.argv[1:] or '--version' in sys.argv[1:]
+            g_steamMode = '--steam' in sys.argv[1:]
+            g_zijiMode = '-Z' in sys.argv[1:]
+            swmhSelect = '--swmh' in sys.argv[1:]
+            sedSelect = '--sed' in sys.argv[1:]
+
+        # Horrible hack upon hacks (command-line selectors should be way more powerful and require far less code,
+        # but repurposing g_steamMode to mean "non-interactive" when one of --swmh or --sed is used... well, it's sick.
+        if swmhSelect or sedSelect:
+            g_steamMode = True
 
         global g_betaMode
         g_betaMode = False
@@ -935,87 +952,99 @@ def main():
 
         # Determine module combination...
 
-        # EMF...
-        EMF = True if g_steamMode else enableMod(u"EMF ({})".format(g_versions['EMF']))
-
-        # ARKOpack...
-        ARKOCoA = True if g_steamMode \
-            else enableMod(u"ARKOpack Armoiries [CoA] ({})".format(g_versions['ARKOC']))
-        
-        if (not g_steamMode) and not g_zijiMode:
-            print(u"\nNOTE: Arumba's Keyboard Shortcuts and ARKOpack Interface are incompatible.\n"
-                  u"      ARKOpack doesn't provide shortcuts. You may only select one of the two:\n")
-        
-        ARKOInt = False if (g_steamMode or g_zijiMode) \
-            else enableMod(u"ARKOpack Interface ({})".format(g_versions['ARKOI']))
-
-        # Arumba's Keyboard Shortcuts...
+        EMF = False
+        ARKOCoA = False
+        ARKOInt = False
         ArumbaKS = False
-
-        if not ARKOInt:
-            ArumbaKS = True if (g_steamMode or g_zijiMode) \
-                else enableMod(u"Arumba's Keyboard Shortcuts ({})".format(g_versions['ArumbaKS']))
-
-        # CPRplus...
         CPR = False
         CPRfaces = False
-
-        if not g_steamMode:
-            cprMissingDLCNames = detectCPRMissingDLCs()
-
-            if cprMissingDLCNames is None:  # Failed to auto-detect game folder
-                if not g_zijiMode:
-                    print(u"\nOOPS: The HIP installer could NOT successfully determine your active CKII\n"
-                          u"game folder! Thus, it cannot auto-detect whether you meet all the portrait DLC\n"
-                          u"prerequisites for CPRplus. All _other_ HIP modules can be installed, however.\n")
-
-            elif len(cprMissingDLCNames) > 0:  # DLC auto-detection succeeded, but there were missing DLCs.
-                if not g_zijiMode:
-                    print(u"\n\nCPRplus (portrait upgrade mod) requires portrait pack DLCs which you,\n"
-                          u"unforunately, are lacking. If you want to use CPRplus, you'll need to install\n"
-                          u"the following DLCs first:\n")
-
-                    for name in sorted(cprMissingDLCNames):
-                        print(u"+ {}".format(name))
-
-                    sys.stdout.write('\n')
-
-            else:  # DLC verification succeeded, and CPR is clear for take-off.
-                CPR = enableMod(u"CPRplus ({})".format(g_versions['CPR']))
-                CPRfaces = False if not CPR else enableMod(u"CPRplus's custom western & muslim facial art")
-
-        ## VIET ...
         VIETevents = False
-        if g_steamMode:
-            VIETevents = True
-        elif not g_zijiMode:
-            VIETevents = enableMod(u"VIET Events ({})".format(g_versions['VIET']))
-
-        VIETtraits = False if EMF else enableMod(u"VIET Traits ({})".format(g_versions['VIET']))
-        VIET = (VIETtraits or VIETevents)
-
-        # SWMH...
+        VIETtraits = False
         SWMH = False
-        
-        if (not g_steamMode) and not g_zijiMode:
-            print(u"\nNOTE: The SWMH map will never include the 769 bookmark. However, SWMH does\n"
-                  u"support all Charlemagne DLC mechanics in 867 and beyond. SWMH is also a very\n"
-                  u"large map (35% more provinces than vanilla), and this can deter performance.\n"
-                  u"If you want the vanilla map instead, simply type 'n' or 'no' for SWMH below:\n")
+        SED = False
+        NBRT = False
 
-        SWMH = False if g_steamMode else enableMod(u'SWMH ({})'.format(g_versions['SWMH']))
-
-        # SED...
-        SED = SWMH and g_zijiMode
-        if SWMH and not g_steamMode and not SED:
-            SED = enableModDefaultNo(u'SED: English Localisation for SWMH ({})'.format(g_versions['SED']), compat=True)
-
-        # NBRT+...
-        if g_platform == 'win' or g_platform == 'cyg':
-            NBRT = True if (g_steamMode or g_zijiMode) else enableMod(u"NBRT+ ({})".format(g_versions['NBRT']))
+        if sedSelect:
+            SED = True
+            SWMH = True
+        elif swmhSelect:
+            SWMH = True
         else:
-            NBRT = False if g_steamMode else enableModDefaultNo(u"NBRT+ ({})".format(g_versions['NBRT']))
+            # EMF...
+            EMF = True if g_steamMode else enableMod(u"EMF ({})".format(g_versions['EMF']))
 
+            # ARKOpack...
+            ARKOCoA = True if g_steamMode \
+                else enableMod(u"ARKOpack Armoiries [CoA] ({})".format(g_versions['ARKOC']))
+
+            if (not g_steamMode) and not g_zijiMode:
+                print(u"\nNOTE: Arumba's Keyboard Shortcuts and ARKOpack Interface are incompatible.\n"
+                      u"      ARKOpack doesn't provide shortcuts. You may only select one of the two:\n")
+
+            ARKOInt = False if (g_steamMode or g_zijiMode) \
+                else enableMod(u"ARKOpack Interface ({})".format(g_versions['ARKOI']))
+
+            # Arumba's Keyboard Shortcuts...
+            ArumbaKS = False
+
+            if not ARKOInt:
+                ArumbaKS = True if (g_steamMode or g_zijiMode) \
+                    else enableMod(u"Arumba's Keyboard Shortcuts ({})".format(g_versions['ArumbaKS']))
+
+            # CPRplus...
+            if not g_steamMode:
+                cprMissingDLCNames = detectCPRMissingDLCs()
+
+                if cprMissingDLCNames is None:  # Failed to auto-detect game folder
+                    if not g_zijiMode:
+                        print(u"\nOOPS: The HIP installer could NOT successfully determine your active CKII\n"
+                              u"game folder! Thus, it cannot auto-detect whether you meet all the portrait DLC\n"
+                              u"prerequisites for CPRplus. All _other_ HIP modules can be installed, however.\n")
+
+                elif len(cprMissingDLCNames) > 0:  # DLC auto-detection succeeded, but there were missing DLCs.
+                    if not g_zijiMode:
+                        print(u"\n\nCPRplus (portrait upgrade mod) requires portrait pack DLCs which you,\n"
+                              u"unforunately, are lacking. If you want to use CPRplus, you'll need to install\n"
+                              u"the following DLCs first:\n")
+
+                        for name in sorted(cprMissingDLCNames):
+                            print(u"+ {}".format(name))
+
+                        sys.stdout.write('\n')
+
+                else:  # DLC verification succeeded, and CPR is clear for take-off.
+                    CPR = enableMod(u"CPRplus ({})".format(g_versions['CPR']))
+                    CPRfaces = False if not CPR else enableMod(u"CPRplus's custom western & muslim facial art")
+
+            ## VIET ...
+            if g_steamMode:
+                VIETevents = True
+            elif not g_zijiMode:
+                VIETevents = enableMod(u"VIET Events ({})".format(g_versions['VIET']))
+
+            VIETtraits = False if EMF else enableMod(u"VIET Traits ({})".format(g_versions['VIET']))
+
+            # SWMH...
+            if (not g_steamMode) and not g_zijiMode:
+                print(u"\nNOTE: The SWMH map will never include the 769 bookmark. However, SWMH does\n"
+                      u"support all Charlemagne DLC mechanics in 867 and beyond. SWMH is also a very\n"
+                      u"large map (35% more provinces than vanilla), and this can deter performance.\n"
+                      u"If you want the vanilla map instead, simply type 'n' or 'no' for SWMH below:\n")
+
+            SWMH = False if g_steamMode else enableMod(u'SWMH ({})'.format(g_versions['SWMH']))
+
+            # SED...
+            SED = SWMH and g_zijiMode
+            if SWMH and not g_steamMode and not SED:
+                SED = enableModDefaultNo(u'SED: English Localisation for SWMH ({})'.format(g_versions['SED']), compat=True)
+
+            # NBRT+...
+            if g_platform == 'win' or g_platform == 'cyg':
+                NBRT = True if (g_steamMode or g_zijiMode) else enableMod(u"NBRT+ ({})".format(g_versions['NBRT']))
+            else:
+                NBRT = False if g_steamMode else enableModDefaultNo(u"NBRT+ ({})".format(g_versions['NBRT']))
+
+        VIET = (VIETtraits or VIETevents)
         HIP = EMF or SWMH or VIETevents  # HIP_Common (Isis, e_hip, our event picture stash, etc.)
         # Converter = EMF and not SWMH  # Vanilla EUIV Converter
 
@@ -1054,7 +1083,7 @@ def main():
 
         if EMF:
             moduleOutput.append("EMF: Extended Mechanics & Flavor (%s)\n" % g_versions['EMF'])
-        
+
         if ARKOInt:
             g_dbg.push("merge('ARKO Interface')")
             moduleOutput.append("ARKO Interface (%s)\n" % g_versions['ARKOI'])
