@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 1, 'patch': 9,
+g_version = {'major': 2, 'minor': 1, 'patch': 10,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -886,24 +886,18 @@ def main():
         global g_steamMode
         global g_zijiMode
 
-        g_dbgMode = False
-        g_steamMode = False
-        g_zijiMode = False
-        versionMode = False
-        swmhSelect = False
-        sedSelect = False
-
-        if len(sys.argv) > 1:
-            g_dbgMode = '-D' in sys.argv[1:] or '--debug' in sys.argv[1:]
-            versionMode = '-V' in sys.argv[1:] or '--version' in sys.argv[1:]
-            g_steamMode = '--steam' in sys.argv[1:]
-            g_zijiMode = '-Z' in sys.argv[1:]
-            swmhSelect = '--swmh' in sys.argv[1:]
-            sedSelect = '--sed' in sys.argv[1:]
+        g_dbgMode = '-D' in sys.argv[1:] or '--debug' in sys.argv[1:]
+        versionMode = '-V' in sys.argv[1:] or '--version' in sys.argv[1:]
+        inplaceMode = '--in-place' in sys.argv[1:]
+        g_steamMode = '--steam' in sys.argv[1:]
+        g_zijiMode = '-Z' in sys.argv[1:]
+        swmhSelect = '--swmh' in sys.argv[1:]
+        sedSelect = '--sed' in sys.argv[1:]
+        emfSelect = '--emf' in sys.argv[1:]
 
         # Horrible hack upon hacks (command-line selectors should be way more powerful and require far less code,
         # but repurposing g_steamMode to mean "non-interactive" when one of --swmh or --sed is used... well, it's sick.
-        if swmhSelect or sedSelect:
+        if swmhSelect or sedSelect or emfSelect:
             g_steamMode = True
 
         global g_betaMode
@@ -924,7 +918,9 @@ def main():
         # location of this module itself. In other words, allow it to be run from
         # anywhere on the system but still be able to assume the relative path to,
         # e.g., "modules/" is just that.
-        normalizeCwd()
+
+        if not inplaceMode:
+            normalizeCwd()
 
         if not os.path.isdir('modules'):
             raise InstallerPackageNotFoundError()
@@ -964,12 +960,20 @@ def main():
         SED = False
         NBRT = False
 
+        batchMode = False
+
         if sedSelect:
             SED = True
             SWMH = True
-        elif swmhSelect:
+            batchMode = True
+        if swmhSelect:
             SWMH = True
-        else:
+            batchMode = True
+        if emfSelect:
+            EMF = True
+            batchMode = True
+
+        if not batchMode:
             # EMF...
             EMF = True if g_steamMode else enableMod(u"EMF ({})".format(g_versions['EMF']))
 
