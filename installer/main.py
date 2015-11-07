@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 1, 'patch': 10,
+g_version = {'major': 2, 'minor': 1, 'patch': 11,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -1122,6 +1122,10 @@ def main():
             g_dbg.push("merge(SED)")
             moduleOutput.append("SED: English Localisation for SWMH (%s)\n" % g_versions['SED'])
             pushFolder("SED2", targetFolder)
+            if EMF:
+                pushFolder("SED2+EMF", targetFolder)
+            if VIET:
+                pushFolder("SED2+VIET", targetFolder)
             g_dbg.pop()
 
         if ARKOCoA:
