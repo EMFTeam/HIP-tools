@@ -1049,7 +1049,7 @@ def main():
                 NBRT = False if g_steamMode else enableModDefaultNo(u"NBRT+ ({})".format(g_versions['NBRT']))
 
         VIET = (VIETtraits or VIETevents)
-        HIP = EMF or SWMH or VIETevents  # HIP_Common (Isis, e_hip, our event picture stash, etc.)
+        HIP = EMF or VIETevents  # HIP_Common (Isis, e_hip, our event picture stash, etc.)
         # Converter = EMF and not SWMH  # Vanilla EUIV Converter
 
         euFolderBase = '../eu4_export/mod'

@@ -10,7 +10,7 @@ import argparse
 import re
 
 DEFAULT_VANILLA_DIR = "/cygdrive/d/SteamLibrary/steamapps/common/Crusader Kings II/gfx/flags"
-p_flag_file = re.compile(r'^(.*?)\.tga$')
+p_flag_file = re.compile(r'^([cdek]_[\w_\-]+)\.tga$')
 p_title_all = re.compile(r'\W([cdek]_[\w_\-]+)')
 p_title = re.compile(r'^[cdek]_[\w_\-]+')
 p_txt_file = re.compile(r'^.*?\.txt$')
