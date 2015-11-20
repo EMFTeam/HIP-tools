@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 1, 'patch': 11,
+g_version = {'major': 2, 'minor': 1, 'patch': 12,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -1049,7 +1049,7 @@ def main():
                 NBRT = False if g_steamMode else enableModDefaultNo(u"NBRT+ ({})".format(g_versions['NBRT']))
 
         VIET = (VIETtraits or VIETevents)
-        HIP = EMF or VIETevents  # HIP_Common (Isis, e_hip, our event picture stash, etc.)
+        HIP = VIETevents  # HIP_Common (Isis, e_hip, our event picture stash, etc.)
         # Converter = EMF and not SWMH  # Vanilla EUIV Converter
 
         euFolderBase = '../eu4_export/mod'
