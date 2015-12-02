@@ -779,6 +779,7 @@ def getSteamGameFolder(masterFolder, gameName, magicFile):
 
 
 cprReqDLCNames = {'dlc/dlc013.dlc': 'African Portraits',
+                  'dlc/dlc022.dlc': 'The Republic',
                   'dlc/dlc028.dlc': 'Celtic Portraits',
                   'dlc/dlc014.dlc': 'Mediterranean Portraits',
                   'dlc/dlc002.dlc': 'Mongol Face Pack',
