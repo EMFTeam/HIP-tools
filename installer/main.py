@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 1, 'patch': 13,
+g_version = {'major': 2, 'minor': 2, 'patch': 0,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -928,15 +928,16 @@ def main():
 
         # These are the modules/ directories from which to grab each mod's version.txt:
         modDirs = {'pkg': '',  # Installer package version
-                   'VIET': 'VIET_Assets',
-                   'SWMH': 'SWMH',
-                   'NBRT': 'NBRT+',
-                   'CPR': 'CPRplus',
-                   'EMF': 'EMF',
-                   'SED': 'SED2',
-                   'ARKOC': 'ARKOpack_Armoiries',
-                   'ARKOI': 'ARKOpack_Interface',
+                   'VIET':     'VIET_Assets',
+                   'SWMH':     'SWMH',
+                   'NBRT':     'NBRT+',
+                   'CPR':      'CPRplus',
+                   'EMF':      'EMF',
+                   'SED':      'SED2',
+                   'ARKOC':    'ARKOpack_Armoiries',
+                   'ARKOI':    'ARKOpack_Interface',
                    'ArumbaKS': 'ArumbaKS',
+                   'uSWMH':    'MiniSWMH'
         }
 
         getPkgVersions(modDirs)
@@ -958,6 +959,7 @@ def main():
         VIETevents = False
         VIETtraits = False
         SWMH = False
+        uSWMH = False
         SED = False
         NBRT = False
 
@@ -1031,12 +1033,18 @@ def main():
 
             # SWMH...
             if (not g_steamMode) and not g_zijiMode:
-                print(u"\nNOTE: The SWMH map will never include the 769 bookmark. However, SWMH does\n"
-                      u"support all Charlemagne DLC mechanics in 867 and beyond. SWMH is also a very\n"
-                      u"large map (35% more provinces than vanilla), and this can deter performance.\n"
-                      u"If you want the vanilla map instead, simply type 'n' or 'no' for SWMH below:\n")
+                print(u"\nNOTE: The SWMH map will never include the 769 bookmark. Also, SWMH is a highly\n"
+                      u"detailed, dense map, which is known to negatively impact game performance.\n"
+                      u"\nNEW: MiniSWMH is an SWMH sub-mod which significantly improves performance by\n"
+                      u"deactivating India and some parts of Africa on the map. If you'd like to try\n"
+                      u"MiniSWMH, you must select SWMH below in order to be prompted about it afterward.\n"
+                      u"\nIf you want the vanilla map instead, simply type 'n' or 'no' for SWMH below:\n")
 
             SWMH = False if g_steamMode else enableMod(u'SWMH ({})'.format(g_versions['SWMH']))
+
+            # MiniSWMH...
+            if SWMH and not g_steamMode:
+                uSWMH = enableModDefaultNo(u'MiniSWMH: Performance-Friendly SWMH ({})'.format(g_versions['uSWMH']), compat=True)
 
             # SED...
             SED = SWMH and g_zijiMode
@@ -1119,6 +1127,12 @@ def main():
                 pushFolder("SWMH+ArumbaKS", targetFolder)
             g_dbg.pop()
 
+        if uSWMH:
+            g_dbg.push("merge(uSWMH)")
+            moduleOutput.append("MiniSWMH: Performance-Friendly SWMH (%s)\n" % g_versions['uSWMH'])
+            pushFolder("MiniSWMH", targetFolder)
+            g_dbg.pop()
+
         if SED:
             g_dbg.push("merge(SED)")
             moduleOutput.append("SED: English Localisation for SWMH (%s)\n" % g_versions['SED'])
@@ -1127,6 +1141,8 @@ def main():
                 pushFolder("SED2+EMF", targetFolder)
             if VIET:
                 pushFolder("SED2+VIET", targetFolder)
+            if uSWMH:
+                pushFolder("SED2+MiniSWMH", targetFolder)
             g_dbg.pop()
 
         if ARKOCoA:
@@ -1165,6 +1181,8 @@ def main():
 
             if SWMH:
                 pushFolder('EMF+SWMH', targetFolder)
+                if uSWMH:
+                    pushFolder('EMF+MiniSWMH', targetFolder)
             else:
                 pushFolder('EMF+Vanilla', targetFolder)
 
