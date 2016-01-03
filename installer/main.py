@@ -978,7 +978,7 @@ def main():
             batchMode = True
         if zijiSelect:
             EMF = True
-            ArkoCoA = True
+            ARKOCoA = True
             ArumbaKS = True
             CPR = True
             CPRfaces = True
