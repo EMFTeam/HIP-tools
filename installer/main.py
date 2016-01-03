@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 2, 'patch': 0,
+g_version = {'major': 2, 'minor': 2, 'patch': 1,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -892,13 +892,14 @@ def main():
         inplaceMode = '--in-place' in sys.argv[1:]
         g_steamMode = '--steam' in sys.argv[1:]
         g_zijiMode = '-Z' in sys.argv[1:]
+        zijiSelect = '-z' in sys.argv[1:]
         swmhSelect = '--swmh' in sys.argv[1:]
         sedSelect = '--sed' in sys.argv[1:]
         emfSelect = '--emf' in sys.argv[1:]
 
         # Horrible hack upon hacks (command-line selectors should be way more powerful and require far less code,
         # but repurposing g_steamMode to mean "non-interactive" when one of --swmh or --sed is used... well, it's sick.
-        if swmhSelect or sedSelect or emfSelect:
+        if swmhSelect or sedSelect or emfSelect or zijiSelect:
             g_steamMode = True
 
         global g_betaMode
@@ -974,6 +975,17 @@ def main():
             batchMode = True
         if emfSelect:
             EMF = True
+            batchMode = True
+        if zijiSelect:
+            EMF = True
+            ArkoCoA = True
+            ArumbaKS = True
+            CPR = True
+            CPRfaces = True
+            SWMH = True
+            uSWMH = True
+            SED = True
+            NBRT = True
             batchMode = True
 
         if not batchMode:
