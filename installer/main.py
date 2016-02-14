@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 2, 'patch': 1,
+g_version = {'major': 2, 'minor': 2, 'patch': 2,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -778,20 +778,22 @@ def getSteamGameFolder(masterFolder, gameName, magicFile):
     return None
 
 
-cprReqDLCNames = {'dlc/dlc013.dlc': 'African Portraits',
+cprReqDLCNames = {'dlc/dlc002.dlc': 'Mongol Face Pack',
+                  'dlc/dlc013.dlc': 'African Portraits',
+                  'dlc/dlc014.dlc': 'Mediterranean Portraits',
+                  'dlc/dlc016.dlc': 'Russian Portraits',
+                  'dlc/dlc020.dlc': 'Norse Portraits',
                   'dlc/dlc022.dlc': 'The Republic',
                   'dlc/dlc028.dlc': 'Celtic Portraits',
-                  'dlc/dlc014.dlc': 'Mediterranean Portraits',
-                  'dlc/dlc002.dlc': 'Mongol Face Pack',
-                  'dlc/dlc020.dlc': 'Norse Portraits',
-                  'dlc/dlc016.dlc': 'Russian Portraits',
                   'dlc/dlc039.dlc': 'Rajas of India',
                   'dlc/dlc041.dlc': 'Turkish Portraits',
                   'dlc/dlc044.dlc': 'Persian Portraits',
                   'dlc/dlc046.dlc': 'Early Western Clothing Pack',
                   'dlc/dlc047.dlc': 'Early Eastern Clothing Pack',
                   'dlc/dlc052.dlc': 'Iberian Portraits',
-                  'dlc/dlc057.dlc': 'Cuman Portraits'}
+                  'dlc/dlc057.dlc': 'Cuman Portraits',
+                  'dlc/dlc063.dlc': 'Conclave Content Pack',
+                  'dlc/dlc065.dlc': 'South Indian Portraits'}
 
 
 # Determine whether the DLCs required for CPR are installed in the active game folder.
@@ -936,7 +938,7 @@ def main():
                    'EMF':      'EMF',
                    'SED':      'SED2',
                    'ARKOC':    'ARKOpack_Armoiries',
-                   'ARKOI':    'ARKOpack_Interface',
+#                  'ARKOI':    'ARKOpack_Interface',
                    'ArumbaKS': 'ArumbaKS',
                    'uSWMH':    'MiniSWMH'
         }
@@ -996,12 +998,12 @@ def main():
             ARKOCoA = True if g_steamMode \
                 else enableMod(u"ARKOpack Armoiries [CoA] ({})".format(g_versions['ARKOC']))
 
-            if (not g_steamMode) and not g_zijiMode:
-                print(u"\nNOTE: Arumba's Keyboard Shortcuts and ARKOpack Interface are incompatible.\n"
-                      u"      ARKOpack doesn't provide shortcuts. You may only select one of the two:\n")
+#            if (not g_steamMode) and not g_zijiMode:
+#                print(u"\nNOTE: Arumba's Keyboard Shortcuts and ARKOpack Interface are incompatible.\n"
+#                      u"      ARKOpack doesn't provide shortcuts. You may only select one of the two:\n")
 
-            ARKOInt = False if (g_steamMode or g_zijiMode) \
-                else enableMod(u"ARKOpack Interface ({})".format(g_versions['ARKOI']))
+#            ARKOInt = False if (g_steamMode or g_zijiMode) \
+#                else enableMod(u"ARKOpack Interface ({})".format(g_versions['ARKOI']))
 
             # Arumba's Keyboard Shortcuts...
             ArumbaKS = False
@@ -1109,13 +1111,13 @@ def main():
         if EMF:
             moduleOutput.append("EMF: Extended Mechanics & Flavor (%s)\n" % g_versions['EMF'])
 
-        if ARKOInt:
-            g_dbg.push("merge('ARKO Interface')")
-            moduleOutput.append("ARKO Interface (%s)\n" % g_versions['ARKOI'])
-            pushFolder("ARKOpack_Interface", targetFolder)
-            if HIP:
-                popTree('gfx/event_pictures', targetFolder)
-            g_dbg.pop()
+#        if ARKOInt:
+#            g_dbg.push("merge('ARKO Interface')")
+#            moduleOutput.append("ARKO Interface (%s)\n" % g_versions['ARKOI'])
+#            pushFolder("ARKOpack_Interface", targetFolder)
+#            if HIP:
+#                popTree('gfx/event_pictures', targetFolder)
+#            g_dbg.pop()
 
         if ArumbaKS:
             g_dbg.push('merge(ArumbaKS)')
