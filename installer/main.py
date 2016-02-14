@@ -778,20 +778,22 @@ def getSteamGameFolder(masterFolder, gameName, magicFile):
     return None
 
 
-cprReqDLCNames = {'dlc/dlc013.dlc': 'African Portraits',
+cprReqDLCNames = {'dlc/dlc002.dlc': 'Mongol Face Pack',
+                  'dlc/dlc013.dlc': 'African Portraits',
+                  'dlc/dlc014.dlc': 'Mediterranean Portraits',
+                  'dlc/dlc016.dlc': 'Russian Portraits',
+                  'dlc/dlc020.dlc': 'Norse Portraits',
                   'dlc/dlc022.dlc': 'The Republic',
                   'dlc/dlc028.dlc': 'Celtic Portraits',
-                  'dlc/dlc014.dlc': 'Mediterranean Portraits',
-                  'dlc/dlc002.dlc': 'Mongol Face Pack',
-                  'dlc/dlc020.dlc': 'Norse Portraits',
-                  'dlc/dlc016.dlc': 'Russian Portraits',
                   'dlc/dlc039.dlc': 'Rajas of India',
                   'dlc/dlc041.dlc': 'Turkish Portraits',
                   'dlc/dlc044.dlc': 'Persian Portraits',
                   'dlc/dlc046.dlc': 'Early Western Clothing Pack',
                   'dlc/dlc047.dlc': 'Early Eastern Clothing Pack',
                   'dlc/dlc052.dlc': 'Iberian Portraits',
-                  'dlc/dlc057.dlc': 'Cuman Portraits'}
+                  'dlc/dlc057.dlc': 'Cuman Portraits',
+                  'dlc/dlc063.dlc': 'Conclave Content Pack',
+                  'dlc/dlc065.dlc': 'South Indian Portraits'}
 
 
 # Determine whether the DLCs required for CPR are installed in the active game folder.
