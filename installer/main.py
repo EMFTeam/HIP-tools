@@ -994,10 +994,6 @@ def main():
             # EMF...
             EMF = True if g_steamMode else enableMod(u"EMF ({})".format(g_versions['EMF']))
 
-            # Arumba's Keyboard Shortcuts...
-            ArumbaKS = True if (g_steamMode or g_zijiMode) \
-                else enableMod(u"Arumba's Keyboard Shortcuts ({})".format(g_versions['ArumbaKS']))
-
             # ARKOpack...
             ARKOCoA = True if g_steamMode \
                 else enableMod(u"ARKOpack Armoiries [CoA] ({})".format(g_versions['ARKOC']))
@@ -1008,6 +1004,10 @@ def main():
 
             ARKOInt = False if (g_steamMode or g_zijiMode) \
                 else enableMod(u"ARKOpack Interface ({})".format(g_versions['ARKOI']))
+
+            # Arumba's Keyboard Shortcuts...
+            ArumbaKS = True if (g_steamMode or g_zijiMode) \
+                else enableMod(u"Arumba's Keyboard Shortcuts ({})".format(g_versions['ArumbaKS']))
 
             # CPRplus...
             if not g_steamMode:
