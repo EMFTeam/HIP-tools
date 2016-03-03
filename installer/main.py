@@ -998,10 +998,6 @@ def main():
             ARKOCoA = True if g_steamMode \
                 else enableMod(u"ARKOpack Armoiries [CoA] ({})".format(g_versions['ARKOC']))
 
-            if (not g_steamMode) and not g_zijiMode:
-                print(u"\nNOTE: Arumba's Keyboard Shortcuts and ARKOpack Interface are now compatible.\n"
-                      u"      You may select both, either, or none:\n")
-
             ARKOInt = False if (g_steamMode or g_zijiMode) \
                 else enableMod(u"ARKOpack Interface ({})".format(g_versions['ARKOI']))
 
