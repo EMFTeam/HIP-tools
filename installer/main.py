@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 2, 'patch': 3,
+g_version = {'major': 2, 'minor': 3, 'patch': 0,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -994,23 +994,20 @@ def main():
             # EMF...
             EMF = True if g_steamMode else enableMod(u"EMF ({})".format(g_versions['EMF']))
 
+            # Arumba's Keyboard Shortcuts...
+            ArumbaKS = True if (g_steamMode or g_zijiMode) \
+                else enableMod(u"Arumba's Keyboard Shortcuts ({})".format(g_versions['ArumbaKS']))
+
             # ARKOpack...
             ARKOCoA = True if g_steamMode \
                 else enableMod(u"ARKOpack Armoiries [CoA] ({})".format(g_versions['ARKOC']))
 
             if (not g_steamMode) and not g_zijiMode:
-                print(u"\nNOTE: Arumba's Keyboard Shortcuts and ARKOpack Interface are incompatible.\n"
-                      u"      ARKOpack doesn't provide shortcuts. You may only select one of the two:\n")
+                print(u"\nNOTE: Arumba's Keyboard Shortcuts and ARKOpack Interface are now compatible.\n"
+                      u"      You may select both, either, or none:\n")
 
             ARKOInt = False if (g_steamMode or g_zijiMode) \
                 else enableMod(u"ARKOpack Interface ({})".format(g_versions['ARKOI']))
-
-            # Arumba's Keyboard Shortcuts...
-            ArumbaKS = False
-
-            if not ARKOInt:
-                ArumbaKS = True if (g_steamMode or g_zijiMode) \
-                    else enableMod(u"Arumba's Keyboard Shortcuts ({})".format(g_versions['ArumbaKS']))
 
             # CPRplus...
             if not g_steamMode:
@@ -1111,18 +1108,20 @@ def main():
         if EMF:
             moduleOutput.append("EMF: Extended Mechanics & Flavor (%s)\n" % g_versions['EMF'])
 
-        if ARKOInt:
-            g_dbg.push("merge('ARKO Interface')")
-            moduleOutput.append("ARKO Interface (%s)\n" % g_versions['ARKOI'])
-            pushFolder("ARKOpack_Interface", targetFolder)
-            if HIP:
-                popTree('gfx/event_pictures', targetFolder)
-            g_dbg.pop()
-
         if ArumbaKS:
             g_dbg.push('merge(ArumbaKS)')
             moduleOutput.append("Arumba's Keyboard Shortcuts (%s)\n" % g_versions['ArumbaKS'])
             pushFolder('ArumbaKS', targetFolder)
+            g_dbg.pop()
+
+        if ARKOInt:
+            g_dbg.push("merge('ARKO Interface')")
+            moduleOutput.append("ARKO Interface (%s)\n" % g_versions['ARKOI'])
+            pushFolder("ARKOpack_Interface", targetFolder)
+            if ArumbaKS:
+                pushFolder('ArkoInterface+AKS', targetFolder)
+            if HIP:
+                popTree('gfx/event_pictures', targetFolder)
             g_dbg.pop()
 
         if VIET:
@@ -1137,8 +1136,10 @@ def main():
             pushFolder("SWMH", targetFolder)
             if ARKOInt:
                 pushFolder("SWMH+ArkoInterface", targetFolder)
+                if ArumbaKS:
+                    pushFolder("SWMH+ArkoInterface+AKS", targetFolder)
             elif ArumbaKS:
-                pushFolder("SWMH+ArumbaKS", targetFolder)
+                pushFolder("SWMH+AKS", targetFolder)
             g_dbg.pop()
 
         if uSWMH:
