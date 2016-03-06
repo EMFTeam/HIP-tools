@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 3, 'patch': 0,
+g_version = {'major': 2, 'minor': 3, 'patch': 1,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -1034,9 +1034,9 @@ def main():
             if g_steamMode:
                 VIETevents = True
             elif not g_zijiMode:
-                VIETevents = enableMod(u"VIET Events ({})".format(g_versions['VIET']))
+                VIETevents = enableModDefaultNo(u"VIET Events ({})".format(g_versions['VIET']))
 
-            VIETtraits = False if EMF else enableMod(u"VIET Traits ({})".format(g_versions['VIET']))
+            VIETtraits = False if EMF else enableModDefaultNo(u"VIET Traits ({})".format(g_versions['VIET']))
 
             # SWMH...
             if (not g_steamMode) and not g_zijiMode:
@@ -1079,12 +1079,17 @@ def main():
         else:
             modBasename = 'HIP'
 
+        if EMF or ARKOCoA or ARKOInt or CPR or VIET or SWMH:
+            modUserDir = modBasename
+        else:
+            modUserDir = None
+
         modFilename = scaffoldMod('.',
                                   targetFolder,
                                   modBasename,
                                   'HIP - ' + targetFolder,
                                   targetFolder,
-                                  modBasename)
+                                  modUserDir)
 
 #        if Converter:
 #            euModFilename = scaffoldMod(euFolderBase,
