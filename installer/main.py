@@ -1034,9 +1034,9 @@ def main():
             if g_steamMode:
                 VIETevents = True
             elif not g_zijiMode:
-                VIETevents = enableModDefaultNo(u"VIET Events ({})".format(g_versions['VIET']))
+                VIETevents = enableModDefaultNo(u"VIET Events ({})".format(g_versions['VIET']), compat=True)
 
-            VIETtraits = False if EMF else enableModDefaultNo(u"VIET Traits ({})".format(g_versions['VIET']))
+            VIETtraits = False if EMF else enableModDefaultNo(u"VIET Traits ({})".format(g_versions['VIET']), compat=True)
 
             # SWMH...
             if (not g_steamMode) and not g_zijiMode:
