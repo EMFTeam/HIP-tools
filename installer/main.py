@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 3, 'patch': 1,
+g_version = {'major': 2, 'minor': 3, 'patch': 2,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -940,7 +940,8 @@ def main():
                    'ARKOC':    'ARKOpack_Armoiries',
                    'ARKOI':    'ARKOpack_Interface',
                    'ArumbaKS': 'ArumbaKS',
-                   'uSWMH':    'MiniSWMH'
+                   'uSWMH':    'MiniSWMH',
+                   'LTM':      'LTM-swmh'
         }
 
         getPkgVersions(modDirs)
@@ -965,6 +966,7 @@ def main():
         uSWMH = False
         SED = False
         NBRT = False
+        LTM = False
 
         batchMode = False
 
@@ -1057,11 +1059,15 @@ def main():
             if SWMH and not g_steamMode and not SED:
                 SED = enableModDefaultNo(u'SED: English Localisation for SWMH ({})'.format(g_versions['SED']), compat=True)
 
+            # LTM
+            LTM = True if (g_steamMode or g_zijiMode) else enableMod(u"Lindbrook's Texture Map ({})".format(g_versions['LTM']))
+
             # NBRT+...
-            if g_platform == 'win' or g_platform == 'cyg':
-                NBRT = True if (g_steamMode or g_zijiMode) else enableMod(u"NBRT+ ({})".format(g_versions['NBRT']))
-            else:
-                NBRT = False if g_steamMode else enableModDefaultNo(u"NBRT+ ({})".format(g_versions['NBRT']))
+            if not LTM:
+                if g_platform == 'win' or g_platform == 'cyg':
+                    NBRT = True if (g_steamMode or g_zijiMode) else enableMod(u"NBRT+ ({})".format(g_versions['NBRT']))
+                else:
+                    NBRT = False if g_steamMode else enableModDefaultNo(u"NBRT+ ({})".format(g_versions['NBRT']))
 
         VIET = (VIETtraits or VIETevents)
         HIP = VIETevents  # HIP_Common (Isis, e_hip, our event picture stash, etc.)
@@ -1176,6 +1182,15 @@ def main():
                 pushFolder("NBRT+ARKO", targetFolder)
             if not SWMH or True:  # Enabled for SWMH EE testing
                 popFile('gfx/FX/pdxmap.fxh', targetFolder)  # Z: 2.2 compatch for NBRT+ Light (and Mac/Linux compatch)
+            g_dbg.pop()
+
+        if LTM:
+            g_dbg.push("merge(LTM)")
+            moduleOutput.append("LTM (%s)\n" % g_versions['LTM'])
+            if SWMH:
+                pushFolder("LTM-swmh", targetFolder)
+            else:
+                pushFolder("LTM-vanilla", targetFolder)
             g_dbg.pop()
 
         if VIETtraits:
