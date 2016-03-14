@@ -987,7 +987,6 @@ def main():
             SWMH = True
             uSWMH = True
             SED = True
-            NBRT = True
             batchMode = True
 
         if not batchMode:
