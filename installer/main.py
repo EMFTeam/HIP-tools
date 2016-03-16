@@ -894,7 +894,7 @@ def main():
         inplaceMode = '--in-place' in sys.argv[1:]
         g_steamMode = '--steam' in sys.argv[1:]
         g_zijiMode = '-Z' in sys.argv[1:]
-        zijiSelect = '-z' in sys.argv[1:]
+        zijiSelect = '-z' in sys.argv[1:] # the guy needs not 1 but 2 distinct ways of selecting his mods, wtf princess
         swmhSelect = '--swmh' in sys.argv[1:]
         sedSelect = '--sed' in sys.argv[1:]
         emfSelect = '--emf' in sys.argv[1:]
@@ -988,7 +988,7 @@ def main():
             CPRfaces = True
             SWMH = True
             uSWMH = True
-            SED = True
+            LTM = True
             batchMode = True
 
         if not batchMode:
