@@ -933,7 +933,6 @@ def main():
         modDirs = {'pkg': '',  # Installer package version
                    'VIET':     'VIET_Assets',
                    'SWMH':     'SWMH',
-                   'NBRT':     'NBRT+',
                    'CPR':      'CPRplus',
                    'EMF':      'EMF',
                    'SED':      'SED2',
@@ -941,7 +940,7 @@ def main():
                    'ARKOI':    'ARKOpack_Interface',
                    'ArumbaKS': 'ArumbaKS',
                    'uSWMH':    'MiniSWMH',
-                   'LTM':      'LTM-swmh'
+                   'LTM':      'LTM+SWMH'
         }
 
         getPkgVersions(modDirs)
@@ -965,7 +964,6 @@ def main():
         SWMH = False
         uSWMH = False
         SED = False
-        NBRT = False
         LTM = False
 
         batchMode = False
@@ -1059,15 +1057,8 @@ def main():
             if SWMH and not g_steamMode and not SED:
                 SED = enableModDefaultNo(u'SED: English Localisation for SWMH ({})'.format(g_versions['SED']), compat=True)
 
-            # LTM
+            # LTM...
             LTM = True if (g_steamMode or g_zijiMode) else enableMod(u"Lindbrook's Texture Map ({})".format(g_versions['LTM']))
-
-            # NBRT+...
-            if not LTM:
-                if g_platform == 'win' or g_platform == 'cyg':
-                    NBRT = True if (g_steamMode or g_zijiMode) else enableMod(u"NBRT+ ({})".format(g_versions['NBRT']))
-                else:
-                    NBRT = False if g_steamMode else enableModDefaultNo(u"NBRT+ ({})".format(g_versions['NBRT']))
 
         VIET = (VIETtraits or VIETevents)
         HIP = VIETevents  # HIP_Common (Isis, e_hip, our event picture stash, etc.)
@@ -1172,25 +1163,13 @@ def main():
             pushFolder("ARKOpack_Armoiries", targetFolder)
             g_dbg.pop()
 
-        if NBRT:
-            g_dbg.push("merge(NBRT)")
-            moduleOutput.append("NBRT+ (%s)\n" % g_versions['NBRT'])
-            pushFolder("NBRT+", targetFolder)
-            if SWMH and (g_platform == 'win' or g_platform == 'cyg') and False:  # Disabled for SWMH EE testing
-                pushFolder("NBRT+SWMH", targetFolder)
-            if ARKOCoA:
-                pushFolder("NBRT+ARKO", targetFolder)
-            if not SWMH or True:  # Enabled for SWMH EE testing
-                popFile('gfx/FX/pdxmap.fxh', targetFolder)  # Z: 2.2 compatch for NBRT+ Light (and Mac/Linux compatch)
-            g_dbg.pop()
-
         if LTM:
             g_dbg.push("merge(LTM)")
             moduleOutput.append("LTM (%s)\n" % g_versions['LTM'])
             if SWMH:
-                pushFolder("LTM-swmh", targetFolder)
+                pushFolder("LTM+SWMH", targetFolder)
             else:
-                pushFolder("LTM-vanilla", targetFolder)
+                pushFolder("LTM+Vanilla", targetFolder)
             g_dbg.pop()
 
         if VIETtraits:
