@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 3, 'patch': 2,
+g_version = {'major': 2, 'minor': 3, 'patch': 4,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -235,23 +235,23 @@ def isFileQuickUnwrapped(path):
 
 
 def isYes(answer):
-    yesSet = {'fr': ('', 'o', 'oui'),
-              'es': ('', 's', 'si'),
-              'en': ('', 'y', 'yes')}
+    yesSet = {'fr': ('', 'o', 'oui', 'ou', 'oi', 'y', 'yes', 'ye', 'es'),
+              'es': ('', 's', 'si', 'y', 'yes', 'ye', 'es'),
+              'en': ('', 'y', 'yes', 'ye', 'es')}
     return answer in yesSet[g_language]
 
 
 def isYesDefaultNo(answer):
-    yesSet = {'fr': ('o', 'oui'),
-              'es': ('s', 'si'),
-              'en': ('y', 'yes')}
+    yesSet = {'fr': ('o', 'oui', 'ou', 'oi', 'y', 'yes', 'ye', 'es'),
+              'es': ('s', 'si', 'y', 'yes', 'ye', 'es'),
+              'en': ('y', 'yes', 'ye', 'es')}
     return answer in yesSet[g_language]
 
 
 def promptUser(prompt, lc=True):
     sys.stdout.write(prompt + u' ')
     sys.stdout.flush()
-    response = sys.stdin.readline().strip()  # TODO: broken if diff locales use non-ASCII chars in response
+    response = sys.stdin.readline().strip().strip("\"'").strip()
     return response.lower() if lc else response
 
 
@@ -1170,6 +1170,8 @@ def main():
                 pushFolder("LTM+SWMH", targetFolder)
             else:
                 pushFolder("LTM+Vanilla", targetFolder)
+            if ARKOCoA:
+                pushFolder("ArkoCoA+LTM", targetFolder)
             g_dbg.pop()
 
         if VIETtraits:
