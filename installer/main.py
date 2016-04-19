@@ -22,14 +22,15 @@ def initLocalisation():
                 {
                     'fr': u"Cette version de Historical Immersion Project date du {}.\n"
                           u"Taper 'o' ou 'oui' pour valider, ou laisser le champ vierge. Toute autre\n"
-                          u"réponse sera interpretée comme négative.\n"
+                          u"réponse sera interpretée comme négative.\n\n"
                           u"Pour abandonner à tout moment l'installation, appuyer sur Ctrl+C.\n",
                     'es': u"Esta vercion de Historical Immersion Project fecha del {}.\n"
                           u"Escribe 's' o 'si' para aceptar, o deja el campo en blanco. Cualquier otro\n"
-                          u"caso sera considerado un 'no'.\n",
+                          u"caso sera considerado un 'no'.\n\n"
+                          u"Con el fin de abortar la instalación, presione Ctrl+C.\n",
                     'en': u"\nHIP release version: {}\n\n"
                           u"All prompts require a yes/no answer. The default answer for any particular\n"
-                          u"prompt is shown in brackets directly following it (e.g, '[yes]' or '[no]').\n"
+                          u"prompt is shown in brackets directly following it (e.g., '[yes]' or '[no]').\n"
                           u"To answer yes, enter 'y' or 'yes'. To answer no, enter 'n' or 'no'. For the\n"
                           u"default, simply hit ENTER.\n\n"
                           u"If at any time you wish to abort the installation, press Ctrl+C.\n",
@@ -232,6 +233,16 @@ def isFileWanted(path):
 def isFileQuickUnwrapped(path):
     _, extension = os.path.splitext(path)
     return extension.lower() in ['.dds', '.tga']
+
+
+def canonicalYes():
+    yes = {'fr': 'oui', 'es': 'si', 'en': 'yes'}
+    return yes[g_language]
+
+
+def canonicalNo():
+    no = {'fr': 'non', 'es': 'no', 'en': 'no'}
+    return no[g_language]
 
 
 def isYes(answer):
@@ -630,9 +641,8 @@ def getInstallOptions():
     g_defaultFolder = 'Historical Immersion Project'
     targetFolder = ''
 
-    # FIXME: `or not g_betaMode` is only for the EMF 4 Beta Installer
     useCustomFolder = False if (g_steamMode or g_zijiMode) else \
-         isYesDefaultNo(promptUser(u'Do you want to install to a custom folder / mod name? [no]'))
+         isYesDefaultNo(promptUser(u'Do you want to install to a custom folder / mod name? [{}]'.format(canonicalNo())))
 
     if useCustomFolder:
         # Note that we use the case-preserving form of promptUser (also determines name in launcher)
@@ -898,6 +908,7 @@ def main():
         swmhSelect = '--swmh' in sys.argv[1:]
         sedSelect = '--sed' in sys.argv[1:]
         emfSelect = '--emf' in sys.argv[1:]
+        ltmSelect = '--ltm' in sys.argv[1:]
 
         # Horrible hack upon hacks (command-line selectors should be way more powerful and require far less code,
         # but repurposing g_steamMode to mean "non-interactive" when one of --swmh or --sed is used... well, it's sick.
@@ -977,6 +988,9 @@ def main():
             batchMode = True
         if emfSelect:
             EMF = True
+            batchMode = True
+        if ltmSelect:
+            LTM = True
             batchMode = True
         if zijiSelect:
             EMF = True
