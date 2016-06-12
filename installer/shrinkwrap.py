@@ -5,7 +5,7 @@ import sys
 import time
 import argparse
 
-default_module_folder = '/cygdrive/d/ck/mod/modules'
+default_module_folder = '/cygdrive/c/Users/ziji/Documents/Paradox Interactive/Crusader Kings II/mod/modules'
 shrinkwrap_sentinel_file = 'no_shrinkwrap.txt'
 k = bytearray(br'"The enemy of a good plan is the dream of a perfect plan" - Carl von Clausewitz')
 header_len = 1 << 12

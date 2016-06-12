@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 3, 'patch': 4,
+g_version = {'major': 2, 'minor': 3, 'patch': 5,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -909,6 +909,15 @@ def main():
         sedSelect = '--sed' in sys.argv[1:]
         emfSelect = '--emf' in sys.argv[1:]
         ltmSelect = '--ltm' in sys.argv[1:]
+        vietSelect = '--viet' in sys.argv[1:]
+        arkocSelect = '--coa' in sys.argv[1:]
+        arkoiSelect = '--interface' in sys.argv[1:]
+        if '--arko' in sys.argv[1:]:
+            arkocSelect = True
+            arkoiSelect = True
+        cprSelect = '--cpr' in sys.argv[1:]
+        aksSelect = '--aks' in sys.argv[1:]
+        uswmhSelect = '--mini' in sys.argv[1:]
 
         # Horrible hack upon hacks (command-line selectors should be way more powerful and require far less code,
         # but repurposing g_steamMode to mean "non-interactive" when one of --swmh or --sed is used... well, it's sick.
@@ -977,21 +986,31 @@ def main():
         SED = False
         LTM = False
 
-        batchMode = False
+        batchMode = sedSelect or swmhSelect or emfSelect or ltmSelect or vietSelect or arkocSelect or arkoiSelect or cprSelect or aksSelect or uswmhSelect or zijiSelect
 
         if sedSelect:
             SED = True
             SWMH = True
-            batchMode = True
         if swmhSelect:
             SWMH = True
-            batchMode = True
         if emfSelect:
             EMF = True
-            batchMode = True
         if ltmSelect:
             LTM = True
-            batchMode = True
+        if vietSelect:
+            VIETevents = True
+        if arkocSelect:
+            ARKOCoA = True
+        if arkoiSelect:
+            ARKOInt = True
+        if cprSelect:
+            CPR = True
+            CPRfaces = True
+        if aksSelect:
+            ArumbaKS = True
+        if uswmhSelect:
+            uSWMH = True
+            SWMH = True
         if zijiSelect:
             EMF = True
             ARKOCoA = True
@@ -1001,7 +1020,6 @@ def main():
             SWMH = True
             uSWMH = True
             LTM = True
-            batchMode = True
 
         if not batchMode:
             # EMF...
