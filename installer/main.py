@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 3, 'patch': 5,
+g_version = {'major': 2, 'minor': 3, 'patch': 6,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -1177,18 +1177,6 @@ def main():
             pushFolder("MiniSWMH", targetFolder)
             g_dbg.pop()
 
-        if SED:
-            g_dbg.push("merge(SED)")
-            moduleOutput.append("SED: English Localisation for SWMH (%s)\n" % g_versions['SED'])
-            pushFolder("SED2", targetFolder)
-            if EMF:
-                pushFolder("SED2+EMF", targetFolder)
-            if VIET:
-                pushFolder("SED2+VIET", targetFolder)
-            if uSWMH:
-                pushFolder("SED2+MiniSWMH", targetFolder)
-            g_dbg.pop()
-
         if ARKOCoA:
             g_dbg.push("merge('ARKO CoA')")
             moduleOutput.append("ARKO Armoiries (%s)\n" % g_versions['ARKOC'])
@@ -1232,6 +1220,20 @@ def main():
             if ARKOInt:
                 pushFolder("EMF+ArkoInterface", targetFolder)
 
+            g_dbg.pop()
+
+        if SED:
+            g_dbg.push("merge(SED)")
+            moduleOutput.append("SED: English Localisation for SWMH (%s)\n" % g_versions['SED'])
+            pushFolder("SED2", targetFolder)
+            if VIET:
+                pushFolder("SED2+VIET", targetFolder)
+            if uSWMH:
+                pushFolder("SED2+MiniSWMH", targetFolder)
+            if EMF:
+                pushFolder("SED2+EMF", targetFolder)
+                if uSWMH:
+                    pushFolder("SED2+EMF+MiniSWMH", targetFolder)
             g_dbg.pop()
 
         if CPR:
