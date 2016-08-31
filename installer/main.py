@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 4, 'patch': 0,
+g_version = {'major': 2, 'minor': 4, 'patch': 1,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -1033,8 +1033,8 @@ def main():
             #    else enableMod(u"ARKOpack Interface ({})".format(g_versions['ARKOI']))
 
             # Arumba's Keyboard Shortcuts...
-            #ArumbaKS = True if (g_steamMode or g_zijiMode) \
-            #    else enableMod(u"Arumba's Keyboard Shortcuts ({})".format(g_versions['ArumbaKS']))
+            ArumbaKS = True if (g_steamMode or g_zijiMode) \
+                else enableMod(u"Arumba's Keyboard Shortcuts ({})".format(g_versions['ArumbaKS']))
 
             # CPRplus...
             if not g_steamMode:
