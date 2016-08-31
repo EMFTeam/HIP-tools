@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 3, 'patch': 5,
+g_version = {'major': 2, 'minor': 4, 'patch': 0,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -1026,15 +1026,15 @@ def main():
             EMF = True if g_steamMode else enableMod(u"EMF ({})".format(g_versions['EMF']))
 
             # ARKOpack...
-            ARKOCoA = True if g_steamMode \
-                else enableMod(u"ARKOpack Armoiries [CoA] ({})".format(g_versions['ARKOC']))
+            #ARKOCoA = True if g_steamMode \
+            #    else enableMod(u"ARKOpack Armoiries [CoA] ({})".format(g_versions['ARKOC']))
 
-            ARKOInt = False if (g_steamMode or g_zijiMode) \
-                else enableMod(u"ARKOpack Interface ({})".format(g_versions['ARKOI']))
+            #ARKOInt = False if (g_steamMode or g_zijiMode) \
+            #    else enableMod(u"ARKOpack Interface ({})".format(g_versions['ARKOI']))
 
             # Arumba's Keyboard Shortcuts...
-            ArumbaKS = True if (g_steamMode or g_zijiMode) \
-                else enableMod(u"Arumba's Keyboard Shortcuts ({})".format(g_versions['ArumbaKS']))
+            #ArumbaKS = True if (g_steamMode or g_zijiMode) \
+            #    else enableMod(u"Arumba's Keyboard Shortcuts ({})".format(g_versions['ArumbaKS']))
 
             # CPRplus...
             if not g_steamMode:
