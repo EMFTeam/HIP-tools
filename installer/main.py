@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 4, 'patch': 1,
+g_version = {'major': 2, 'minor': 4, 'patch': 2,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -803,7 +803,8 @@ cprReqDLCNames = {'dlc/dlc002.dlc': 'Mongol Face Pack',
                   'dlc/dlc052.dlc': 'Iberian Portraits',
                   'dlc/dlc057.dlc': 'Cuman Portraits',
                   'dlc/dlc063.dlc': 'Conclave Content Pack',
-                  'dlc/dlc065.dlc': 'South Indian Portraits'}
+                  'dlc/dlc065.dlc': 'South Indian Portraits',
+                  'dlc/dlc067.dlc': "Reaper's Due Content Pack"}
 
 
 # Determine whether the DLCs required for CPR are installed in the active game folder.
@@ -1026,8 +1027,8 @@ def main():
             EMF = True if g_steamMode else enableMod(u"EMF ({})".format(g_versions['EMF']))
 
             # ARKOpack...
-            #ARKOCoA = True if g_steamMode \
-            #    else enableMod(u"ARKOpack Armoiries [CoA] ({})".format(g_versions['ARKOC']))
+            ARKOCoA = True if g_steamMode \
+                else enableMod(u"ARKOpack Armoiries [CoA] ({})".format(g_versions['ARKOC']))
 
             #ARKOInt = False if (g_steamMode or g_zijiMode) \
             #    else enableMod(u"ARKOpack Interface ({})".format(g_versions['ARKOI']))
