@@ -418,7 +418,7 @@ def popTree(d, targetFolder):
 def stripPathHead(path):
     i = path.find('/')
     if i == -1:
-        i = path.find(r'\\')
+        i = path.find('\\\\')
     if i == -1:
         i = path.find('\\')
     if i == -1:
@@ -437,21 +437,28 @@ def unwrapBuffer(buf, length):
 
 
 def compileTargetFile(src, dst, wrap):
+    global g_modified
     hash_md5 = hashlib.md5()
     length = os.path.getsize(src)
     buf = bytearray(length)
-    with open(src, 'rb') as fsrc, open(dst, 'wb') as fdst:
+    with open(src, 'rb') as fsrc:
         fsrc.readinto(buf)
-        if wrap != WRAP_NONE:
-            if wrap == WRAP_QUICK:
-                length = min(1 << 12, length)
-            unwrapBuffer(buf, length)
-        hash_md5.update(buf)
-        fdst.write(buf)
-    if g_move:
-        os.remove(src)
-    md5 = hash_md5.hexdigest()
-    return md5
+    if wrap != WRAP_NONE:
+        if wrap == WRAP_QUICK:
+            length = min(1 << 12, length)
+        unwrapBuffer(buf, length)
+    hash_md5.update(buf)
+    if g_move and wrap == WRAP_NONE:
+        shutil.move(src, dst)
+    else:
+        with open(dst, 'wb') as fdst:
+            fdst.write(buf)
+    cksum = hash_md5.hexdigest()
+
+    if g_manifest.get(src) != cksum:
+        if g_manifest:
+            g_dbg.trace("checksum_failed('{}')".format(src))
+        g_modified = True
 
 
 def compileTarget(mapFilename):
@@ -473,8 +480,9 @@ def compileTarget(mapFilename):
             if src.isDir:
                 mkTree(dstPath)
             else:
-                md5 = compileTargetFile(src.srcPath, dstPath, src.wrap)
-                # TODO: do something with the hash
+                compileTargetFile(src.srcPath, dstPath, src.wrap)
+
+
 
 def detectPlatform():
     p = sys.platform
@@ -592,6 +600,19 @@ def printVersionEnvInfo():
     print(u"Python Runtime Version:")
     print(unicode(sys.version))
     return
+
+
+def getManifest():
+    global g_manifest
+    g_manifest = {}
+    try:
+        with open("modules/release_manifest.txt") as f:
+            for line in f:
+                relpath, cksum = line.split(" // ")
+                path = os.path.join("modules", path)
+                g_manifest[path] = cksum
+    except IOError:
+        g_dbg.push("manifest(NOT_FOUND)")
 
 
 def getPkgVersions(modDirs):
@@ -758,7 +779,7 @@ def readSteamLibraryFolders(dbPath):
             line = line.rstrip('\r\n')
             m = p_library.match(line)
             if m:
-                p = m.group(1).replace(r'\\', '/')
+                p = m.group(1).replace('\\\\', '/')
                 if g_platform == 'cyg':
                     i = p.find(':/')
                     if i == 1:
@@ -951,6 +972,11 @@ def main():
 
         if not os.path.isdir('modules'):
             raise InstallerPackageNotFoundError()
+
+        global g_modified
+        g_modified = False
+
+        getManifest()
 
         # These are the modules/ directories from which to grab each mod's version.txt:
         modDirs = {'pkg': '',  # Installer package version
@@ -1268,6 +1294,10 @@ def main():
 
         # do all the actual compilation (file I/O)
         compileTarget(mapFilename)
+
+        if g_modified:
+            moduleOutput.append("\nWARNING: Some installed files do not match "
+                                "their released version.\n")
 
         if g_move:
             rmTree("modules")  # Cleanup
