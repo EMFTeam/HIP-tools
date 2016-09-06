@@ -941,7 +941,6 @@ def main():
 
         # These are the modules/ directories from which to grab each mod's version.txt:
         modDirs = {'pkg': '',  # Installer package version
-                   'VIET':     'VIET_Assets',
                    'SWMH':     'SWMH',
                    'CPR':      'CPRplus',
                    'EMF':      'EMF',
@@ -969,8 +968,6 @@ def main():
         ArumbaKS = False
         CPR = False
         CPRfaces = False
-        VIETevents = False
-        VIETtraits = False
         SWMH = False
         uSWMH = False
         SED = False
@@ -987,8 +984,6 @@ def main():
             EMF = True
         if ltmSelect:
             LTM = True
-        if vietSelect:
-            VIETevents = True
         if arkocSelect:
             ARKOCoA = True
         if arkoiSelect:
@@ -1051,19 +1046,9 @@ def main():
                     CPR = enableMod(u"CPRplus ({})".format(g_versions['CPR']))
                     CPRfaces = False if not CPR else enableMod(u"CPRplus's custom western & muslim facial art")
 
-            ## VIET ...
-            if g_steamMode:
-                VIETevents = True
-            elif not g_zijiMode:
-                VIETevents = enableModDefaultNo(u"VIET Events ({})".format(g_versions['VIET']), compat=True)
-
-            VIETtraits = False if EMF else enableModDefaultNo(u"VIET Traits ({})".format(g_versions['VIET']), compat=True)
-
             # SWMH...
             if (not g_steamMode) and not g_zijiMode:
-                print(u"\nNOTE: The SWMH map will never include the 769 bookmark. Also, SWMH is a highly\n"
-                      u"detailed, dense map, which is known to negatively impact game performance.\n"
-                      u"\nNEW: MiniSWMH is an SWMH sub-mod which significantly improves performance by\n"
+                print(u"\nNEW: MiniSWMH is an SWMH sub-mod which significantly improves performance by\n"
                       u"deactivating India and some parts of Africa on the map. If you'd like to try\n"
                       u"MiniSWMH, you must select SWMH below in order to be prompted about it afterward.\n"
                       u"\nIf you want the vanilla map instead, simply type 'n' or 'no' for SWMH below:\n")
@@ -1082,13 +1067,9 @@ def main():
             # LTM...
             LTM = True if (g_steamMode or g_zijiMode) else enableMod(u"Lindbrook's Texture Map ({})".format(g_versions['LTM']))
 
-        VIET = (VIETtraits or VIETevents)
-        HIP = VIETevents  # HIP_Common (Isis, e_hip, our event picture stash, etc.)
-        # Converter = EMF and not SWMH  # Vanilla EUIV Converter
-
-        euFolderBase = '../eu4_export/mod'
-        euSubfolder = 'HIP_Converter'
-        euFolder = euFolderBase + '/' + euSubfolder
+#        euFolderBase = '../eu4_export/mod'
+#        euSubfolder = 'HIP_Converter'
+#        euFolder = euFolderBase + '/' + euSubfolder
 
         # Prepare for installation...
 
@@ -1097,7 +1078,7 @@ def main():
         else:
             modBasename = 'HIP'
 
-        if EMF or ARKOCoA or ARKOInt or CPR or VIET or SWMH:
+        if EMF or ARKOCoA or ARKOInt or CPR or SWMH:
             modUserDir = modBasename
         else:
             modUserDir = None
@@ -1139,15 +1120,7 @@ def main():
             pushFolder("ARKOpack_Interface", targetFolder)
             if ArumbaKS:
                 pushFolder('ArkoInterface+AKS', targetFolder)
-            if HIP:
-                popTree('gfx/event_pictures', targetFolder)
             g_dbg.pop()
-
-        if VIET:
-            pushFolder("VIET_Assets", targetFolder)
-
-        if HIP:
-            pushFolder("HIP_Common", targetFolder)
 
         if SWMH:
             g_dbg.push("merge(SWMH)")
@@ -1173,8 +1146,6 @@ def main():
             pushFolder("SED2", targetFolder)
             if EMF:
                 pushFolder("SED2+EMF", targetFolder)
-            if VIET:
-                pushFolder("SED2+VIET", targetFolder)
             if uSWMH:
                 pushFolder("SED2+MiniSWMH", targetFolder)
             g_dbg.pop()
@@ -1196,54 +1167,31 @@ def main():
                 pushFolder("ArkoCoA+LTM", targetFolder)
             g_dbg.pop()
 
-        if VIETtraits:
-            g_dbg.push("merge('VIET Traits')")
-            moduleOutput.append("VIET Traits (%s)\n" % g_versions['VIET'])
-            pushFolder("VIET_Traits", targetFolder)
-            g_dbg.pop()
-
-        if VIETevents:
-            g_dbg.push("merge('VIET Events')")
-            moduleOutput.append("VIET Events (%s)\n" % g_versions['VIET'])
-            pushFolder("VIET_Events", targetFolder)
-            g_dbg.pop()
-
         if EMF:
             g_dbg.push('merge(EMF)')
             pushFolder('EMF', targetFolder)
-
             if SWMH:
                 pushFolder('EMF+SWMH', targetFolder)
                 if uSWMH:
                     pushFolder('EMF+MiniSWMH', targetFolder)
             else:
                 pushFolder('EMF+Vanilla', targetFolder)
-
             if ARKOInt:
                 pushFolder("EMF+ArkoInterface", targetFolder)
-
             g_dbg.pop()
 
         if CPR:
             g_dbg.push('merge(CPR)')
             moduleOutput.append("CPRplus (%s)\n" % g_versions['CPR'])
-
             wrappedPaths = set(['gfx'])
             pushFolder('CPRplus', targetFolder, wrapPaths=wrappedPaths)
-
             if CPRfaces:
                 pushFolder('CPRplus-compatch/CustomFaces', targetFolder)
-
             if SWMH:
                 pushFolder('CPRplus-compatch/SWMH', targetFolder)
             elif EMF:
                 pushFolder('CPRplus-compatch/EMF', targetFolder)
-
             g_dbg.pop()
-
-#        if Converter:
-#            pushFolder("Converter/Vanilla", targetFolder)
-#            pushFolder("Converter/Extra", euFolder)
 
         g_dbg.pop("merge_done")
 
