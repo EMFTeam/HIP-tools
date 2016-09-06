@@ -4,6 +4,7 @@ import os
 import sys
 import time
 import argparse
+import hashlib
 
 default_module_folder = '/cygdrive/c/Users/ziji/Documents/Paradox Interactive/Crusader Kings II/mod/modules'
 shrinkwrap_sentinel_file = 'no_shrinkwrap.txt'
@@ -25,7 +26,6 @@ def is_binary(path):
     _, extension = os.path.splitext(path)
     return extension.lower() in ['.dds', '.tga']
 
-
 def encrypt(buf, length):
     kN = len(k)
     for i in xrange(length):
@@ -44,6 +44,13 @@ def encrypt_file(path, header_only=False):
         fdst.write(buf)
     os.unlink(path)
     os.rename(tmp_path, path)
+
+
+def cksum_file(fname):
+    cksum = hashlib.md5()
+    with open(fname, "rb") as f:
+        cksum.update(f.read())
+    return cksum.hexdigest()
 
 
 def get_args():
@@ -80,7 +87,14 @@ n_removed_bytes = 0
 n_files = 0
 n_bytes = 0
 
+version_path = os.path.join(module_folder, 'version.txt')
+manifest_path = os.path.join(module_folder, 'release_manifest.txt')
+sentinel_path = os.path.join(shrinkwrap_folder, shrinkwrap_sentinel_file)
+
 # Clear unwanted files from full distribution
+
+if os.path.exists(manifest_path):
+    os.unlink(manifest_path)
 
 for root, dirs, files in os.walk(module_folder):
     for i in files:
@@ -108,7 +122,6 @@ final_MB = n_bytes / 1000 / 1000
 # Now, onward to encryption of real_shrinkwrap_folder...
 
 # We will check for the encryption sentinel first
-sentinel_path = os.path.join(shrinkwrap_folder, shrinkwrap_sentinel_file)
 
 if not os.path.exists(sentinel_path):
     sys.stderr.write('already shrinkwrapped: {}\n'.format(shrinkwrap_folder))
@@ -121,6 +134,25 @@ else:
     end_wrap_time = time.time()
     os.unlink(sentinel_path)
     print("shrinkwrap time: %0.2fsec" % (end_wrap_time - start_wrap_time))
+
+# Now that we've shrinkwrapped, build a checksum manifest file
+start_cksum_time = time.time()
+path_cksum_map = {}
+
+for root, dirs, files in os.walk(module_folder):
+    for i in files:
+        real_path = os.path.join(root, i)
+        if real_path == version_path:  # Don't checksum the module pack version.txt
+            continue
+        virt_path = os.path.relpath(real_path, module_folder)
+        path_cksum_map[virt_path] = cksum_file(real_path)
+
+with open(manifest_path, 'wb') as f:
+    for p in sorted(path_cksum_map):
+        f.write('{} // {}\n'.format(p, path_cksum_map[p]))
+
+end_cksum_time = time.time()
+print("checksum time:   %0.2fsec" % (end_cksum_time - start_cksum_time))
 
 print('final package:   %d files (%dMB)' % (n_files, final_MB))
 
