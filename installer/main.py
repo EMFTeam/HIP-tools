@@ -443,11 +443,11 @@ def compileTargetFile(src, dst, wrap):
     buf = bytearray(length)
     with open(src, 'rb') as fsrc:
         fsrc.readinto(buf)
+    hash_md5.update(buf)
     if wrap != WRAP_NONE:
         if wrap == WRAP_QUICK:
             length = min(1 << 12, length)
         unwrapBuffer(buf, length)
-    hash_md5.update(buf)
     if g_move and wrap == WRAP_NONE:
         shutil.move(src, dst)
     else:
@@ -455,6 +455,8 @@ def compileTargetFile(src, dst, wrap):
             fdst.write(buf)
     cksum = hash_md5.hexdigest()
 
+    src = os.path.normpath(src)
+    src = os.path.normcase(src)
     if g_manifest.get(src) != cksum:
         if g_manifest:
             g_dbg.trace("checksum_failed('{}')".format(src))
@@ -610,6 +612,8 @@ def getManifest():
             for line in f:
                 relpath, cksum = line.split(" // ")
                 path = os.path.join("modules", path)
+                path = os.path.normpath(path)
+                path = os.path.normcase(path)
                 g_manifest[path] = cksum
     except IOError:
         g_dbg.push("manifest(NOT_FOUND)")
