@@ -2,6 +2,7 @@
 # -*- coding: cp1252 -*-
 # -*- python-indent-offset: 4 -*-
 
+import hashlib
 import os
 import sys
 import shutil
@@ -435,15 +436,22 @@ def unwrapBuffer(buf, length):
         buf[i] ^= g_k[i % kN]
 
 
-def unwrapToFile(src, dst, quickMode=False):
+def compileTargetFile(src, dst, wrap):
+    hash_md5 = hashlib.md5()
     length = os.path.getsize(src)
     buf = bytearray(length)
     with open(src, 'rb') as fsrc, open(dst, 'wb') as fdst:
         fsrc.readinto(buf)
-        if quickMode:
-            length = min(1 << 12, length)
-        unwrapBuffer(buf, length)
+        if wrap != WRAP_NONE:
+            if wrap == WRAP_QUICK:
+                length = min(1 << 12, length)
+            unwrapBuffer(buf, length)
+        hash_md5.update(buf)
         fdst.write(buf)
+    if g_move:
+        os.remove(src)
+    md5 = hash_md5.hexdigest()
+    return md5
 
 
 def compileTarget(mapFilename):
@@ -464,15 +472,9 @@ def compileTarget(mapFilename):
 
             if src.isDir:
                 mkTree(dstPath)
-            elif g_move and src.wrap == WRAP_NONE:
-                shutil.move(src.srcPath, dstPath)
-            elif src.wrap == WRAP_NONE:
-                shutil.copy(src.srcPath, dstPath)
-            elif src.wrap == WRAP_QUICK:
-                unwrapToFile(src.srcPath, dstPath, quickMode=True)
-            elif src.wrap == WRAP_TOTAL:
-                unwrapToFile(src.srcPath, dstPath)
-
+            else:
+                md5 = compileTargetFile(src.srcPath, dstPath, src.wrap)
+                # TODO: do something with the hash
 
 def detectPlatform():
     p = sys.platform
