@@ -576,10 +576,8 @@ def getManifest():
         with open("modules/release_manifest.txt") as f:
             for line in f:
                 relpath, cksum = line.split(" // ")
-                path = os.path.join("modules", path)
-                path = os.path.normpath(path)
-                path = os.path.normcase(path)
-                g_manifest[path] = cksum
+                path = os.path.join("modules", os.path.normpath(relpath))
+                g_manifest[path] = cksum.strip()
     except IOError:
         g_dbg.push("manifest(NOT_FOUND)")
 
@@ -894,7 +892,6 @@ def main():
         sedSelect = '--sed' in sys.argv[1:]
         emfSelect = '--emf' in sys.argv[1:]
         ltmSelect = '--ltm' in sys.argv[1:]
-        vietSelect = '--viet' in sys.argv[1:]
         arkocSelect = '--coa' in sys.argv[1:]
         arkoiSelect = '--interface' in sys.argv[1:]
         if '--arko' in sys.argv[1:]:
