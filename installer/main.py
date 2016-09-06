@@ -78,40 +78,6 @@ def initLocalisation():
                     'es': u"> Compilar ...",
                     'en': u"> Compiling ...",
                 },
-            'SWMH_NATIVE':
-                {
-                    'fr': u"SWMH avec les noms culturels locaux, plutôt qu'en anglais ou francisés",
-                    'es': u"SWMH con localizacion nativa para culturas y titulos, en lugar de ingles",
-                    'en': u"SWMH with native localisation for cultures/titles, rather than English",
-                },
-            'MOVE_VS_COPY':
-                {
-                    'fr': u"L'installeur DEPLACE ou COPIE les fichiers d'installation. La\n"
-                          u"COPIE permet l'installation ultérieure de differents combos de\n"
-                          u"mods à partir de l'installeur de base. Notez que DEPLACER est\n"
-                          u"plus rapide que COPIER.\n\n"
-                          u"Voulez-vous donc que les fichiers soient DEPLACES plutôt que\n"
-                          u"COPIES ? [oui]",
-                    'es': u"Mover los archivos en lugar de copiarlos es mucho mas rapido, pero hace\n"
-                          u"que la instalacion de varias copias sea mas complicada.\n\n"
-                          u"Quieres que los archivos de los modulos se muevan en lugar de copiarse? [si]",
-                    'en': u"The installer can either directly MOVE the module package's data files\n"
-                          u"into your installation folder, deleting the package in the process, or\n"
-                          u"it can preserve the installation package by COPYING the files into the\n"
-                          u"installation folder. Moving is faster than copying, but copying allows\n"
-                          u"you to reinstall at will (e.g., with different module combinations).\n\n"
-                          u"Would you like to MOVE rather than COPY? [yes]",
-                },
-            'MOVE_CONFIRM':
-                {
-                    'fr': u"Etes-vous sûr ?\n"
-                          u"Voulez-vous supprimer les fichiers d'installation une fois l'opération terminée ? "
-                          u"[oui]",
-                    'es': u"?Esta seguro?\n"
-                          u"?Quieres eliminar el paquete despuès de la instalaciòn? [si]",
-                    'en': u"\nAre you sure?\n"
-                          u"Do you want to delete the package after installation? [yes]",
-                },
             'TARGET_FOLDER':
                 {
                     'fr': u"Installer le mod dans un répertoire existant supprimera ce répertoire.\n"
@@ -441,22 +407,21 @@ def compileTargetFile(src, dst, wrap):
     hash_md5 = hashlib.md5()
     length = os.path.getsize(src)
     buf = bytearray(length)
+
     with open(src, 'rb') as fsrc:
         fsrc.readinto(buf)
+
     hash_md5.update(buf)
+    cksum = hash_md5.hexdigest()
+
     if wrap != WRAP_NONE:
         if wrap == WRAP_QUICK:
             length = min(1 << 12, length)
         unwrapBuffer(buf, length)
-    if g_move and wrap == WRAP_NONE:
-        shutil.move(src, dst)
     else:
         with open(dst, 'wb') as fdst:
             fdst.write(buf)
-    cksum = hash_md5.hexdigest()
 
-    src = os.path.normpath(src)
-    src = os.path.normcase(src)
     if g_manifest.get(src) != cksum:
         if g_manifest:
             g_dbg.trace("checksum_failed('{}')".format(src))
@@ -654,14 +619,6 @@ def getInstallOptions():
     # Show HIP installer version & explain interactive prompting
     if not (g_steamMode or g_zijiMode):
         print(localise('INTRO').format(g_versions['pkg']))
-
-    global g_move
-    #g_move = False if (g_steamMode or g_zijiMode) else isYes(promptUser(localise('MOVE_VS_COPY')))
-    g_move = False
-
-    if g_move:
-        g_move = isYes(promptUser(localise('MOVE_CONFIRM')))
-    g_dbg.trace('move_instead_of_copy({})'.format(g_move))
 
     # Determine installation target folder...
     global g_defaultFolder
@@ -1302,9 +1259,6 @@ def main():
         if g_modified:
             moduleOutput.append("\nWARNING: Some installed files do not match "
                                 "their released version.\n")
-
-        if g_move:
-            rmTree("modules")  # Cleanup
 
         endTime = time.time()
         print(u'> Compiled (%0.1f sec).\n' % (endTime - startTime))
