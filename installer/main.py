@@ -404,23 +404,23 @@ def unwrapBuffer(buf, length):
 
 def compileTargetFile(src, dst, wrap):
     global g_modified
-    hash_md5 = hashlib.md5()
     length = os.path.getsize(src)
     buf = bytearray(length)
 
     with open(src, 'rb') as fsrc:
         fsrc.readinto(buf)
 
-    hash_md5.update(buf)
-    cksum = hash_md5.hexdigest()
-
     if wrap != WRAP_NONE:
         if wrap == WRAP_QUICK:
             length = min(1 << 12, length)
         unwrapBuffer(buf, length)
-    else:
-        with open(dst, 'wb') as fdst:
-            fdst.write(buf)
+
+    with open(dst, 'wb') as fdst:
+        fdst.write(buf)
+
+    hash_md5 = hashlib.md5()
+    hash_md5.update(buf)
+    cksum = hash_md5.hexdigest()
 
     if g_manifest.get(src) != cksum:
         if g_manifest:
@@ -970,7 +970,7 @@ def main():
         SED = False
         LTM = False
 
-        batchMode = sedSelect or swmhSelect or emfSelect or ltmSelect or vietSelect or arkocSelect or arkoiSelect or cprSelect or aksSelect or uswmhSelect or zijiSelect
+        batchMode = sedSelect or swmhSelect or emfSelect or ltmSelect or arkocSelect or arkoiSelect or cprSelect or aksSelect or uswmhSelect or zijiSelect
 
         if sedSelect:
             SED = True
