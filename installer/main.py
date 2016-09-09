@@ -11,7 +11,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 4, 'patch': 2,
+g_version = {'major': 2, 'minor': 5, 'patch': 0,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -1201,12 +1201,17 @@ def main():
         # do all the actual compilation (file I/O)
         compileTarget(mapFilename)
 
+        endTime = time.time()
+        print(u'> Compiled (%0.1f sec).\n' % (endTime - startTime))
+
         if g_modified:
             moduleOutput.append("\nWARNING: Some installed files do not match "
                                 "their released version.\n")
-
-        endTime = time.time()
-        print(u'> Compiled (%0.1f sec).\n' % (endTime - startTime))
+            print(u"\nWARNING: Some installed files do not match their released version! If you have\n"
+                  u"         not made any personal modifications or applied the EMF beta to the\n"
+                  u"         files in the modules/ folder, then this is a certain sign of corruption\n"
+                  u"         due to forgetting to delete the modules/ folder before unzipping this\n"
+                  u"         release into your mod folder.\n\n")
 
         if not g_steamMode:
             print(u"Mapping of all compiled mod files to their HIP source modules:")
