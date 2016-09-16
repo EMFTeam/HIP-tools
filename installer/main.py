@@ -410,6 +410,10 @@ def compileTargetFile(src, dst, wrap):
     with open(src, 'rb') as fsrc:
         fsrc.readinto(buf)
 
+    hash_md5 = hashlib.md5()
+    hash_md5.update(buf)
+    cksum = hash_md5.hexdigest()
+
     if wrap != WRAP_NONE:
         if wrap == WRAP_QUICK:
             length = min(1 << 12, length)
@@ -417,10 +421,6 @@ def compileTargetFile(src, dst, wrap):
 
     with open(dst, 'wb') as fdst:
         fdst.write(buf)
-
-    hash_md5 = hashlib.md5()
-    hash_md5.update(buf)
-    cksum = hash_md5.hexdigest()
 
     if g_manifest.get(src) != cksum:
         if g_manifest:
