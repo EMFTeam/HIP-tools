@@ -1004,11 +1004,11 @@ def main():
             LTM = True
 
         cprMissingDLCNames = detectCPRMissingDLCs()
-        if batchMode or g_steamMode:
+
+        if batchMode:
             CPR &= cprMissingDLCNames is not None and len(cprMissingDLCNames) == 0
             CPRfaces &= CPR
-
-        if not batchMode:
+        else:
             # EMF...
             EMF = True if g_steamMode else enableMod(u"EMF ({})".format(g_versions['EMF']))
 
