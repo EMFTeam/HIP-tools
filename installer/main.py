@@ -11,7 +11,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 5, 'patch': 0,
+g_version = {'major': 2, 'minor': 5, 'patch': 1,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -1003,6 +1003,11 @@ def main():
             uSWMH = True
             LTM = True
 
+        cprMissingDLCNames = detectCPRMissingDLCs()
+        if batchMode or g_steamMode:
+            CPR &= cprMissingDLCNames is not None and len(cprMissingDLCNames) == 0
+            CPRfaces &= CPR
+
         if not batchMode:
             # EMF...
             EMF = True if g_steamMode else enableMod(u"EMF ({})".format(g_versions['EMF']))
@@ -1020,8 +1025,6 @@ def main():
 
             # CPRplus...
             if not g_steamMode:
-                cprMissingDLCNames = detectCPRMissingDLCs()
-
                 if cprMissingDLCNames is None:  # Failed to auto-detect game folder
                     if not g_zijiMode:
                         print(u"\nOOPS: The HIP installer could NOT successfully determine your active CKII\n"
