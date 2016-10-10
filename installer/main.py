@@ -11,7 +11,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 5, 'patch': 1,
+g_version = {'major': 2, 'minor': 5, 'patch': 2,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -448,7 +448,6 @@ def compileTarget(mapFilename):
                 mkTree(dstPath)
             else:
                 compileTargetFile(src.srcPath, dstPath, src.wrap)
-
 
 
 def detectPlatform():
@@ -1016,8 +1015,8 @@ def main():
             ARKOCoA = True if g_steamMode \
                 else enableMod(u"ARKOpack Armoiries [CoA] ({})".format(g_versions['ARKOC']))
 
-            #ARKOInt = False if (g_steamMode or g_zijiMode) \
-            #    else enableMod(u"ARKOpack Interface ({})".format(g_versions['ARKOI']))
+            ARKOInt = False if (g_steamMode or g_zijiMode) \
+                else enableMod(u"ARKOpack Interface ({})".format(g_versions['ARKOI']))
 
             # Arumba's Keyboard Shortcuts...
             ArumbaKS = True if (g_steamMode or g_zijiMode) \
