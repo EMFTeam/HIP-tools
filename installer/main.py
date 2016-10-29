@@ -11,7 +11,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 5, 'patch': 2,
+g_version = {'major': 2, 'minor': 5, 'patch': 3,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -432,13 +432,12 @@ def compileTarget(mapFilename):
     print(localise('COMPILING'))
     sys.stdout.flush()
 
-    x = len(g_targetSrc) // 20
-
+    x = len(g_targetSrc) / 20.0
     with open(mapFilename, "w") as mapFile:
         for n, dstPath in enumerate(sorted(g_targetSrc)):
 
-            if n and x and n % x == 0:
-                print(u"{}%".format((n // x * 5)))
+            if n > 0 and x > 0 and (x < 1 or n % x < (n - 1) % x):
+                print(u"{}%".format(int(n / x) * 5))
                 sys.stdout.flush()
 
             src = g_targetSrc[dstPath]
