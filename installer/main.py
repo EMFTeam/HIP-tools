@@ -9,7 +9,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 6, 'patch': 0,
+g_version = {'major': 2, 'minor': 6, 'patch': 1,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -1023,7 +1023,7 @@ def main():
 
             # Arumba's Keyboard Shortcuts...
             ArumbaKS = True if (g_steamMode or g_zijiMode) \
-                else enableMod(u"Arumba's Keyboard Shortcuts ({})".format(g_versions['ArumbaKS']))
+                else enableMod(u"Arumba and Internal Tab Shortcuts ({})".format(g_versions['ArumbaKS']))
 
             # CPRplus...
             if not g_steamMode:
@@ -1111,7 +1111,7 @@ def main():
 
         if ArumbaKS:
             g_dbg.push('merge(ArumbaKS)')
-            moduleOutput.append("Arumba's Keyboard Shortcuts (%s)\n" % g_versions['ArumbaKS'])
+            moduleOutput.append("Arumba and Internal Tab Shortcuts (%s)\n" % g_versions['ArumbaKS'])
             pushFolder('ArumbaKS', targetFolder)
             g_dbg.pop()
 
@@ -1177,8 +1177,12 @@ def main():
                     pushFolder('EMF+MiniSWMH', targetFolder)
             else:
                 pushFolder('EMF+Vanilla', targetFolder)
+            if AKS:
+                pushFolder("EMF+AKS", targetFolder)
             if ARKOInt:
                 pushFolder("EMF+ArkoInterface", targetFolder)
+                if AKS:
+                    pushFolder("EMF+ArkoInterface+AKS", targetFolder)
             g_dbg.pop()
 
         if CPR:
