@@ -11,7 +11,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 5, 'patch': 3,
+g_version = {'major': 2, 'minor': 5, 'patch': 4,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -968,7 +968,8 @@ def main():
         SED = False
         LTM = False
 
-        batchMode = sedSelect or swmhSelect or emfSelect or ltmSelect or arkocSelect or arkoiSelect or cprSelect or aksSelect or uswmhSelect or zijiSelect
+        batchMode = sedSelect or swmhSelect or emfSelect or ltmSelect or arkocSelect or \
+                    arkoiSelect or cprSelect or aksSelect or uswmhSelect or zijiSelect
 
         if sedSelect:
             SED = True
@@ -1233,7 +1234,11 @@ def main():
 
         # Installation complete
         g_dbg.trace("install_done")
-        promptUser(localise('INSTALL_DONE'))
+
+        if batchMode:
+            print(u"DONE!")
+        else:
+            promptUser(localise('INSTALL_DONE'))
 
         return 0  # Return success code to OS
 
