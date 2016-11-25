@@ -34,7 +34,7 @@ my %traits = ();
 my $max_id = 0;
 
 for my $f (@files) {
-    open my $fh, '<', $f or croak "open: $!: $f";
+    open my $fh, '<:crlf', $f or croak "open: $!: $f";
 
     my $n_line = 0;
     my $n_traits = 0;
