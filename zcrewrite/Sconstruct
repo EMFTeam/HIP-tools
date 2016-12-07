@@ -1,9 +1,0 @@
-# -*- python -*-
-
-env = Environment()
-env.Append(CXXFLAGS="-Wall -Wextra -g -O0 --std=c++0x")
-env.Append(LIBS='pcrecpp')
-
-sources = ['main.cc', 'CHFile.cc', 'Rewritable.cc']
-
-env.Program('zcrewrite', sources)

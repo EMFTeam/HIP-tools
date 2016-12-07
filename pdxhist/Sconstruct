@@ -1,9 +1,0 @@
-# -*- python -*-
-
-env = Environment()
-env.Append(CXXFLAGS="-Wall -Wextra -Wno-unused-function -Wno-unused-parameter -g -O0")
-
-sources = ["parser.cc", "token.cc", "lexer.cc"]
-sources += env.CXXFile('scanner.ll')
-
-env.Program('parser', sources)
