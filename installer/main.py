@@ -1252,6 +1252,7 @@ def main():
         sys.stderr.write("\nFatal error: " + str(e))
         traceback.print_exc(file=sys.stderr)
         sys.stderr.write("Screenshot/copy this error and send it to the HIP team. Press ENTER to exit.")
+        sys.stdin.readline()
         sys.exit(255)
 
     # Special handling for specific installer-understood error types (all derive from InstallerException)
