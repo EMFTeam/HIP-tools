@@ -1,0 +1,47 @@
+#!/usr/bin/python3
+# -*- python-indent-offset: 4 -*-
+
+import sys
+import pwd
+import daemon
+import lockfile
+
+from pathlib import Path
+
+update_dir = Path("/var/www/hip.zijistark.com/hiphub")
+root_repo_dir = Path("/var/local/git")
+pidfile_path = Path('/var/run/hiphub.pid')
+daemon_username = "hiphub"
+
+repos = {
+    'SWMH-BETA': ['master', 'Timeline_Extension+Bookmark_BETA'],
+    'sed2': ['dev', 'timeline'],
+    'EMF': ['alpha', 'timeline'],
+    'MiniSWMH': ['master', 'timeline'],
+    'HIP-tools': ['master'],
+    'ck2utils': ['dev'],
+    'CPRplus': ['dev'],
+    'ARKOpack': ['master'],
+    'ArumbaKS': ['master'],
+    'LTM': ['master', 'dev']
+}
+
+
+
+def main():
+    context = daemon.DaemonContext()
+    context.working_directory = str(update_dir)
+    context.pidfile = lockfile.FileLock(str(pidfile_path))
+
+    pwent = pwd.getpwnam(daemon_username)
+
+    context.uid = pwent[2]
+    context.gid = pwent[3]
+
+    print("uid={},gid={}".format(context.uid, context.gid))
+
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
