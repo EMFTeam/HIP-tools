@@ -67,8 +67,7 @@ def git_run(args, retry=False):
         if cp.returncode == 0:
             return cp
         else:
-            logging.error('git failed:\n>command: {}\n>code: {}\n>stdout:\n{}\n>stderr:\n{}\n'
-                          .format(cp.args, cp.returncode, cp.stdout, cp.stderr))
+            logging.error('git failed:\n>command: {}\n>code: {}\n>error:\n{}\n'.format(cp.args, cp.returncode, cp.stderr))
 
             if not retry:
                 cp.check_returncode()  # will throw for us
@@ -145,6 +144,41 @@ def init_daemon():
         process_head_change(pn[0], pn[1], pn[2])  # FIXME: is there better syntax here?
 
 
+def run_daemon():
+    last_mtime = {}
+
+    # initialize file mtimes
+    for r in g_repos:
+        for b in g_repos[r]:
+            h = '{}:{}'.format(r, b)
+            p = g_webhook_dir / h
+            if p.exists():
+                last_mtime[h] = p.stat().st_mtime
+    
+    while True:
+        time.sleep(1)  # one-second polling interval
+        changed_heads = []
+        for r in g_repos:
+            for b in g_repos[r]:
+                h = '{}:{}'.format(r, b)
+                p = g_webhook_dir / h
+                if p.exists() and (h not in last_mtime or p.stat().st_mtime > last_mtime[h]):
+                    logging.debug('detected update from webhook: %s', h)
+                    changed_heads.append( (repo, branch) )
+                    last_mtime[h] = p.stat().st_mtime
+
+        proc_needed = []
+        
+        for c in changed_heads:
+            rev = update_head(c[0], c[1])  # FIXME: is there better syntax here?
+            proc_needed.append( (c[0], c[1], rev) )  # FIXME: is there better syntax here?
+
+        # TODO: might want to sort proc_needed so that, e.g., SWMH-BETA < MiniSWMH < EMF
+
+        for pn in proc_needed:
+            process_head_change(pn[0], pn[1], pn[2])  # FIXME: is there better syntax here?
+        
+
 def main():
     context = daemon.DaemonContext()
     context.working_directory = str(g_base_dir)
@@ -184,7 +218,7 @@ def main():
         try:
             logging.info('hiphub v{} starting with pid {}...'.format(VERSION, os.getpid()))
             init_daemon()
-            shutdown_daemon()  # just here for convenience until this thing actually stays running after init
+            run_daemon()
         except Exception as e:
             # will direct a traceback to the log
             logging.exception("unhandled exception, hiphub must terminate:")
