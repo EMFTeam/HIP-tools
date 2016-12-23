@@ -92,14 +92,29 @@ def update_head(repo, branch):
     return cp.stdout.strip()
 
     
-def update_all_heads():
-    logging.debug('updating all tracked heads...')
-    
-    for repo in g_repos:
-        logging.debug('refreshing repository {}...'.format(repo))
-        for branch in g_repos[repo]:
-            update_head(repo, branch)
-    
+def load_state():
+    global g_last_rev
+    g_last_rev = {}
+    for r in g_repos:
+        for b in g_repos[r]:
+            h = '{}:{}'.format(r, b)
+            p = g_state_dir / h
+            if p.exists():
+                with p.open() as f:
+                    g_last_rev[h] = f.read().strip()
+
+
+def process_head_change(repo, branch, head_rev):
+    # TODO: actual [selective] processing :)
+
+    # update memory state
+    h = '{}:{}'.format(repo, branch)
+    g_last_rev[h] = head_rev
+
+    # update state on disk
+    with (g_state_dir / h).open("w") as f:
+        f.write('{}\n'.format(head_rev))
+
 
 def init_daemon():
     # mark our tracks with pidfile
@@ -111,7 +126,23 @@ def init_daemon():
         logging.debug('state folder does not exist, creating: {}'.format(g_state_dir))
         g_state_dir.mkdir(parents=True)
 
-    update_all_heads()
+    load_state()
+
+    logging.debug('updating all tracked heads...')
+    proc_needed = []
+    
+    for repo in g_repos:
+        logging.debug('refreshing repository {}...'.format(repo))
+        for branch in g_repos[repo]:
+            rev = update_head(repo, branch)
+            h = '{}:{}'.format(repo, branch)
+            if h not in g_last_rev or rev != g_last_rev[h]:
+                proc_needed.append( (repo, branch, rev) )
+
+    # TODO: might want to sort proc_needed so that, e.g., SWMH-BETA < MiniSWMH < EMF
+    
+    for pn in proc_needed:
+        process_head_change(pn[0], pn[1], pn[2])  # FIXME: is there better syntax here?
 
 
 def main():
@@ -153,6 +184,7 @@ def main():
         try:
             logging.info('hiphub v{} starting with pid {}...'.format(VERSION, os.getpid()))
             init_daemon()
+            shutdown_daemon()  # just here for convenience until this thing actually stays running after init
         except Exception as e:
             # will direct a traceback to the log
             logging.exception("unhandled exception, hiphub must terminate:")
