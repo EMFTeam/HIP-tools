@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- python-indent-offset: 4 -*-
 
-VERSION='0.01'
+VERSION='0.02'
 
 import os
 import sys
@@ -83,10 +83,18 @@ def git_run(args, retry=False):
 
 def update_head(repo, branch):
     os.chdir(str(g_root_repo_dir / repo))
+
+    # first, make the repo a carbon copy of HEAD -- remove changes to index, remove untracked changes
     git_run(['reset', '--hard', 'HEAD'])
+    git_run(['clean', '-f'])
+
+    # now checkout the desired branch and pull 
     git_run(['checkout', branch])
     git_run(['pull'], retry=True)
+
+    # determine the head's possibly-new SHA
     cp = git_run(['rev-parse', 'HEAD'])
+    
     os.chdir(str(g_base_dir))
     return cp.stdout.strip()
 
