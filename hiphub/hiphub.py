@@ -112,13 +112,13 @@ def process_head_change(repo, branch, head_rev):
 
     # update state on disk
     with (g_state_dir / h).open("w") as f:
-        f.write('{}\n'.format(head_rev))
+        print(head_rev, file=f)
 
 
 def init_daemon():
     # mark our tracks with pidfile
     with g_pidfile_path.open("w") as f:
-        f.write('{}\n'.format(os.getpid()))
+        print(os.getpid(), file=f)
 
     # created needed directories on-demand
     if not g_state_dir.exists():
@@ -141,7 +141,7 @@ def init_daemon():
     # TODO: might want to sort proc_needed so that, e.g., SWMH-BETA < MiniSWMH < EMF
     
     for pn in proc_needed:
-        process_head_change(pn[0], pn[1], pn[2])  # FIXME: is there better syntax here?
+        process_head_change(*pn)
 
 
 def run_daemon():
@@ -170,13 +170,13 @@ def run_daemon():
 
         proc_needed = []
         for c in changed_heads:
-            rev = update_head(c[0], c[1])  # FIXME: is there better syntax here?
-            proc_needed.append( (c[0], c[1], rev) )  # FIXME: is there better syntax here?
+            rev = update_head(*c)
+            proc_needed.append( (*c, rev) )
 
         # TODO: might want to sort proc_needed so that, e.g., SWMH-BETA < MiniSWMH < EMF
 
         for pn in proc_needed:
-            process_head_change(pn[0], pn[1], pn[2])  # FIXME: is there better syntax here?
+            process_head_change(*pn)
         
 
 def main():
