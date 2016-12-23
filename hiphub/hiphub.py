@@ -157,6 +157,7 @@ def run_daemon():
     
     while True:
         time.sleep(1)  # one-second polling interval
+
         changed_heads = []
         for r in g_repos:
             for b in g_repos[r]:
@@ -164,11 +165,10 @@ def run_daemon():
                 p = g_webhook_dir / h
                 if p.exists() and (h not in last_mtime or p.stat().st_mtime > last_mtime[h]):
                     logging.debug('detected update from webhook: %s', h)
-                    changed_heads.append( (repo, branch) )
+                    changed_heads.append( (r, b) )
                     last_mtime[h] = p.stat().st_mtime
 
         proc_needed = []
-        
         for c in changed_heads:
             rev = update_head(c[0], c[1])  # FIXME: is there better syntax here?
             proc_needed.append( (c[0], c[1], rev) )  # FIXME: is there better syntax here?
