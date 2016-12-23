@@ -4,14 +4,15 @@
 VERSION='0.02'
 
 import os
+import re
 import sys
 import pwd
 import time
 import signal
-import logging
-import subprocess
 import daemon
+import logging
 import lockfile
+import subprocess
 from pathlib import Path
 
 g_daemon_user = 'hiphub'  # user hiphub should run as (will use user's default group)
@@ -23,7 +24,7 @@ g_gitbin_path = Path('/usr/bin/git')
 # repos and respective branches which we track
 g_repos = {
     'SWMH-BETA': ['master', 'Timeline_Extension+Bookmark_BETA'],
-    'sed2': ['dev', 'timeline'],
+    'SED2': ['dev', 'timeline'],
     'EMF': ['alpha', 'timeline'],
     'MiniSWMH': ['master', 'timeline'],
     'HIP-tools': ['master'],
@@ -45,7 +46,7 @@ def fatal(msg):
     sys.exit(1)
 
 
-def shutdown_daemon():
+def shutdown_daemon(sig_num, stack_frame):
     g_pidfile_path.unlink()
     logging.info('hiphub v{} shutting down with pid {}...'.format(VERSION, os.getpid()))
     sys.exit(0)
@@ -82,6 +83,7 @@ def git_run(args, retry=False):
 
 
 def update_head(repo, branch):
+    logging.debug('updating head: %s/%s', repo, branch)
     os.chdir(str(g_root_repo_dir / repo))
 
     # first, make the repo a carbon copy of HEAD -- remove changes to index, remove untracked changes
@@ -98,7 +100,33 @@ def update_head(repo, branch):
     os.chdir(str(g_base_dir))
     return cp.stdout.strip()
 
+
+def git_files_changed(repo, branch, old_rev, new_rev='HEAD'):
+    os.chdir(str(g_root_repo_dir / repo))
+    git_run(['checkout', branch])
+    cp = git_run(['log', '--name-only', '--pretty=format:', '{}..{}'.format(old_rev, new_rev)])
+    changed_files = set()
+
+    for line in cp.stdout.splitlines():
+        if line != '':
+            changed_files.add(line)
+
+    os.chdir(str(g_base_dir))
+    return changed_files
+
     
+def has_this_repo_changed(ignored_file=None):
+    cp = git_run(['status', '--porcelain'])
+    p_line = re.compile(r'^\s*\S+\s+(.+)$')  ## example line: '?? i got mad spaces and am untracked, yo.txt'
+    for line in cp.stdout.splitlines():
+        m = p_line.match(line)
+        if m:
+            path = m.group(1)
+            if ignored_file is None or path != ignored_file:
+                return True
+    return False
+
+                    
 def load_state():
     global g_last_rev
     g_last_rev = {}
@@ -110,16 +138,87 @@ def load_state():
                 with p.open() as f:
                     g_last_rev[h] = f.read().strip()
 
+                    
+# assuming repo is SWMH-BETA and we've processed SWMH-BETA before
+# (s.t. we have a list of files changed), should we rebuild MiniSWMH?
+def should_rebuild_mini_from_swmh(branch, changed_files):
+    if 'SWMH/common/landed_titles/swmh_landed_titles.txt' in changed_files:
+        return True
+    if 'SWMH/common/province_setup/00_province_setup.txt' in changed_files:
+        return True
+    if 'SWMH/map/default.map' in changed_files:
+        return True
+    if 'SWMH/map/definition.csv' in changed_files:
+        return True
+    p_wanted_file = re.compile(r'^SWMH/history/(?:titles|provinces)/.+?\.txt$')
+    for f in changed_files:
+        if p_wanted_file.match(f):
+            return True
+    return False
 
+
+def rebuild_mini(swmh_branch):
+    logging.info('rebuilding MiniSWMH...')
+    # get on the right branches
+    mini_branch = 'master' if swmh_branch == 'master' else 'timeline'
+    os.chdir(str(g_root_repo_dir / 'MiniSWMH'))
+    git_run(['checkout', mini_branch])
+    
+    # SWMH is already on the right branch. for something more complex
+    # like a `rebuild_sed2`, we'd have to be more careful about this.
+
+    # we also assume here that ck2utils only even has 1 branch that we
+    # track, so we're on the right branch for mapcut too.
+
+    cp = subprocess.run(['./build_mini.py'], stderr=subprocess.PIPE, shell=True, universal_newlines=True)
+
+    if cp.returncode != 0:
+        logging.error('failed to rebuild MiniSWMH:\n>command: {}\n>code: {}\n>error:\n{}\n'.format(cp.args, cp.returncode, cp.stderr))
+        git_run(['reset', '--hard', 'HEAD'])
+        git_run(['clean', '-f'])
+        os.chdir(str(g_base_dir))
+        return False
+
+    # did anything change besides our version.txt?
+    if not has_this_repo_changed(ignored_file='MiniSWMH/version.txt'):
+        # eh, no biggie-- cleanup version.txt and go
+        git_run(['reset', '--hard', 'HEAD'])
+        os.chdir(str(g_base_dir))
+        return False
+
+    # if we're here, we do indeed have changes to commit.
+    git_run(['add', '-A'])
+    git_run(['commit', '-a', '-m', 'rebuild from upstream changes :robot_face:'])
+    git_run(['push'], retry=True)
+
+    # ta-dah!
+    logging.info('rebuild of MiniSWMH was substantial, so committed changes and pushed!')
+    os.chdir(str(g_base_dir))
+    return True
+    
+                    
 def process_head_change(repo, branch, head_rev):
-    # TODO: actual [selective] processing :)
+    build_mini = False
+    build_sed = False  # not implemented yet
+
+    head = '{}:{}'.format(repo, branch)
+    
+    if repo == 'SWMH-BETA':
+        if head not in g_last_rev:  # first time (all files in repo changed, effectively)
+            build_mini = True
+            build_sed = True
+        else:
+            changed_files = git_files_changed(repo, branch, g_last_rev[head])
+            build_mini = should_rebuild_mini_from_swmh(branch, changed_files)
+            
+        if build_mini:
+            rebuild_mini(branch)
 
     # update memory state
-    h = '{}:{}'.format(repo, branch)
-    g_last_rev[h] = head_rev
+    g_last_rev[head] = head_rev
 
     # update state on disk
-    with (g_state_dir / h).open("w") as f:
+    with (g_state_dir / head).open("w") as f:
         print(head_rev, file=f)
 
 
@@ -133,13 +232,17 @@ def init_daemon():
         logging.debug('state folder does not exist, creating: {}'.format(g_state_dir))
         g_state_dir.mkdir(parents=True)
 
+    # some of our python child processes will need this for localpaths.py and such
+    os.environ['PYTHONPATH'] = str(g_root_repo_dir / 'ck2utils/esc')
+    os.environ['USER'] = g_daemon_user
+    os.environ['HOME'] = '/home/' + g_daemon_user
+    
     load_state()
 
     logging.debug('updating all tracked heads...')
     proc_needed = []
     
     for repo in g_repos:
-        logging.debug('refreshing repository {}...'.format(repo))
         for branch in g_repos[repo]:
             rev = update_head(repo, branch)
             h = '{}:{}'.format(repo, branch)
