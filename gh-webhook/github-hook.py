@@ -9,7 +9,7 @@ update_dir = Path("/var/www/hip.zijistark.com/hiphub")
 
 tracked_repos = {
     'Aasmul/SWMH-BETA': ['master', 'Timeline_Extension+Bookmark_BETA'],
-    'escalonn/SED2': ['dev', 'timeline'],
+    'escalonn/sed2': ['dev', 'timeline'],
     'EMFTeam/EMF': ['alpha', 'timeline'],
     'EMFTeam/MiniSWMH': ['master', 'timeline'],
     'EMFTeam/HIP-tools': ['master'],
