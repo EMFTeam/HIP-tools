@@ -20,3 +20,6 @@ $RECYCLE.BIN/
 
 # SCons build state / dependency tracking cache DB
 .sconsign.dblite
+
+# Cached python module bytecode
+__pycache__
