@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- python-indent-offset: 4 -*-
 
-VERSION='0.02'
+VERSION='0.03'
 
 import os
 import re
@@ -46,12 +46,6 @@ def fatal(msg):
     sys.exit(1)
 
 
-def shutdown_daemon(sig_num, stack_frame):
-    g_pidfile_path.unlink()
-    logging.info('hiphub v{} shutting down with pid {}...'.format(VERSION, os.getpid()))
-    sys.exit(0)
-
-    
 class TooManyRetriesException(Exception):
     def __str__(self):
         return 'Retried command too many times'
@@ -288,9 +282,56 @@ def run_daemon():
 
         for pn in proc_needed:
             process_head_change(*pn)
-        
 
+            
+def shutdown_daemon(exit_code=0):
+    g_pidfile_path.unlink()
+    logging.info('hiphub v{} shutting down with pid {}...'.format(VERSION, os.getpid()))
+    sys.exit(exit_code)
+
+
+# NOTE: this *_daemon function is not called from within a daemon context
+def kill_existing_daemon():
+    if not g_pidfile_path.exists():
+        return
+
+    # get the PID of the running hiphub daemon    
+    with g_pidfile_path.open() as f:
+        pid = int(f.read().strip())
+
+    print('sending SIGTERM to running daemon with pid {}...'.format(pid))
+    os.kill(pid, signal.SIGTERM)  # send it a SIGTERM so that it may gracefully shutdown
+
+    # now block until the pidfile is removed (100ms poll interval, up
+    # to 300 polls allowed for approx. 30sec of allowed wait before
+    # timing out).
+
+    n_tries = 0
+    need_hard_kill = False
+    
+    while True:
+        time.sleep(0.1)
+        n_tries += 1
+        if not g_pidfile_path.exists():
+            break
+        elif n_tries == 300:
+            need_hard_kill = True
+            break
+
+    if need_hard_kill:
+        print('warning: since running daemon did not respond to SIGTERM, sending SIGKILL...')
+        os.kill(pid, signal.SIGKILL)
+        if g_pidfile_path.exists():
+            g_pidfile_path.unlink()
+                
+
+def sig_terminate_handler(sig_num, stack_frame):
+    shutdown_daemon()
+
+    
 def main():
+    opt_restart = '--restart' in sys.argv[1:]
+    
     context = daemon.DaemonContext()
     context.working_directory = str(g_base_dir)
 
@@ -300,24 +341,20 @@ def main():
     context.gid = pwent[3]
 
     if g_pidfile_path.exists():
-        fatal('hiphub appears to already be running or to have terminated ungracefully')
+        if opt_restart:
+            kill_existing_daemon()
+        else:
+            fatal('hiphub appears to already be running (use --restart to force a restart)')
 
     context.pidfile = lockfile.FileLock(str(g_pidfile_path))
 
     context.signal_map = {
-        signal.SIGTERM: shutdown_daemon,
-        signal.SIGHUP: shutdown_daemon,
-        }
+        signal.SIGTERM: sig_terminate_handler,
+        signal.SIGHUP: sig_terminate_handler,
+    }
 
     context.umask = 0o002
-    
-    # for debugging purposes, we may want to NOT detach our
-    # stdout/stderr, so use -F for foreground mode (even though it's
-    # not really in the foreground-- still a daemon)
-    if '-F' in sys.argv[1:]:
-        context.stdout = sys.stdout
-        context.stderr = sys.stderr
-    
+        
     with context:
         # initialize logging
         logging.basicConfig(filename=str(g_logfile_path),
@@ -333,7 +370,7 @@ def main():
         except Exception as e:
             # will direct a traceback to the log
             logging.exception("unhandled exception, hiphub must terminate:")
-            sys.exit(255)
+            shutdown_daemon(exit_code=255)
 
 
 if __name__ == '__main__':
