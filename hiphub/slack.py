@@ -18,11 +18,11 @@ def sendmsg(webhook, text, channel, username, icon_emoji=None):
     
     conn = http.client.HTTPSConnection('hooks.slack.com')
     conn.request('POST', webhook, body, {'Content-type': 'application/json'})
-    conn.getresponse()
+    response = conn.getresponse()
     response.read()
     conn.close()
     
 
-def isis_sendmsg(text, channel='#hiphub-alerts', wink=False):
+def isis_sendmsg(text, channel='#hiphub', wink=False):
     icon_emoji = ':isis:' if not wink else ':isis-winking:'
     sendmsg('/services/T055NUPPW/B34JCEDBM/OVRrTApteiWLWPKsSqkvb21c', text, channel, 'isis', icon_emoji)
