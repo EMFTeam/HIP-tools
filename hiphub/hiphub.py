@@ -108,7 +108,7 @@ def git_files_changed(repo, branch, old_rev, new_rev='HEAD'):
 
     for line in cp.stdout.splitlines():
         if line != '':
-            changed_files.add(line)
+            changed_files.add(Path(line))
 
     os.chdir(str(g_base_dir))
     return changed_files
@@ -144,17 +144,17 @@ def load_state():
 # assuming repo is SWMH-BETA and we've processed SWMH-BETA before
 # (s.t. we have a list of files changed), should we rebuild MiniSWMH?
 def should_rebuild_mini_from_swmh(branch, changed_files):
-    if 'SWMH/common/landed_titles/swmh_landed_titles.txt' in changed_files:
-        return True
-    if 'SWMH/common/province_setup/00_province_setup.txt' in changed_files:
-        return True
-    if 'SWMH/map/default.map' in changed_files:
-        return True
-    if 'SWMH/map/definition.csv' in changed_files:
-        return True
+    specific_paths = ['SWMH/common/landed_titles/swmh_landed_titles.txt',
+                      'SWMH/common/province_setup/00_province_setup.txt',
+                      'SWMH/map/default.map',
+                      'SWMH/map/definition.csv']
+
+    for p in specific_paths:
+        if Path(p) in changed_files:
+            return True
     p_wanted_file = re.compile(r'^SWMH/history/(?:titles|provinces)/.+?\.txt$')
     for f in changed_files:
-        if p_wanted_file.match(f):
+        if p_wanted_file.match(str(f)):
             return True
     return False
 
