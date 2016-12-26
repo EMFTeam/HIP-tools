@@ -127,11 +127,14 @@ def has_this_repo_changed(ignored_file=None):
 
                     
 def load_state():
+    global g_ignored_rev
+    g_ignored_rev = {}
     global g_last_rev
     g_last_rev = {}
     for r in g_repos:
         for b in g_repos[r]:
             h = '{}:{}'.format(r, b)
+            g_ignored_rev[h] = None
             p = g_state_dir / h
             if p.exists():
                 with p.open() as f:
@@ -189,6 +192,11 @@ def rebuild_mini(swmh_branch):
     # if we're here, we do indeed have changes to commit.
     git_run(['add', '-A'])
     git_run(['commit', '-a', '-m', 'rebuild from upstream changes :robot_face:'])
+
+    # determine the head's new SHA so that we may ignore it for future processing
+    g_ignored_rev['MiniSWMH:' + mini_branch] = git_run(['rev-parse', 'HEAD']).stdout.strip()
+    
+    # .. and puuuuush, deep breaths
     git_run(['push'], retry=True)
 
     # ta-dah!
@@ -198,11 +206,18 @@ def rebuild_mini(swmh_branch):
     
                     
 def process_head_change(repo, branch, head_rev):
+    head = '{}:{}'.format(repo, branch)
+
+    if g_ignored_rev[head] is head_rev:
+        logging.debug('processing skipped for rev due to being self-emitted: %s/%s [%s]', repo, branch, head_rev)
+        g_ignored_rev[head] = None
+        return
+    else:
+        g_ignored_rev[head] = None
+
     build_mini = False
     build_sed = False  # not implemented yet
 
-    head = '{}:{}'.format(repo, branch)
-    
     if repo == 'SWMH-BETA':
         if head not in g_last_rev:  # first time (all files in repo changed, effectively)
             build_mini = True
