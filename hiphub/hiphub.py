@@ -15,6 +15,8 @@ import lockfile
 import subprocess
 from pathlib import Path
 
+##########
+
 g_daemon_user = 'hiphub'  # user hiphub should run as (will use user's default group)
 g_base_dir = Path('/home') / g_daemon_user  # daemon state will be kept under here
 g_webhook_dir = Path('/var/www/hip.zijistark.com/hiphub')  # folder where the webhook hints us as to new commit activity
@@ -39,16 +41,18 @@ g_pidfile_path = g_base_dir / 'hiphub.pid'  # we mark our currently running PID 
 g_state_dir = g_base_dir / 'state'  # we store the last-processed SHA for each tracked head within files in this folder
 g_logfile_path = g_base_dir / 'hiphub.log'  # we log info and errors here (once the daemon is off the ground and no longer attached to a session/terminal)
 
-
-def fatal(msg):
-    sys.stderr.write('fatal: ' + msg + '\n')
-    sys.stderr.flush()
-    sys.exit(1)
+##########
 
 
 class TooManyRetriesException(Exception):
     def __str__(self):
         return 'Retried command too many times'
+
+
+def fatal(msg):
+    sys.stderr.write('fatal: ' + msg + '\n')
+    sys.stderr.flush()
+    sys.exit(1)
 
 
 def git_run(args, retry=False):
@@ -111,7 +115,7 @@ def git_files_changed(repo, branch, old_rev, new_rev='HEAD'):
     
 def has_this_repo_changed(ignored_file=None):
     cp = git_run(['status', '--porcelain'])
-    p_line = re.compile(r'^\s*\S+\s+(.+)$')  ## example line: '?? i got mad spaces and am untracked, yo.txt'
+    p_line = re.compile(r'^\s*\S+\s(.+)$')  ## example line: '?? i got mad spaces and am untracked, yo.txt'
     for line in cp.stdout.splitlines():
         m = p_line.match(line)
         if m:
