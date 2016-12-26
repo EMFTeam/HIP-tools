@@ -207,27 +207,28 @@ def rebuild_mini(swmh_branch):
                     
 def process_head_change(repo, branch, head_rev):
     head = '{}:{}'.format(repo, branch)
-
+    do_processing = True
+    
     if g_ignored_rev[head] is head_rev:
         logging.debug('processing skipped for rev due to being self-emitted: %s/%s [%s]', repo, branch, head_rev)
-        g_ignored_rev[head] = None
-        return
-    else:
-        g_ignored_rev[head] = None
+        do_processing = False
 
-    build_mini = False
-    build_sed = False  # not implemented yet
+    g_ignored_rev[head] = None
 
-    if repo == 'SWMH-BETA':
-        if head not in g_last_rev:  # first time (all files in repo changed, effectively)
-            build_mini = True
-            build_sed = True
-        else:
-            changed_files = git_files_changed(repo, branch, g_last_rev[head])
-            build_mini = should_rebuild_mini_from_swmh(branch, changed_files)
-            
-        if build_mini:
-            rebuild_mini(branch)
+    if do_processing:
+        build_mini = False
+        build_sed = False  # not implemented yet
+
+        if repo == 'SWMH-BETA':
+            if head not in g_last_rev:  # first time (all files in repo changed, effectively)
+                build_mini = True
+                build_sed = True
+            else:
+                changed_files = git_files_changed(repo, branch, g_last_rev[head])
+                build_mini = should_rebuild_mini_from_swmh(branch, changed_files)
+                
+            if build_mini:
+                rebuild_mini(branch)
 
     # update memory state
     g_last_rev[head] = head_rev
