@@ -322,17 +322,20 @@ def shutdown_daemon(exit_code=0):
     except Exception as e:
         pass
 
-    # tell all of our children to kill themselves
-    kids = psutil.Process().children()
-    for p in kids:
-        p.terminate()
+    try:
+        # tell all of our children to kill themselves
+        kids = psutil.Process().children()
+        for p in kids:
+            p.terminate()
 
-    # reap dying children for up to 3sec
-    _, still_alive = psutil.wait_procs(kids, timeout=3, callback=on_child_terminated)
+        # reap dying children for up to 3sec
+        _, still_alive = psutil.wait_procs(kids, timeout=3, callback=on_child_terminated)
 
-    # hard-kill kids still alive after 3sec
-    for p in still_alive:
-        p.kill()
+        # hard-kill kids still alive after 3sec
+        for p in still_alive:
+            p.kill()
+    except psutil.NoSuchProcess:
+        pass
     
     g_pidfile_path.unlink()    
     sys.exit(exit_code)
