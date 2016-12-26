@@ -50,10 +50,6 @@ class TooManyRetriesException(Exception):
         return 'Retried command too many times'
 
 
-class SourceModifiedException(Exception):
-    pass
-
-
 def fatal(msg):
     sys.stderr.write('fatal: ' + msg + '\n')
     sys.stderr.flush()
@@ -206,8 +202,8 @@ def rebuild_mini(swmh_branch):
     return True
 
 
-def rebuild_sed2(swmh_branch):
-    logging.info('rebuilding SED...')
+def rebuild_sed(swmh_branch):
+    logging.info('rebuilding sed2...')
     # get on the right branches
     sed_branch = g_repos['sed2'][g_repos['SWMH-BETA'].index(swmh_branch)]
     os.chdir(str(g_root_repo_dir / 'sed2'))
@@ -217,7 +213,7 @@ def rebuild_sed2(swmh_branch):
     cp = subprocess.run(['./build.py'], stderr=subprocess.PIPE, shell=True, universal_newlines=True)
 
     if cp.returncode != 0:
-        logging.error('failed to rebuild SED:\n>command: {}\n>code: {}\n>error:\n{}\n'.format(cp.args, cp.returncode, cp.stderr))
+        logging.error('failed to rebuild sed2:\n>command: {}\n>code: {}\n>error:\n{}\n'.format(cp.args, cp.returncode, cp.stderr))
         git_run(['reset', '--hard', 'HEAD'])
         git_run(['clean', '-f'])
         os.chdir(str(g_base_dir))
@@ -262,23 +258,23 @@ def process_head_change(repo, branch, head_rev):
         build_sed = False
 
         if repo == 'SWMH-BETA':
-            if head not in g_last_rev:  # first time (all files in repo changed, effectively)
-                build_mini = True
-                build_sed = True
-            else:
+            if head in g_last_rev:
                 changed_files = git_files_changed(repo, branch, g_last_rev[head])
                 build_mini = should_rebuild_mini_from_swmh(branch, changed_files)
                 build_sed = should_rebuild_sed_from_swmh(branch, changed_files)
+            else:  # first time (all files in repo changed, effectively)
+                build_mini = True
+                build_sed = True
+        elif repo == 'MiniSWMH':
+            if head in g_last_rev:
+                changed_files = git_files_changed(repo, branch, g_last_rev[head])
+                build_sed = should_rebuild_sed_from_swmh(branch, changed_files)
 
-            if build_mini:
-                rebuild_mini(branch)
-            if build_sed:
-                rebuild_sed2(branch)
+        if build_mini:
+            rebuild_mini(branch)
+        if build_sed:
+            rebuild_sed(branch)
 
-        elif repo == 'HIP-tools':
-            changed_files = git_files_changed(repo, branch, g_last_rev[head])
-            if Path('hiphub/hiphub.py') in changed_files:
-                pass #raise SourceModifiedException()  # XXX
 
     # update memory state
     g_last_rev[head] = head_rev
@@ -315,7 +311,7 @@ def init_daemon():
         for branch in g_repos[repo]:
             rev = update_head(repo, branch)
             h = '{}:{}'.format(repo, branch)
-            if h not in g_last_rev or rev != g_last_rev[h]:
+            if rev != g_last_rev.get(h):
                 proc_needed.append( (repo, branch, rev) )
 
     # TODO: might want to sort proc_needed so that, e.g., SWMH-BETA < MiniSWMH < EMF
@@ -426,18 +422,6 @@ def kill_existing_daemon():
             g_pidfile_path.unlink()
 
 
-def restart_program(context, owd):
-    os.chdir(owd)
-    context.close()
-    kill_existing_daemon()
-    sys.stdout.flush()
-    sys.stderr.flush()
-    try:
-        os.execvp('python3', [s for s in sys.argv if s != '--restart'])
-    except OSError as e:
-        logging.error(e)
-
-
 def sig_terminate_handler(sig_num, stack_frame):
     shutdown_daemon()
 
@@ -481,9 +465,6 @@ def main():
             logging.info('hiphub v{} starting with pid {}...'.format(VERSION, os.getpid()))
             init_daemon()
             run_daemon()
-        except SourceModifiedException as e:
-            logging.warning('hiphub.py modified, hiphub will restart...')
-            restart_program(context, owd)
         except Exception as e:
             # will direct a traceback to the log
             logging.exception('unhandled exception, hiphub must terminate:')
