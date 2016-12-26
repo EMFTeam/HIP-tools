@@ -261,7 +261,7 @@ def process_head_change(repo, branch, head_rev):
             if head in g_last_rev:
                 changed_files = git_files_changed(repo, branch, g_last_rev[head])
                 build_mini = should_rebuild_mini_from_swmh(branch, changed_files)
-                build_sed = should_rebuild_sed_from_swmh(branch, changed_files)
+                build_sed = build_mini or should_rebuild_sed_from_swmh(branch, changed_files)
             else:  # first time (all files in repo changed, effectively)
                 build_mini = True
                 build_sed = True
