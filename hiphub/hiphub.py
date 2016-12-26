@@ -242,6 +242,9 @@ def init_daemon():
     with g_pidfile_path.open("w") as f:
         print(os.getpid(), file=f)
 
+    # deprioritize our process scheduling priority (as well as our subprocesses')
+    os.nice(5)
+
     # created needed directories on-demand
     if not g_state_dir.exists():
         logging.debug('state folder does not exist, creating: {}'.format(g_state_dir))
