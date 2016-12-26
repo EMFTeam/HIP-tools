@@ -10,6 +10,7 @@ import pwd
 import time
 import signal
 import daemon
+import psutil
 import logging
 import lockfile
 import subprocess
@@ -178,9 +179,10 @@ def rebuild_mini(swmh_branch):
         return False
 
     # did anything change besides our version.txt?
-    if not has_this_repo_changed(ignored_file='MiniSWMH/version.txt'):
+    version_file = 'MiniSWMH/version.txt'
+    if not has_this_repo_changed(ignored_file=version_file):
         # eh, no biggie-- cleanup version.txt and go
-        git_run(['reset', '--hard', 'HEAD'])
+        git_run(['checkout', version_file])
         os.chdir(str(g_base_dir))
         return False
 
@@ -190,7 +192,7 @@ def rebuild_mini(swmh_branch):
     git_run(['push'], retry=True)
 
     # ta-dah!
-    logging.info('rebuild of MiniSWMH was substantial, so committed changes and pushed!')
+    logging.info('rebuild of MiniSWMH resulted in net change, so pushed new MiniSWMH.')
     os.chdir(str(g_base_dir))
     return True
     
@@ -273,7 +275,7 @@ def run_daemon():
                 h = '{}:{}'.format(r, b)
                 p = g_webhook_dir / h
                 if p.exists() and (h not in last_mtime or p.stat().st_mtime > last_mtime[h]):
-                    logging.debug('detected update from webhook: %s', h)
+                    logging.debug('webhook received push event: %s/%s', r, b)
                     changed_heads.append( (r, b) )
                     last_mtime[h] = p.stat().st_mtime
 
@@ -287,10 +289,33 @@ def run_daemon():
         for pn in proc_needed:
             process_head_change(*pn)
 
-            
+
+def on_child_terminated(proc):
+    try:
+        logging.debug('subprocess {} terminated with exit code {}'.format(proc, proc.returncode))
+    except Exception as e:
+        pass
+
+
 def shutdown_daemon(exit_code=0):
-    g_pidfile_path.unlink()
-    logging.info('hiphub v{} shutting down with pid {}...'.format(VERSION, os.getpid()))
+    try:
+        logging.info('hiphub v{} shutting down with pid {}...'.format(VERSION, os.getpid()))
+    except Exception as e:
+        pass
+
+    # tell all of our children to kill themselves
+    kids = psutil.Process().children()
+    for p in kids:
+        p.terminate()
+
+    # reap dying children for up to 3sec
+    _, still_alive = psutil.wait_procs(kids, timeout=3, callback=on_child_terminated)
+
+    # hard-kill kids still alive after 3sec
+    for p in still_alive:
+        p.kill()
+    
+    g_pidfile_path.unlink()    
     sys.exit(exit_code)
 
 
