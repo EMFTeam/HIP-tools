@@ -10,7 +10,6 @@ import pwd
 import time
 import signal
 import daemon
-import psutil
 import logging
 import lockfile
 import subprocess
@@ -169,7 +168,7 @@ def rebuild_mini(swmh_branch):
     # we also assume here that ck2utils only even has 1 branch that we
     # track, so we're on the right branch for mapcut too.
 
-    cp = subprocess.run(['./build_mini.py'], stderr=subprocess.PIPE, shell=True, universal_newlines=True)
+    cp = subprocess.run(['/usr/bin/python3', 'build_mini.py'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
     if cp.returncode != 0:
         logging.error('failed to rebuild MiniSWMH:\n>command: {}\n>code: {}\n>error:\n{}\n'.format(cp.args, cp.returncode, cp.stderr))
@@ -202,15 +201,24 @@ def rebuild_mini(swmh_branch):
     return True
 
 
-def rebuild_sed(swmh_branch):
+def rebuild_sed(repo, branch):
     logging.info('rebuilding sed2...')
+
     # get on the right branches
-    sed_branch = g_repos['sed2'][g_repos['SWMH-BETA'].index(swmh_branch)]
+    sed_branch = g_repos['sed2'][g_repos[repo].index(branch)]
+    emf_branch = g_repos['EMF'][g_repos[repo].index(branch)]
+    mini_branch = g_repos['MiniSWMH'][g_repos[repo].index(branch)]
+    swmh_branch = g_repos['SWMH-BETA'][g_repos[repo].index(branch)]
+    os.chdir(str(g_root_repo_dir / 'SWMH-BETA'))
+    git_run(['checkout', swmh_branch])
+    os.chdir(str(g_root_repo_dir / 'MiniSWMH'))
+    git_run(['checkout', mini_branch])
+    os.chdir(str(g_root_repo_dir / 'EMF'))
+    git_run(['checkout', emf_branch])
     os.chdir(str(g_root_repo_dir / 'sed2'))
     git_run(['checkout', sed_branch])
 
-    # SWMH is already on the right branch.
-    cp = subprocess.run(['./build.py'], stderr=subprocess.PIPE, shell=True, universal_newlines=True)
+    cp = subprocess.run(['/usr/bin/python3', 'build.py'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
     if cp.returncode != 0:
         logging.error('failed to rebuild sed2:\n>command: {}\n>code: {}\n>error:\n{}\n'.format(cp.args, cp.returncode, cp.stderr))
@@ -247,8 +255,10 @@ def process_head_change(repo, branch, head_rev):
     head = '{}:{}'.format(repo, branch)
     do_processing = True
 
+    logging.debug('processing head change: %s/%s to rev %s', repo, branch, head_rev)
+    
     if g_ignored_rev[head] is head_rev:
-        logging.debug('processing skipped for rev due to being self-emitted: %s/%s [%s]', repo, branch, head_rev)
+        logging.debug('skipped processing for rev due to being self-emitted')
         do_processing = False
 
     g_ignored_rev[head] = None
@@ -269,12 +279,13 @@ def process_head_change(repo, branch, head_rev):
             if head in g_last_rev:
                 changed_files = git_files_changed(repo, branch, g_last_rev[head])
                 build_sed = should_rebuild_sed_from_swmh(branch, changed_files)
+            else:
+                build_sed = True
 
         if build_mini:
             rebuild_mini(branch)
         if build_sed:
-            rebuild_sed(branch)
-
+            rebuild_sed(repo, branch)
 
     # update memory state
     g_last_rev[head] = head_rev
@@ -290,7 +301,7 @@ def init_daemon():
         print(os.getpid(), file=f)
 
     # deprioritize our process scheduling priority (as well as our subprocesses')
-    os.nice(5)
+    os.nice(10)
 
     # created needed directories on-demand
     if not g_state_dir.exists():
@@ -355,32 +366,10 @@ def run_daemon():
             process_head_change(*pn)
 
 
-def on_child_terminated(proc):
-    try:
-        logging.debug('subprocess {} terminated with exit code {}'.format(proc, proc.returncode))
-    except Exception as e:
-        pass
-
-
 def shutdown_daemon(exit_code=0):
     try:
         logging.info('hiphub v{} shutting down with pid {}...'.format(VERSION, os.getpid()))
     except Exception as e:
-        pass
-
-    try:
-        # tell all of our children to kill themselves
-        kids = psutil.Process().children()
-        for p in kids:
-            p.terminate()
-
-        # reap dying children for up to 3sec
-        _, still_alive = psutil.wait_procs(kids, timeout=3, callback=on_child_terminated)
-
-        # hard-kill kids still alive after 3sec
-        for p in still_alive:
-            p.kill()
-    except psutil.NoSuchProcess:
         pass
 
     g_pidfile_path.unlink()
@@ -428,7 +417,6 @@ def sig_terminate_handler(sig_num, stack_frame):
 
 def main():
     opt_restart = '--restart' in sys.argv[1:]
-    owd = os.getcwd()
 
     context = daemon.DaemonContext()
     context.working_directory = str(g_base_dir)
@@ -445,13 +433,7 @@ def main():
             fatal('hiphub appears to already be running (use --restart to force a restart)')
 
     context.pidfile = lockfile.FileLock(str(g_pidfile_path))
-
-    context.signal_map = {
-        signal.SIGTERM: sig_terminate_handler,
-        signal.SIGHUP: sig_terminate_handler,
-    }
-
-    context.umask = 0o002
+    context.signal_map = {signal.SIGTERM: sig_terminate_handler}
 
     with context:
         # initialize logging
