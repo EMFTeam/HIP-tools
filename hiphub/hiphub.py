@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- python-indent-offset: 4 -*-
 
-VERSION='0.04'
+VERSION='0.05'
 
 import os
 import re
@@ -159,14 +159,12 @@ def rebuild_mini(swmh_branch):
     logging.info('rebuilding MiniSWMH...')
     # get on the right branches
     mini_branch = g_repos['MiniSWMH'][g_repos['SWMH-BETA'].index(swmh_branch)]
+    os.chdir(str(g_root_repo_dir / 'SWMH-BETA'))
+    git_run(['checkout', swmh_branch])
+    os.chdir(str(g_root_repo_dir / 'ck2utils'))
+    git_run(['checkout', 'dev'])
     os.chdir(str(g_root_repo_dir / 'MiniSWMH'))
     git_run(['checkout', mini_branch])
-
-    # SWMH is already on the right branch. for something more complex
-    # like a `rebuild_sed2`, we'd have to be more careful about this.
-
-    # we also assume here that ck2utils only even has 1 branch that we
-    # track, so we're on the right branch for mapcut too.
 
     cp = subprocess.run(['/usr/bin/python3', 'build_mini.py'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
@@ -175,7 +173,7 @@ def rebuild_mini(swmh_branch):
         git_run(['reset', '--hard', 'HEAD'])
         git_run(['clean', '-f'])
         os.chdir(str(g_base_dir))
-        return False
+        return None
 
     # did anything change besides our version.txt?
     version_file = 'MiniSWMH/version.txt'
@@ -183,14 +181,15 @@ def rebuild_mini(swmh_branch):
         # eh, no biggie-- cleanup version.txt and go
         git_run(['checkout', version_file])
         os.chdir(str(g_base_dir))
-        return False
+        return None
 
     # if we're here, we do indeed have changes to commit.
     git_run(['add', '-A'])
     git_run(['commit', '-a', '-m', 'rebuild from upstream changes :robot_face:'])
 
     # determine the head's new SHA so that we may ignore it for future processing
-    g_ignored_rev['MiniSWMH:' + mini_branch] = git_run(['rev-parse', 'HEAD']).stdout.strip()
+    new_rev = git_run(['rev-parse', 'HEAD']).stdout.strip()
+    g_ignored_rev['MiniSWMH:' + mini_branch] = new_rev
 
     # .. and puuuuush, deep breaths
     git_run(['push'], retry=True)
@@ -198,7 +197,7 @@ def rebuild_mini(swmh_branch):
     # ta-dah!
     logging.info('rebuild of MiniSWMH resulted in net change, so pushed new MiniSWMH.')
     os.chdir(str(g_base_dir))
-    return True
+    return new_rev
 
 
 def rebuild_sed(repo, branch):
@@ -225,7 +224,7 @@ def rebuild_sed(repo, branch):
         git_run(['reset', '--hard', 'HEAD'])
         git_run(['clean', '-f'])
         os.chdir(str(g_base_dir))
-        return False
+        return None
 
     # did anything change besides our version.txt?
     version_file = 'build/SED2/version.txt'
@@ -233,14 +232,15 @@ def rebuild_sed(repo, branch):
         # eh, no biggie-- cleanup version.txt and go
         git_run(['checkout', version_file])
         os.chdir(str(g_base_dir))
-        return False
+        return None
 
     # if we're here, we do indeed have changes to commit.
     git_run(['add', '-A'])
     git_run(['commit', '-a', '-m', 'rebuild from upstream changes :robot_face:'])
 
     # determine the head's new SHA so that we may ignore it for future processing
-    g_ignored_rev['sed2:' + sed_branch] = git_run(['rev-parse', 'HEAD']).stdout.strip()
+    new_rev = git_run(['rev-parse', 'HEAD']).stdout.strip()
+    g_ignored_rev['sed2:' + sed_branch] = new_rev
 
     # .. and puuuuush, deep breaths
     git_run(['push'], retry=True)
@@ -248,7 +248,7 @@ def rebuild_sed(repo, branch):
     # ta-dah!
     logging.info('rebuild of sed2 resulted in net change, so pushed new sed2.')
     os.chdir(str(g_base_dir))
-    return True
+    return new_rev
 
 
 def process_head_change(repo, branch, head_rev):
