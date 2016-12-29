@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- python-indent-offset: 4 -*-
 
-VERSION='0.03'
+VERSION='0.04'
 
 import os
 import re
@@ -308,11 +308,29 @@ def init_daemon():
         logging.debug('state folder does not exist, creating: {}'.format(g_state_dir))
         g_state_dir.mkdir(parents=True)
 
+    # reset our environment to something appropriate for the `g_daemon_user`
+    env_vars_to_del = ['LOGNAME', 'LS_COLORS', 'SUDO_GID', 'SUDO_UID', 'SUDO_USER', 'SUDO_COMMAND',
+                       'TERM', 'MAIL', 'USER', 'HOME', 'USERNAME']
+
+    for v in env_vars_to_del:
+        if v in os.environ:
+            del os.environ[v]
+
+    os.environ['LOGNAME'] = g_daemon_user
+    os.environ['USER'] = g_daemon_user
+    os.environ['USERNAME'] = g_daemon_user
+    os.environ['TERM'] = 'xterm'
+    os.environ['HOME'] = '/home/' + g_daemon_user
+    
     # some of our python child processes will need this for localpaths.py and such
     os.environ['PYTHONPATH'] = str(g_root_repo_dir / 'ck2utils/esc')
-    os.environ['USER'] = g_daemon_user
-    os.environ['HOME'] = '/home/' + g_daemon_user
 
+    env_dump = 'daemon environment (after adjustment):\n'
+    for k in os.environ:
+        env_dump += k + '=' + os.environ[k] + '\n'
+
+    logging.debug(env_dump)
+    
     load_state()
 
     logging.debug('updating all tracked heads...')
