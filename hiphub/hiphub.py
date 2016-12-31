@@ -158,11 +158,6 @@ def should_rebuild_sed(repo, branch, changed_files):
     return any(landed_titles in p.parents for p in changed_files)
 
 
-def should_rebuild_sed_from_mini(branch, changed_files):
-    landed_titles = Path('MiniSWMH/common/landed_titles')
-    return any(landed_titles in p.parents for p in changed_files)
-
-
 def rebuild_mini(swmh_branch):
     logging.info('rebuilding MiniSWMH...')
     # get on the right branches
