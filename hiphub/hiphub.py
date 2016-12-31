@@ -155,7 +155,10 @@ def should_rebuild_sed(repo, branch, changed_files):
     assert repo == 'MiniSWMH' or repo == 'SWMH-BETA', "should_rebuild_sed: unsupported trigger repository: " + repo
     prefix = repo if repo == 'MiniSWMH' else 'SWMH'
     landed_titles = Path(prefix) / Path('common/landed_titles')
-    return any(landed_titles in p.parents for p in changed_files)
+    if any(landed_titles in p.parents for p in changed_files):
+        return True
+    i18n = Path(prefix) / Path('localisation')
+    return any(i18n in p.parents for p in changed_files)
 
 
 def rebuild_mini(swmh_branch):
