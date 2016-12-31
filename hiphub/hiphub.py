@@ -138,7 +138,8 @@ def load_state():
 
 # assuming repo is SWMH-BETA and we've processed SWMH-BETA before
 # (s.t. we have a list of files changed), should we rebuild MiniSWMH?
-def should_rebuild_mini_from_swmh(branch, changed_files):
+def should_rebuild_mini(repo, branch, changed_files):
+    assert repo == 'SWMH-BETA', 'should_rebuild_mini: unsupported trigger repository: ' + repo
     specific_paths = ['SWMH/common/landed_titles/swmh_landed_titles.txt',
                       'SWMH/common/province_setup/00_province_setup.txt',
                       'SWMH/map/default.map',
@@ -150,8 +151,15 @@ def should_rebuild_mini_from_swmh(branch, changed_files):
     return any(re.match(p_wanted_file, str(f)) for f in changed_files)
 
 
-def should_rebuild_sed_from_swmh(branch, changed_files):
-    landed_titles = Path('SWMH/common/landed_titles')
+def should_rebuild_sed(repo, branch, changed_files):
+    assert repo == 'MiniSWMH' or repo == 'SWMH-BETA', "should_rebuild_sed: unsupported trigger repository: " + repo
+    prefix = repo if repo == 'MiniSWMH' else 'SWMH'
+    landed_titles = Path(prefix) / Path('common/landed_titles')
+    return any(landed_titles in p.parents for p in changed_files)
+
+
+def should_rebuild_sed_from_mini(branch, changed_files):
+    landed_titles = Path('MiniSWMH/common/landed_titles')
     return any(landed_titles in p.parents for p in changed_files)
 
 
@@ -270,15 +278,15 @@ def process_head_change(repo, branch, head_rev):
         if repo == 'SWMH-BETA':
             if head in g_last_rev:
                 changed_files = git_files_changed(repo, branch, g_last_rev[head])
-                build_mini = should_rebuild_mini_from_swmh(branch, changed_files)
-                build_sed = build_mini or should_rebuild_sed_from_swmh(branch, changed_files)
+                build_mini = should_rebuild_mini(repo, branch, changed_files)
+                build_sed = build_mini or should_rebuild_sed(repo, branch, changed_files)
             else:  # first time (all files in repo changed, effectively)
                 build_mini = True
                 build_sed = True
         elif repo == 'MiniSWMH':
             if head in g_last_rev:
                 changed_files = git_files_changed(repo, branch, g_last_rev[head])
-                build_sed = should_rebuild_sed_from_swmh(branch, changed_files)
+                build_sed = should_rebuild_sed(repo, branch, changed_files)
             else:
                 build_sed = True
 
