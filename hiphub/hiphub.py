@@ -48,6 +48,11 @@ class TooManyRetriesException(Exception):
     def __str__(self):
         return 'Retried command too many times'
 
+    
+class RebuildFailedException(Exception):
+    def __str__(self):
+        return 'Rebuild of downstream repository failed'
+
 
 def fatal(msg):
     sys.stderr.write('fatal: ' + msg + '\n')
@@ -152,7 +157,7 @@ def should_rebuild_mini(repo, branch, changed_files):
 
 
 def should_rebuild_sed(repo, branch, changed_files):
-    assert repo == 'MiniSWMH' or repo == 'SWMH-BETA', "should_rebuild_sed: unsupported trigger repository: " + repo
+    assert repo == 'MiniSWMH' or repo == 'SWMH-BETA', 'should_rebuild_sed: unsupported trigger repository: ' + repo
     prefix = repo if repo == 'MiniSWMH' else 'SWMH'
     landed_titles = Path(prefix) / Path('common/landed_titles')
     if any(landed_titles in p.parents for p in changed_files):
@@ -179,7 +184,7 @@ def rebuild_mini(swmh_branch):
         git_run(['reset', '--hard', 'HEAD'])
         git_run(['clean', '-f'])
         os.chdir(str(g_base_dir))
-        return None
+        raise RebuildFailedException()
 
     # did anything change besides our version.txt?
     version_file = 'MiniSWMH/version.txt'
@@ -230,7 +235,7 @@ def rebuild_sed(repo, branch):
         git_run(['reset', '--hard', 'HEAD'])
         git_run(['clean', '-f'])
         os.chdir(str(g_base_dir))
-        return None
+        raise RebuildFailedException()
 
     # did anything change besides our version.txt?
     version_file = 'build/SED2/version.txt'
@@ -260,7 +265,8 @@ def rebuild_sed(repo, branch):
 def process_head_change(repo, branch, head_rev):
     head = '{}:{}'.format(repo, branch)
     do_processing = True
-
+    processing_failed = False
+    
     logging.debug('processing head change: %s/%s to rev %s', repo, branch, head_rev)
     
     if g_ignored_rev[head] is head_rev:
@@ -288,17 +294,21 @@ def process_head_change(repo, branch, head_rev):
             else:
                 build_sed = True
 
-        if build_mini:
-            rebuild_mini(branch)
-        if build_sed:
-            rebuild_sed(repo, branch)
+        try:
+            if build_mini:
+                rebuild_mini(branch)
+            if build_sed:
+                rebuild_sed(repo, branch)
+        except RebuildFailedException:
+            processing_failed = True
 
-    # update memory state
-    g_last_rev[head] = head_rev
+    if not processing_failed:  # don't advance last-processed rev for this head unless its processing tasks completed OK
+        # update memory state
+        g_last_rev[head] = head_rev
 
-    # update state on disk
-    with (g_state_dir / head).open('w') as f:
-        print(head_rev, file=f)
+        # update state on disk
+        with (g_state_dir / head).open('w') as f:
+            print(head_rev, file=f)
 
 
 def init_daemon():
