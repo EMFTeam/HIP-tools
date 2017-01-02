@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- python-indent-offset: 4 -*-
 
-VERSION='0.05'
+VERSION='0.06'
 
 import os
 import re
@@ -108,7 +108,7 @@ def git_files_changed(repo, branch, old_rev, new_rev='HEAD'):
     os.chdir(str(g_root_repo_dir / repo))
     git_run(['checkout', branch])
     cp = git_run(['log', '--pretty=format:', '-z', '--name-only', '{}..{}'.format(old_rev, new_rev)])
-    changed_files = {Path(path) for path in cp.stdout.split('\x00') if path}
+    changed_files = { Path(path) for path in cp.stdout.split('\x00') if path }
 
     os.chdir(str(g_base_dir))
     return changed_files
@@ -206,7 +206,7 @@ def rebuild_mini(swmh_branch):
     git_run(['push'], retry=True)
 
     # ta-dah!
-    logging.info('rebuild of MiniSWMH resulted in net change, so pushed new MiniSWMH.')
+    logging.info('rebuild of MiniSWMH resulted in net change. pushed new MiniSWMH (%s)', new_rev)
     os.chdir(str(g_base_dir))
     return new_rev
 
@@ -257,7 +257,7 @@ def rebuild_sed(repo, branch):
     git_run(['push'], retry=True)
 
     # ta-dah!
-    logging.info('rebuild of sed2 resulted in net change, so pushed new sed2.')
+    logging.info('rebuild of sed2 resulted in net change. pushed new sed2 (%s).', new_rev)
     os.chdir(str(g_base_dir))
     return new_rev
 
