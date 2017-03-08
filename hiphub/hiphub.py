@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- python-indent-offset: 4 -*-
 
-VERSION='0.06'
+VERSION='0.07'
 
 import os
 import re
@@ -116,7 +116,7 @@ def git_files_changed(repo, branch, old_rev, new_rev='HEAD'):
 
 def has_this_repo_changed(ignored_file=None):
     cp = git_run(['status', '-z'])  # filenames are terminated with NUL instead of line break
-    status_iter = iter(cp.stdout.split('\x00')[:-1])  ## example entry: '?? i got mad spaces and am untracked, yo.txt'
+    status_iter = iter(cp.stdout.split('\x00')[:-1])
     for entry in status_iter:
         if entry[0] == 'R':
             next(status_iter)  # there is an extra filename (what path was renamed from). skip it
@@ -166,10 +166,12 @@ def should_rebuild_sed(repo, branch, changed_files):
     return any(i18n in p.parents for p in changed_files)
 
 
-def rebuild_mini(swmh_branch):
+def rebuild_mini(repo, branch):
+    assert repo == 'SWMH-BETA', 'rebuild_mini: unsupported repo: ' + repo
     logging.info('rebuilding MiniSWMH...')
     # get on the right branches
-    mini_branch = g_repos['MiniSWMH'][g_repos['SWMH-BETA'].index(swmh_branch)]
+    mini_branch = g_repos['MiniSWMH'][g_repos[repo].index(branch)]
+    swmh_branch = g_repos['SWMH-BETA'][g_repos[repo].index(branch)]
     os.chdir(str(g_root_repo_dir / 'SWMH-BETA'))
     git_run(['checkout', swmh_branch])
     os.chdir(str(g_root_repo_dir / 'ck2utils'))
@@ -267,13 +269,12 @@ def process_head_change(repo, branch, head_rev):
     do_processing = True
     processing_failed = False
     
-    logging.debug('processing head change: %s/%s to rev %s', repo, branch, head_rev)
-    
-    if g_ignored_rev[head] is head_rev:
-        logging.debug('skipped processing for rev due to being self-emitted')
+    if head_rev == g_ignored_rev[head]:
+        logging.debug('skipped processing of head change (self-emitted): %s/%s to rev %s', repo, branch, head_rev)
+        g_ignored_rev[head] = None
         do_processing = False
-
-    g_ignored_rev[head] = None
+    else:
+        logging.debug('processing head change: %s/%s to rev %s', repo, branch, head_rev)
 
     if do_processing:
         build_mini = False
@@ -293,10 +294,9 @@ def process_head_change(repo, branch, head_rev):
                 build_sed = should_rebuild_sed(repo, branch, changed_files)
             else:
                 build_sed = True
-
         try:
             if build_mini:
-                rebuild_mini(branch)
+                rebuild_mini(repo, branch)
             if build_sed:
                 rebuild_sed(repo, branch)
         except RebuildFailedException:
