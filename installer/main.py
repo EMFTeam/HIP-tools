@@ -11,7 +11,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 5, 'patch': 4,
+g_version = {'major': 2, 'minor': 5, 'patch': 5,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -962,7 +962,6 @@ def main():
         ARKOInt = False
         ArumbaKS = False
         CPR = False
-        CPRfaces = False
         SWMH = False
         uSWMH = False
         SED = False
@@ -986,7 +985,6 @@ def main():
             ARKOInt = True
         if cprSelect:
             CPR = True
-            CPRfaces = True
         if aksSelect:
             ArumbaKS = True
         if uswmhSelect:
@@ -997,7 +995,6 @@ def main():
             ARKOCoA = True
             ArumbaKS = True
             CPR = True
-            CPRfaces = True
             SWMH = True
             uSWMH = True
             LTM = True
@@ -1006,7 +1003,6 @@ def main():
 
         if batchMode:
             CPR &= cprMissingDLCNames is not None and len(cprMissingDLCNames) == 0
-            CPRfaces &= CPR
         else:
             # EMF...
             EMF = True if g_steamMode else enableMod(u"EMF ({})".format(g_versions['EMF']))
@@ -1043,7 +1039,6 @@ def main():
 
                 else:  # DLC verification succeeded, and CPR is clear for take-off.
                     CPR = enableMod(u"CPRplus ({})".format(g_versions['CPR']))
-                    CPRfaces = False if not CPR else enableMod(u"CPRplus's custom western & muslim facial art")
 
             # SWMH...
             if (not g_steamMode) and not g_zijiMode:
@@ -1184,8 +1179,6 @@ def main():
             moduleOutput.append("CPRplus (%s)\n" % g_versions['CPR'])
             wrappedPaths = set(['gfx'])
             pushFolder('CPRplus', targetFolder, wrapPaths=wrappedPaths)
-            if CPRfaces:
-                pushFolder('CPRplus-compatch/CustomFaces', targetFolder)
             if SWMH:
                 pushFolder('CPRplus-compatch/SWMH', targetFolder)
             elif EMF:
