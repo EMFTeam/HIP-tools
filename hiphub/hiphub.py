@@ -25,16 +25,16 @@ g_gitbin_path = Path('/usr/bin/git')
 
 # repos and respective branches which we track
 g_repos = {
-    'SWMH-BETA': ['master', 'Timeline_Extension+Bookmark_BETA'],
-    'sed2': ['dev', 'timeline'],
-    'EMF': ['alpha', 'timeline'],
-    'MiniSWMH': ['master', 'timeline'],
+    'SWMH-BETA': ['master'],
+    'sed2': ['dev'],
+    'EMF': ['alpha'],
+    'MiniSWMH': ['master'],
     'HIP-tools': ['master'],
     'ck2utils': ['dev'],
     'CPRplus': ['dev'],
     'ARKOpack': ['master'],
     'ArumbaKS': ['master'],
-    'LTM': ['master', 'dev'],
+    'LTM': ['dev'],
 }
 
 g_pidfile_path = g_base_dir / 'hiphub.pid'  # we mark our currently running PID here
