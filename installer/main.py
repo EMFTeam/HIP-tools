@@ -1,6 +1,4 @@
-#!/usr/bin/python
-# -*- coding: cp1252 -*-
-# -*- python-indent-offset: 4 -*-
+#!/usr/bin/python2
 
 import hashlib
 import os
@@ -11,7 +9,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 5, 'patch': 5,
+g_version = {'major': 2, 'minor': 6, 'patch': 0,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -768,31 +766,32 @@ def getSteamGameFolder(masterFolder, gameName, magicFile):
     return None
 
 
-cprReqDLCNames = {'dlc/dlc002.dlc': 'Mongol Face Pack',
-                  'dlc/dlc013.dlc': 'African Portraits',
-                  'dlc/dlc014.dlc': 'Mediterranean Portraits',
-                  'dlc/dlc016.dlc': 'Russian Portraits',
-                  'dlc/dlc020.dlc': 'Norse Portraits',
-                  'dlc/dlc022.dlc': 'The Republic',
-                  'dlc/dlc028.dlc': 'Celtic Portraits',
-                  'dlc/dlc039.dlc': 'Rajas of India',
-                  'dlc/dlc041.dlc': 'Turkish Portraits',
-                  'dlc/dlc044.dlc': 'Persian Portraits',
-                  'dlc/dlc046.dlc': 'Early Western Clothing Pack',
-                  'dlc/dlc047.dlc': 'Early Eastern Clothing Pack',
-                  'dlc/dlc052.dlc': 'Iberian Portraits',
-                  'dlc/dlc057.dlc': 'Cuman Portraits',
-                  'dlc/dlc063.dlc': 'Conclave Content Pack',
-                  'dlc/dlc065.dlc': 'South Indian Portraits',
-                  'dlc/dlc067.dlc': "Reaper's Due Content Pack"}
+cprReqDLCNames = {'dlc002.dlc': 'Mongol Face Pack',
+                  'dlc013.dlc': 'African Portraits',
+                  'dlc014.dlc': 'Mediterranean Portraits',
+                  'dlc016.dlc': 'Russian Portraits',
+                  'dlc020.dlc': 'Norse Portraits',
+                  'dlc022.dlc': 'The Republic',
+                  'dlc028.dlc': 'Celtic Portraits',
+                  'dlc039.dlc': 'Rajas of India',
+                  'dlc041.dlc': 'Turkish Portraits',
+                  'dlc044.dlc': 'Persian Portraits',
+                  'dlc046.dlc': 'Early Western Clothing Pack',
+                  'dlc047.dlc': 'Early Eastern Clothing Pack',
+                  'dlc052.dlc': 'Iberian Portraits',
+                  'dlc057.dlc': 'Cuman Portraits',
+                  'dlc063.dlc': 'Conclave Content Pack',
+                  'dlc065.dlc': 'South Indian Portraits',
+                  'dlc067.dlc': 'Reaper\'s Due Content Pack',
+                  'dlc072.dlc': 'South Indian Portraits',
+                  }
 
 
 # Determine whether the DLCs required for CPR are installed in the active game folder.
 # Returns None if DLC detection (game folder detection) fails, an empty list if all
 # requirements are met, and otherwise the exact list of the missing DLCs' names.
 def detectCPRMissingDLCs():
-    # Normalize path keys denormReqDLCNames, platform-specific (varies even between cygwin and win32)
-    reqDLCNames = {os.path.normpath(f): cprReqDLCNames[f] for f in cprReqDLCNames.keys()}
+    reqDLCNames = cprReqDLCNames
 
     masterFolder = getSteamMasterFolder()
     if not masterFolder:
@@ -810,9 +809,17 @@ def detectCPRMissingDLCs():
     if not os.path.isdir(dlcFolder):
         return None
 
-    for f in [os.path.join('dlc', e) for e in os.listdir(dlcFolder)]:
+    for f in os.listdir(dlcFolder):
         if f in reqDLCNames:
             del reqDLCNames[f]
+
+    # hack alert for a hacky free dlc (south indian portraits has two versions, technically)
+    ether = ['dlc065.dlc', 'dlc072.dlc']  # yep, ether
+    if ether[0] in reqDLCNames and ether[1] in reqDLCNames:
+        del reqDLCNames[ether[0]] # will fail still, but don't display duplicates
+    elif ether[0] in reqDLCNames or ether[1] in reqDLCNames:
+        for i in ether: # mm...
+            reqDLCNames.pop(i, None) # will not fail, because at least one but not both could not be found
 
     return reqDLCNames.values()
 
