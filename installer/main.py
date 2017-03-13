@@ -1177,11 +1177,11 @@ def main():
                     pushFolder('EMF+MiniSWMH', targetFolder)
             else:
                 pushFolder('EMF+Vanilla', targetFolder)
-            if AKS:
+            if ArumbaKS:
                 pushFolder("EMF+AKS", targetFolder)
             if ARKOInt:
                 pushFolder("EMF+ArkoInterface", targetFolder)
-                if AKS:
+                if ArumbaKS:
                     pushFolder("EMF+ArkoInterface+AKS", targetFolder)
             g_dbg.pop()
 
