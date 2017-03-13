@@ -1,4 +1,5 @@
 #!/usr/bin/python2
+# -*- coding: cp1252 -*-
 
 import hashlib
 import os
