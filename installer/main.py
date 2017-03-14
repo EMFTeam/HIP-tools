@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 6, 'patch': 1,
+g_version = {'major': 2, 'minor': 6, 'patch': 2,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -784,6 +784,7 @@ cprReqDLCNames = {'dlc002.dlc': 'Mongol Face Pack',
                   'dlc063.dlc': 'Conclave Content Pack',
                   'dlc065.dlc': 'South Indian Portraits',
                   'dlc067.dlc': 'Reaper\'s Due Content Pack',
+                  'dlc070.dlc': 'Monks and Mystics Content Pack',
                   'dlc072.dlc': 'South Indian Portraits',
                   }
 
