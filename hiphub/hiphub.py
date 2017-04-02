@@ -171,6 +171,11 @@ def rebuild_emf(repo, branch):
     assert repo == 'EMF', 'unsupported trigger repository: ' + repo
     logging.info('rebuilding EMF...')
     # get on the right branches
+    swmh_branch = g_repos['SWMH-BETA'][g_repos[repo].index(branch)]
+    os.chdir(str(g_root_repo_dir / 'SWMH-BETA'))
+    git_run(['checkout', swmh_branch])
+    os.chdir(str(g_root_repo_dir / 'ck2utils'))
+    git_run(['checkout', 'dev'])
     os.chdir(str(g_root_repo_dir / repo))
     git_run(['checkout', branch])
 
