@@ -174,7 +174,7 @@ def rebuild_emf(repo, branch):
     os.chdir(str(g_root_repo_dir / repo))
     git_run(['checkout', branch])
 
-    cp = subprocess.run(['/usr/bin/python3', 'src/rebuild_emf.py'],
+    cp = subprocess.run(['/usr/bin/python3', 'src/rebuild_managed.py'],
                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
     if cp.returncode != 0:
