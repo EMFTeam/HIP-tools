@@ -167,6 +167,49 @@ def should_rebuild_sed(repo, branch, changed_files):
     return any(i18n in p.parents for p in changed_files)
 
 
+def rebuild_emf(repo, branch):
+    assert repo == 'EMF', 'unsupported trigger repository: ' + repo
+    logging.info('rebuilding EMF...')
+    # get on the right branches
+    os.chdir(str(g_root_repo_dir / repo))
+    git_run(['checkout', branch])
+
+    cp = subprocess.run(['/usr/bin/python3', 'src/rebuild_emf.py'],
+                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+
+    if cp.returncode != 0:
+        logging.error('failed to rebuild EMF:\n>command: {}\n>code: {}\n>error:\n{}\n'
+                      .format(cp.args, cp.returncode, cp.stderr))
+        git_run(['reset', '--hard', 'HEAD'])
+        git_run(['clean', '-f'])
+        os.chdir(str(g_base_dir))
+        raise RebuildFailedException()
+
+    # did anything change besides our version.txt?
+    version_file = 'EMF/version.txt'
+    if not has_this_repo_changed(ignored_file=version_file):
+        # eh, no biggie-- cleanup version.txt and go
+        git_run(['checkout', version_file])
+        os.chdir(str(g_base_dir))
+        return None
+
+    # if we're here, we do indeed have changes to commit.
+    git_run(['add', '-A'])
+    git_run(['commit', '-a', '-m', 'regenerated managed files :robot_face:'])
+
+    # determine the head's new SHA so that we may ignore it for future processing
+    new_rev = git_run(['rev-parse', 'HEAD']).stdout.strip()
+    g_ignored_rev[repo + ':' + branch] = new_rev
+
+    # .. and puuuuush, deep breaths
+    git_run(['push'], retry=True)
+
+    # ta-dah!
+    logging.info('rebuild of EMF resulted in net change. pushed new EMF (%s)', new_rev)
+    os.chdir(str(g_base_dir))
+    return new_rev
+
+
 def rebuild_mini(repo, branch):
     assert repo == 'SWMH-BETA', 'rebuild_mini: unsupported repo: ' + repo
     logging.info('rebuilding MiniSWMH...')
@@ -280,26 +323,29 @@ def process_head_change(repo, branch, head_rev):
     if do_processing:
         build_mini = False
         build_sed = False
+        build_emf = False
+
+        if repo in ['SWMH-BETA', 'MiniSWMH', 'EMF']:
+            changed_files = git_files_changed(repo, branch, g_last_rev[head])
 
         if repo == 'SWMH-BETA':
             if head in g_last_rev:
-                changed_files = git_files_changed(repo, branch, g_last_rev[head])
                 build_mini = should_rebuild_mini(repo, branch, changed_files)
                 build_sed = build_mini or should_rebuild_sed(repo, branch, changed_files)
             else:  # first time (all files in repo changed, effectively)
                 build_mini = True
                 build_sed = True
         elif repo == 'MiniSWMH':
-            if head in g_last_rev:
-                changed_files = git_files_changed(repo, branch, g_last_rev[head])
-                build_sed = should_rebuild_sed(repo, branch, changed_files)
-            else:
-                build_sed = True
+            build_sed = (head not in g_last_rev) or should_rebuild_sed(repo, branch, changed_files)
+        elif repo == 'EMF':
+            build_emf = (head not in g_last_rev) or Path('EMF+SWMH/map/geographical_region.txt') in changed_files
         try:
             if build_mini:
                 rebuild_mini(repo, branch)
             if build_sed:
                 rebuild_sed(repo, branch)
+            if build_emf:
+                rebuild_emf(repo, branch)
         except RebuildFailedException:
             processing_failed = True
 
