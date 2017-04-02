@@ -148,7 +148,8 @@ def should_rebuild_mini(repo, branch, changed_files):
     specific_paths = ['SWMH/common/landed_titles/swmh_landed_titles.txt',
                       'SWMH/common/province_setup/00_province_setup.txt',
                       'SWMH/map/default.map',
-                      'SWMH/map/definition.csv']
+                      'SWMH/map/definition.csv',
+                      'SWMH/map/geographical_region.txt']
 
     if any(Path(p) in changed_files for p in specific_paths):
         return True
