@@ -332,7 +332,7 @@ def process_head_change(repo, branch, head_rev):
         build_sed = False
         build_emf = False
 
-        if repo in ['SWMH-BETA', 'MiniSWMH', 'EMF']:
+        if repo in ['SWMH-BETA', 'MiniSWMH', 'EMF'] and head in g_last_rev:
             changed_files = git_files_changed(repo, branch, g_last_rev[head])
 
         if repo == 'SWMH-BETA':
