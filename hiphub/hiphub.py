@@ -94,6 +94,7 @@ def update_head(repo, branch):
     git_run(['clean', '-f'])
 
     # now checkout the desired branch and pull
+    git_run(['fetch'], retry=True)
     git_run(['checkout', branch])
     git_run(['pull'], retry=True)
 
