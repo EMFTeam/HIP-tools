@@ -7,18 +7,18 @@ from pathlib import Path
 
 update_dir = Path("/var/www/hip.zijistark.com/hiphub")
 
-tracked_repos = {
-    'Aasmul/SWMH-BETA': ['master', 'Timeline_Extension+Bookmark_BETA'],
-    'escalonn/sed2': ['dev', 'timeline'],
-    'EMFTeam/EMF': ['alpha', 'timeline'],
-    'EMFTeam/MiniSWMH': ['master', 'timeline'],
-    'EMFTeam/HIP-tools': ['master'],
-    'zijistark/ck2utils': ['dev'],
-    'sifsilver/CPRplus': ['dev'],
-    'ArkoG/ARKOpack': ['master'],
-    'escalonn/ArumbaKS': ['master'],
-    'Leybrook/LTM': ['master', 'dev']
-}
+tracked_repos = [
+    'Aasmul/SWMH-BETA',
+    'escalonn/sed2',
+    'EMFTeam/EMF',
+    'EMFTeam/MiniSWMH',
+    'EMFTeam/HIP-tools',
+    'zijistark/ck2utils',
+    'sifsilver/CPRplus',
+    'ArkoG/ARKOpack',
+    'escalonn/ArumbaKS',
+    'Leybrook/LTM',
+]
 
 
 def main():
@@ -46,11 +46,10 @@ def main():
         print("Repository not being actively tracked.")
         return 0
 
-    branches = tracked_repos[full_name]
     ref_parts = payload["ref"].split('/')
 
-    if len(ref_parts) != 3 or not (ref_parts[0] == 'refs' and ref_parts[1] == 'heads' and ref_parts[2] in branches):
-        print("Branch not being actively tracked or weird ref.")
+    if len(ref_parts) != 3 or not (ref_parts[0] == 'refs' and ref_parts[1] == 'heads'):
+        print("Weird ref.")
         return 0
 
     branch = ref_parts[2]
