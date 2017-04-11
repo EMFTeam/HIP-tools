@@ -152,6 +152,7 @@ def should_rebuild_mini(repo, branch, changed_files):
                       'SWMH/map/definition.csv',
                       'SWMH/map/geographical_region.txt',
                       'SWMH/map/island_region.txt',
+                      'SWMH/map/adjacencies.csv',
     ]
 
     if any(Path(p) in changed_files for p in specific_paths):
