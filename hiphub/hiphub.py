@@ -327,7 +327,7 @@ def archive_emf_beta():
 
     zip_tmp_path = '{}.tmp.{}'.format(g_emfbeta_path, os.getpid())
 
-    git_run(['archive', '-o', zip_tmp_path, 'HEAD'])
+    git_run(['archive', '--format=zip', '-o', zip_tmp_path, 'HEAD'])
 
     if g_emfbeta_path.exists():
         os.unlink(str(g_emfbeta_path))
