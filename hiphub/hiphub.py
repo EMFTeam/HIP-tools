@@ -19,15 +19,18 @@ from pathlib import Path
 
 g_daemon_user = 'hiphub'  # user hiphub should run as (will use user's default group)
 g_base_dir = Path('/home') / g_daemon_user  # daemon state will be kept under here
-g_webhook_dir = Path('/var/www/hip.zijistark.com/hiphub')  # folder where the webhook hints us as to new commit activity
 g_root_repo_dir = Path('/var/local/git')  # root folder of all the hiphub git repositories
+g_webroot_dir = Path('/var/www/hip.zijistark.com')
+g_webhook_dir = g_webroot_dir / 'hiphub'  # folder where the webhook hints us as to new commit activity
+g_emfbeta_name = 'emf_beta.zip'
+g_emfbeta_path = g_webroot_dir / 'pub' / g_emfbeta_name
 g_gitbin_path = Path('/usr/bin/git')
 
 # repos and respective branches which we track
 g_repos = {
     'SWMH-BETA': ['master'],
     'sed2': ['dev'],
-    'EMF': ['alpha'],
+    'EMF': ['alpha', 'beta'],
     'MiniSWMH': ['master'],
     'HIP-tools': ['master'],
     'ck2utils': ['dev'],
@@ -317,6 +320,24 @@ def rebuild_sed(repo, branch):
     return new_rev
 
 
+def archive_emf_beta():
+    logging.info('updating public EMF/beta archive...')
+    os.chdir(str(g_root_repo_dir / 'EMF'))
+    git_run(['checkout', 'beta'])
+
+    zip_tmp_path = '{}.tmp.{}'.format(g_emfbeta_path, os.getpid())
+
+    git_run(['archive', '-o', zip_tmp_path, 'HEAD'])
+
+    if g_emfbeta_path.exists():
+        os.unlink(str(g_emfbeta_path))
+    os.rename(zip_tmp_path, str(g_emfbeta_path))
+
+    # ta-dah!
+    logging.info('ZIP archive of EMF/beta successfully updated: {}'.format(g_emfbeta_path))
+    os.chdir(str(g_base_dir))
+
+
 def process_head_change(repo, branch, head_rev):
     head = '{}:{}'.format(repo, branch)
     do_processing = True
@@ -329,7 +350,10 @@ def process_head_change(repo, branch, head_rev):
     else:
         logging.debug('processing head change: %s/%s to rev %s', repo, branch, head_rev)
 
-    if do_processing:
+    # special case for EMF beta archive rebuild
+    if repo == 'EMF' and branch == 'beta':
+        archive_emf_beta()
+    elif do_processing:
         build_mini = False
         build_sed = False
         build_emf = False
