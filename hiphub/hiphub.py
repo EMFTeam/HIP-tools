@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- python-indent-offset: 4 -*-
 
-VERSION='0.07'
+VERSION='0.2'
 
 import os
 import re
@@ -164,6 +164,15 @@ def should_rebuild_mini(repo, branch, changed_files):
     return any(re.match(p_wanted_file, str(f)) for f in changed_files)
 
 
+def should_rebuild_emf(repo, branch, changed_files):
+    assert repo == 'EMF' or repo == 'SWMH-BETA', 'should_rebuild_emf: unsupported trigger repository: ' + repo
+    if Path('EMF+SWMH/map/geographical_region.txt') in changed_files:
+        return True
+    # for emf_can_add_holding_slot trigger generation:
+    p_wanted_file = r'^SWMH/history/provinces/.+?\.txt$'
+    return any(re.match(p_wanted_file, str(f)) for f in changed_files)
+
+
 def should_rebuild_sed(repo, branch, changed_files):
     assert repo == 'MiniSWMH' or repo == 'SWMH-BETA', 'should_rebuild_sed: unsupported trigger repository: ' + repo
     prefix = repo if repo == 'MiniSWMH' else 'SWMH'
@@ -175,16 +184,17 @@ def should_rebuild_sed(repo, branch, changed_files):
 
 
 def rebuild_emf(repo, branch):
-    assert repo == 'EMF', 'unsupported trigger repository: ' + repo
+    assert repo == 'EMF' or repo == 'SWMH-BETA', 'unsupported trigger repository: ' + repo
     logging.info('rebuilding EMF...')
     # get on the right branches
+    emf_branch = g_repos['EMF'][g_repos[repo].index(branch)]
     swmh_branch = g_repos['SWMH-BETA'][g_repos[repo].index(branch)]
     os.chdir(str(g_root_repo_dir / 'SWMH-BETA'))
     git_run(['checkout', swmh_branch])
     os.chdir(str(g_root_repo_dir / 'ck2utils'))
     git_run(['checkout', 'dev'])
-    os.chdir(str(g_root_repo_dir / repo))
-    git_run(['checkout', branch])
+    os.chdir(str(g_root_repo_dir / 'EMF'))
+    git_run(['checkout', emf_branch])
 
     cp = subprocess.run(['/usr/bin/python3', 'src/rebuild_managed.py'],
                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
@@ -365,13 +375,15 @@ def process_head_change(repo, branch, head_rev):
             if head in g_last_rev:
                 build_mini = should_rebuild_mini(repo, branch, changed_files)
                 build_sed = build_mini or should_rebuild_sed(repo, branch, changed_files)
+                build_emf = should_rebuild_emf(repo, branch, changed_files)
             else:  # first time (all files in repo changed, effectively)
                 build_mini = True
                 build_sed = True
+                build_emf = True
         elif repo == 'MiniSWMH':
             build_sed = (head not in g_last_rev) or should_rebuild_sed(repo, branch, changed_files)
         elif repo == 'EMF':
-            build_emf = (head not in g_last_rev) or Path('EMF+SWMH/map/geographical_region.txt') in changed_files
+            build_emf = (head not in g_last_rev) or should_rebuild_emf(repo, branch, changed_files)
         try:
             if build_mini:
                 rebuild_mini(repo, branch)
