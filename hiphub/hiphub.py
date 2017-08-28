@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- python-indent-offset: 4 -*-
 
-VERSION='0.2'
+VERSION='0.21'
 
 import os
 import re
@@ -28,8 +28,8 @@ g_gitbin_path = Path('/usr/bin/git')
 
 # repos and respective branches which we track
 g_repos = {
-    'SWMH-BETA': ['master'],
-    'sed2': ['dev'],
+    'SWMH-BETA': ['v3.02-compat'],
+    'sed2': ['compat'],
     'EMF': ['alpha', 'beta'],
     'MiniSWMH': ['master'],
     'HIP-tools': ['master'],
@@ -168,8 +168,8 @@ def should_rebuild_emf(repo, branch, changed_files):
     assert repo == 'EMF' or repo == 'SWMH-BETA', 'should_rebuild_emf: unsupported trigger repository: ' + repo
     if Path('EMF+SWMH/map/geographical_region.txt') in changed_files:
         return True
-    # for emf_can_add_holding_slot trigger generation:
-    p_wanted_file = r'^SWMH/history/provinces/.+?\.txt$'
+    # for emf_can_add_holding_slot trigger generation & emf_swmh_history:
+    p_wanted_file = r'^SWMH/history/(characters|titles|provinces)/.+?\.txt$'
     return any(re.match(p_wanted_file, str(f)) for f in changed_files)
 
 
@@ -206,7 +206,7 @@ def rebuild_emf(repo, branch):
         git_run(['clean', '-f'])
         os.chdir(str(g_base_dir))
         raise RebuildFailedException()
-
+    
     # did anything change besides our version.txt?
     version_file = 'EMF/version.txt'
     if not has_this_repo_changed(ignored_file=version_file):
