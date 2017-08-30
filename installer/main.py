@@ -783,7 +783,7 @@ cprReqDLCNames = {'dlc002.dlc': 'Mongol Face Pack',
 
 # Determine the DLCs installed in the active game folder.
 # Returns None if DLC detection (game folder detection) fails,
-# and otherwise the exact list of the DLCs' names.
+# and otherwise the exact list of the DLCs' IDs (e.g. "dlc010.dlc").
 def detectDLCs():
     masterFolder = getSteamMasterFolder()
     if not masterFolder:
