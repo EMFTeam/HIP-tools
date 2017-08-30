@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 6, 'patch': 2,
+g_version = {'major': 2, 'minor': 7, 'patch': 0,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -380,18 +380,6 @@ def popTree(d, targetFolder):
     g_dbg.pop()
 
 
-def stripPathHead(path):
-    i = path.find('/')
-    if i == -1:
-        i = path.find('\\\\')
-    if i == -1:
-        i = path.find('\\')
-    if i == -1:
-        raise InstallerPathException()
-    newStart = i + 1
-    return path[newStart:]
-
-
 g_k  = bytearray(br'"The enemy of a good plan is the dream of a perfect plan" - Carl von Clausewitz')
 
 
@@ -427,7 +415,8 @@ def compileTargetFile(src, dst, wrap):
         g_modified = True
 
 
-def compileTarget(mapFilename):
+# startFolder is the reference point for the relative paths in the map file
+def compileTarget(mapFilename, startFolder):
     print(localise('COMPILING'))
     sys.stdout.flush()
 
@@ -440,7 +429,7 @@ def compileTarget(mapFilename):
                 sys.stdout.flush()
 
             src = g_targetSrc[dstPath]
-            mapFile.write('%s <= [%s]\n' % (stripPathHead(dstPath), src.folder))
+            mapFile.write('%s <= [%s]\n' % (os.path.relpath(dstPath, startFolder), src.folder))
 
             if src.isDir:
                 mkTree(dstPath)
@@ -471,7 +460,7 @@ def cleanUserDir(userDir):
 def resetCaches():
     if g_platform == 'mac':
         print(u'Clearing preexisting CKII gfx/map cache')
-        cleanUserDir('..')  # TODO: Find out if the user_dir changes with the new 2.1.5 launcher
+        cleanUserDir('..')
     elif g_platform == 'win' or g_platform == 'cyg':
         print(u'Clearing preexisting HIP-related CKII gfx/map caches ...')
 
@@ -487,7 +476,7 @@ def resetCaches():
             if os.path.isdir(userDir) and 'HIP' in userDir:
                 cleanUserDir(userDir)
     else:
-        pass  # TODO: Find out if the user_dir changes with the new 2.1.5 launcher
+        pass
 
 
 # Changes the current working directory to the same as that of the
@@ -547,7 +536,7 @@ def printVersionEnvInfo():
         extKeys = [k + ': ' for k in extKeys]
         maxKeyWidth = len(max(extKeys, key=len))
         for k, v in zip(extKeys, extVals):
-            print('% -*s%s' % (maxKeyWidth, k, v))  # TODO: needs to be upgraded to use format() and output UTF-8
+            print(u'{:<{width}}{}'.format(k, v, width=maxKeyWidth))
         sys.stdout.write('\n')
 
     print(u'HIP Installer Path: ')
@@ -642,13 +631,16 @@ def getSteamMasterFolderFromRegistry(x64Mode=True):
 
     g_dbg.push('search_winreg_key("{}")'.format(keyPath))
 
-    # TODO:
-    # _winreg import will fail on Python 3, so a check against the Python major version and subsequent conditional
-    # import of 'winreg' instead of '_winreg' in that case *should* make this part of the script v2/v3-safe.
+    # _winreg import will fail on Python 3, so a conditional import of 'winreg' instead of '_winreg' in that case
+    # *should* make this part of the script v2/v3-safe.
 
     # NOTE: cygwin Python lacks _winreg
 
-    import _winreg
+    try:
+        import _winreg
+    except ImportError:
+        import winreg as _winreg
+
     from _winreg import HKEY_LOCAL_MACHINE
 
     try:
@@ -789,12 +781,10 @@ cprReqDLCNames = {'dlc002.dlc': 'Mongol Face Pack',
                   }
 
 
-# Determine whether the DLCs required for CPR are installed in the active game folder.
-# Returns None if DLC detection (game folder detection) fails, an empty list if all
-# requirements are met, and otherwise the exact list of the missing DLCs' names.
-def detectCPRMissingDLCs():
-    reqDLCNames = cprReqDLCNames
-
+# Determine the DLCs installed in the active game folder.
+# Returns None if DLC detection (game folder detection) fails,
+# and otherwise the exact list of the DLCs' names.
+def detectDLCs():
     masterFolder = getSteamMasterFolder()
     if not masterFolder:
         return None
@@ -811,7 +801,17 @@ def detectCPRMissingDLCs():
     if not os.path.isdir(dlcFolder):
         return None
 
-    for f in os.listdir(dlcFolder):
+    dlcIDs = [f for f in os.listdir(dlcFolder) if f.endswith('.dlc')]
+
+    return dlcIDs
+
+
+# Determine whether the DLCs required for CPR are installed.
+# Returns the exact list of the missing DLCs' names, or an empty list if there are none.
+def detectCPRMissingDLCs(dlcIDs):
+    reqDLCNames = cprReqDLCNames
+
+    for f in dlcIDs:
         if f in reqDLCNames:
             del reqDLCNames[f]
 
@@ -834,7 +834,7 @@ def printCPRReqDLCNames():
     sys.stdout.write('\n')
 
 
-def scaffoldMod(baseFolder, targetFolder, modBasename, modName, modPath, modUserDir=None, eu4Version=None):
+def scaffoldMod(baseFolder, targetFolder, modBasename, modName, modPath, modUserDir=None, eu4Version=None, deps=None):
     # Remove preexisting target folder...
     if os.path.exists(targetFolder):
 
@@ -868,6 +868,11 @@ def scaffoldMod(baseFolder, targetFolder, modBasename, modName, modPath, modUser
     with open(modFilename, "w") as modFile:
         modFile.write('name = "{}"  # Name to use as a dependency if making a sub-mod\n'.format(modName))
         modFile.write('path = "mod/{}"\n'.format(modPath))
+        if deps is not None:
+            modFile.write('dependencies = {\n')
+            for dependencyName in deps:
+                modFile.write('"{}"\n'.format(dependencyName))
+            modFile.write('}\n')
         if modUserDir is not None:
             modFile.write('user_dir = "%s"  '
                           '# Ensure we get our own versions of the gfx/map caches and savegames\n' %
@@ -944,16 +949,17 @@ def main():
         getManifest()
 
         # These are the modules/ directories from which to grab each mod's version.txt:
-        modDirs = {'pkg': '',  # Installer package version
-                   'SWMH':     'SWMH',
-                   'CPR':      'CPRplus',
-                   'EMF':      'EMF',
-                   'SED':      'SED2',
-                   'ARKOC':    'ARKOpack_Armoiries',
-                   'ARKOI':    'ARKOpack_Interface',
-                   'ArumbaKS': 'ArumbaKS',
-                   'uSWMH':    'MiniSWMH',
-                   'LTM':      'LTM+SWMH'
+        modDirs = {'pkg': '',   # Installer package version
+                   'SWMH':      'SWMH',
+                   'CPR':       'CPRplus',
+                   'EMF':       'EMF',
+                   'SED':       'SED2',
+                   'ARKOC':     'ARKOpack_Armoiries',
+                   'ARKOI':     'ARKOpack_Interface',
+                   'ArumbaKS':  'ArumbaKS',
+                   'uSWMH':     'MiniSWMH',
+                   'LTM':       'LTM+SWMH',
+                   'Converter': 'Converter'
         }
 
         getPkgVersions(modDirs)
@@ -975,6 +981,7 @@ def main():
         uSWMH = False
         SED = False
         LTM = False
+        Converter = False
 
         batchMode = sedSelect or swmhSelect or emfSelect or ltmSelect or arkocSelect or \
                     arkoiSelect or cprSelect or aksSelect or uswmhSelect or zijiSelect
@@ -1008,7 +1015,10 @@ def main():
             uSWMH = True
             LTM = True
 
-        cprMissingDLCNames = detectCPRMissingDLCs()
+        cprMissingDLCNames = None
+        dlcIDs = detectDLCs()
+        if dlcIDs is not None:
+            cprMissingDLCNames = detectCPRMissingDLCs(dlcIDs)
 
         if batchMode:
             CPR &= cprMissingDLCNames is not None and len(cprMissingDLCNames) == 0
@@ -1062,6 +1072,15 @@ def main():
             if SWMH and not g_steamMode:
                 uSWMH = enableModDefaultNo(u'MiniSWMH: Performance-Friendly SWMH ({})'.format(g_versions['uSWMH']), compat=True)
 
+            # Converter...
+            if SWMH and not g_steamMode:
+                # Don't prompt if EU4 converter DLC is positively detected as missing.
+                if dlcIDs is None or 'dlc030.dlc' in dlcIDs:
+                    print(u"\nNEW: HIP now supports the EU4 Converter even with SWMH enabled. This will\n"
+                          u"install a separate mod, which should be left disabled until you are ready to\n"
+                          u"convert a save.\n")
+                    Converter = enableModDefaultNo(u'Converter: EU4 conversion support for SWMH ({})'.format(g_versions['Converter']), compat=True)
+
             # SED...
             SED = SWMH and g_zijiMode
             if SWMH and not g_steamMode and not SED:
@@ -1078,8 +1097,13 @@ def main():
 
         if targetFolder != g_defaultFolder:
             modBasename = 'HIP_' + targetFolder
+            converterName = 'HIP - ' + targetFolder + ' - Converter'
         else:
             modBasename = 'HIP'
+            converterName = 'HIP - Converter'
+
+        modName = 'HIP - ' + targetFolder
+        converterTargetFolder = modBasename + '_Converter'
 
         if EMF or ARKOCoA or ARKOInt or CPR or SWMH:
             modUserDir = modBasename
@@ -1089,17 +1113,17 @@ def main():
         modFilename = scaffoldMod('.',
                                   targetFolder,
                                   modBasename,
-                                  'HIP - ' + targetFolder,
+                                  modName,
                                   targetFolder,
                                   modUserDir)
 
-#        if Converter:
-#            euModFilename = scaffoldMod(euFolderBase,
-#                                        euFolder,
-#                                        'HIP_Converter',
-#                                        'HIP Converter Support',
-#                                        euSubfolder,
-#                                        eu4Version='1.10')
+        if Converter:
+            euModFilename = scaffoldMod('.',
+                                        converterTargetFolder,
+                                        converterTargetFolder,
+                                        converterName,
+                                        converterTargetFolder,
+                                        deps=[modName])
 
         # Prepare file mappings...
         global g_targetSrc
@@ -1198,6 +1222,14 @@ def main():
                 pushFolder('CPRplus-compatch/EMF', targetFolder)
             g_dbg.pop()
 
+        if Converter:
+            g_dbg.push("merge(Converter)")
+            moduleOutput.append("Converter (%s)\n" % g_versions['Converter'])
+            pushFolder("Converter", converterTargetFolder)
+            if uSWMH:
+                pushFolder("Converter+Mini", converterTargetFolder)
+            g_dbg.pop()
+
         g_dbg.pop("merge_done")
 
         # Where to dump a mapping of all the compiled files to their source modules (will include stuff from outside
@@ -1207,7 +1239,7 @@ def main():
         startTime = time.time()
 
         # do all the actual compilation (file I/O)
-        compileTarget(mapFilename)
+        compileTarget(mapFilename, targetFolder)
 
         endTime = time.time()
         print(u'> Compiled (%0.1f sec).\n' % (endTime - startTime))
