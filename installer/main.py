@@ -834,7 +834,20 @@ def printCPRReqDLCNames():
     sys.stdout.write('\n')
 
 
-def scaffoldMod(baseFolder, targetFolder, modBasename, modName, modPath, modUserDir=None, eu4Version=None, deps=None):
+def buildModFilename(baseFolder, modBasename):
+    modFilename = modBasename + '.mod'
+
+    # CKII command line argument parser can't handle dashes in .mod file names (which are passed as arguments to
+    # CKII.exe by the launcher)
+    modFilename = modFilename.replace('-', '__')
+    modFilename = modFilename.replace(' ', '+')
+
+    modFilename = os.path.join(baseFolder, modFilename)
+
+    return modFilename
+
+
+def removePreexistingMod(targetFolder, modFilename):
     # Remove preexisting target folder...
     if os.path.exists(targetFolder):
 
@@ -849,18 +862,13 @@ def scaffoldMod(baseFolder, targetFolder, modBasename, modName, modPath, modUser
         print(u'> Removed (%0.1f sec).\n' % (endTime - startTime))
         sys.stdout.flush()
 
+    # Remove preexisting .mod file...
+    if os.path.exists(modFilename):
+        rmFile(modFilename)
+
+
+def scaffoldMod(modFilename, targetFolder, modBasename, modName, modPath, modUserDir=None, eu4Version=None, deps=None):
     mkTree(targetFolder)
-
-    modFilename = modBasename + '.mod'
-
-    # CKII command line argument parser can't handle dashes in .mod file names (which are passed as arguments to
-    # CKII.exe by the launcher)
-    if '-' in modFilename:
-        modFilename = modFilename.replace('-', '__')
-    if ' ' in modFilename:
-        modFilename = modFilename.replace(' ', '+')
-
-    modFilename = os.path.join(baseFolder, modFilename)
 
     # Generate a new .mod file...
     g_dbg.trace('write_dot_mod("{}")'.format(modFilename))
@@ -880,8 +888,6 @@ def scaffoldMod(baseFolder, targetFolder, modBasename, modName, modPath, modUser
         if eu4Version is not None:
             modFile.write('supported_version = {}\n'.format(eu4Version))
 
-    return modFilename
-
 
 def main():
     # noinspection PyBroadException
@@ -889,12 +895,10 @@ def main():
         initLocalisation()
         initVersionEnvInfo()
 
-        # Not really sure if these even need to be global anymore...
-        global g_dbgMode
         global g_steamMode
         global g_zijiMode
 
-        g_dbgMode = '-D' in sys.argv[1:] or '--debug' in sys.argv[1:]
+        dbgMode = '-D' in sys.argv[1:] or '--debug' in sys.argv[1:]
         versionMode = '-V' in sys.argv[1:] or '--version' in sys.argv[1:]
         inplaceMode = '--in-place' in sys.argv[1:]
         g_steamMode = '--steam' in sys.argv[1:]
@@ -922,7 +926,7 @@ def main():
         g_betaMode = False
 
         global g_dbg
-        g_dbg = DebugTrace(open('HIP_debug.log', 'w'), prefix='') if g_dbgMode else NullDebugTrace()
+        g_dbg = DebugTrace(open('HIP_debug.log', 'w'), prefix='') if dbgMode else NullDebugTrace()
 
         global g_platform
         g_platform = detectPlatform()
@@ -1089,10 +1093,6 @@ def main():
             # LTM...
             LTM = True if (g_steamMode or g_zijiMode) else enableMod(u"Lindbrook's Texture Map ({})".format(g_versions['LTM']))
 
-#        euFolderBase = '../eu4_export/mod'
-#        euSubfolder = 'HIP_Converter'
-#        euFolder = euFolderBase + '/' + euSubfolder
-
         # Prepare for installation...
 
         if targetFolder != g_defaultFolder:
@@ -1110,20 +1110,26 @@ def main():
         else:
             modUserDir = None
 
-        modFilename = scaffoldMod('.',
-                                  targetFolder,
-                                  modBasename,
-                                  modName,
-                                  targetFolder,
-                                  modUserDir)
+        modFilename = buildModFilename('.', modBasename)
+        euModFilename = buildModFilename('.', converterTargetFolder)
+
+        removePreexistingMod(targetFolder, modFilename)
+        removePreexistingMod(converterTargetFolder, euModFilename)
+
+        scaffoldMod(modFilename,
+                    targetFolder,
+                    modBasename,
+                    modName,
+                    targetFolder,
+                    modUserDir)
 
         if Converter:
-            euModFilename = scaffoldMod('.',
-                                        converterTargetFolder,
-                                        converterTargetFolder,
-                                        converterName,
-                                        converterTargetFolder,
-                                        deps=[modName])
+            scaffoldMod(euModFilename,
+                        converterTargetFolder,
+                        converterTargetFolder,
+                        converterName,
+                        converterTargetFolder,
+                        deps=[modName])
 
         # Prepare file mappings...
         global g_targetSrc
