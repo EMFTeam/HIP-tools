@@ -19,7 +19,7 @@ from pathlib import Path
 
 g_daemon_user = 'hiphub'  # user hiphub should run as (will use user's default group)
 g_base_dir = Path('/home') / g_daemon_user  # daemon state will be kept under here
-g_root_repo_dir = Path('/var/local/git')  # root folder of all the hiphub git repositories
+g_root_repo_dir = g_base_dir / 'git'  # root folder of all the hiphub git repositories
 g_webroot_dir = Path('/var/www/hip.zijistark.com')
 g_webhook_dir = g_webroot_dir / 'hiphub'  # folder where the webhook hints us as to new commit activity
 g_emfbeta_name = 'emf_beta.zip'
