@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- python-indent-offset: 4 -*-
 
-VERSION='0.21'
+VERSION='0.22'
 
 import os
 import re
@@ -14,6 +14,7 @@ import logging
 import lockfile
 import subprocess
 from pathlib import Path
+import slack
 
 ##########
 
@@ -51,7 +52,7 @@ class TooManyRetriesException(Exception):
     def __str__(self):
         return 'Retried command too many times'
 
-    
+
 class RebuildFailedException(Exception):
     def __str__(self):
         return 'Rebuild of downstream repository failed'
@@ -94,7 +95,7 @@ def update_head(repo, branch):
 
     # first, make the repo a carbon copy of HEAD -- remove changes to index, remove untracked changes
     git_run(['reset', '--hard', 'HEAD'])
-    git_run(['clean', '-f'])
+    git_run(['clean', '-df'])
 
     # now checkout the desired branch and pull
     git_run(['fetch'], retry=True)
@@ -204,10 +205,10 @@ def rebuild_emf(repo, branch):
         logging.error('failed to rebuild EMF:\n>command: {}\n>code: {}\n>error:\n{}\n'
                       .format(cp.args, cp.returncode, cp.stderr))
         git_run(['reset', '--hard', 'HEAD'])
-        git_run(['clean', '-f'])
+        git_run(['clean', '-df'])
         os.chdir(str(g_base_dir))
         raise RebuildFailedException()
-    
+
     # did anything change besides our version.txt?
     version_file = 'EMF/version.txt'
     if not has_this_repo_changed(ignored_file=version_file):
@@ -251,7 +252,7 @@ def rebuild_mini(repo, branch):
     if cp.returncode != 0:
         logging.error('failed to rebuild MiniSWMH:\n>command: {}\n>code: {}\n>error:\n{}\n'.format(cp.args, cp.returncode, cp.stderr))
         git_run(['reset', '--hard', 'HEAD'])
-        git_run(['clean', '-f'])
+        git_run(['clean', '-df'])
         os.chdir(str(g_base_dir))
         raise RebuildFailedException()
 
@@ -302,7 +303,7 @@ def rebuild_sed(repo, branch):
     if cp.returncode != 0:
         logging.error('failed to rebuild sed2:\n>command: {}\n>code: {}\n>error:\n{}\n'.format(cp.args, cp.returncode, cp.stderr))
         git_run(['reset', '--hard', 'HEAD'])
-        git_run(['clean', '-f'])
+        git_run(['clean', '-df'])
         os.chdir(str(g_base_dir))
         raise RebuildFailedException()
 
@@ -349,11 +350,38 @@ def archive_emf_beta():
     os.chdir(str(g_base_dir))
 
 
+def check_save_compat(repo, branch):
+    assert repo == 'SWMH-BETA', 'check_save_compat: unsupported repo: ' + repo
+    logging.info('checking save compatibility for SWMH...')
+    # get on the right branch
+    os.chdir(str(g_root_repo_dir / 'SWMH-BETA'))
+    git_run(['checkout', branch])
+
+    cp = subprocess.run(['/usr/bin/python3', str(g_root_repo_dir / 'ck2utils/esc/save_compat.py'), str(g_root_repo_dir / 'SWMH-BETA/SWMH')], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+
+    if cp.returncode != 0:
+        logging.error('failed to check save compatibility for SWMH:\n>command: {}\n>code: {}\n>error:\n{}\n'.format(cp.args, cp.returncode, cp.stderr))
+
+        slack.isis_sendmsg("ERROR: SWMH compat check failed to complete", channel='#github')
+
+        git_run(['reset', '--hard', 'HEAD'])
+        git_run(['clean', '-df'])
+        os.chdir(str(g_base_dir))
+        raise RebuildFailedException()
+
+    result = cp.stdout.strip()
+    compatible = result == 'compatible'
+    if not compatible:
+        slack.isis_sendmsg(":shakefist: SWMH {}".format(result), channel='#github')
+    os.chdir(str(g_base_dir))
+    return compatible
+
+
 def process_head_change(repo, branch, head_rev):
     head = '{}:{}'.format(repo, branch)
     do_processing = True
     processing_failed = False
-    
+
     if head_rev == g_ignored_rev[head]:
         logging.debug('skipped processing of head change (self-emitted): %s/%s to rev %s', repo, branch, head_rev)
         g_ignored_rev[head] = None
@@ -368,11 +396,13 @@ def process_head_change(repo, branch, head_rev):
         build_mini = False
         build_sed = False
         build_emf = False
+        should_check_compat = False
 
         if repo in ['SWMH-BETA', 'MiniSWMH', 'EMF'] and head in g_last_rev:
             changed_files = git_files_changed(repo, branch, g_last_rev[head])
 
         if repo == 'SWMH-BETA':
+            should_check_compat = True
             if head in g_last_rev:
                 build_mini = should_rebuild_mini(repo, branch, changed_files)
                 build_sed = build_mini or should_rebuild_sed(repo, branch, changed_files)
@@ -392,6 +422,8 @@ def process_head_change(repo, branch, head_rev):
                 rebuild_sed(repo, branch)
             if build_emf:
                 rebuild_emf(repo, branch)
+            if should_check_compat:
+                check_save_compat(repo, branch)
         except RebuildFailedException:
             processing_failed = True
 
@@ -430,7 +462,7 @@ def init_daemon():
     os.environ['USERNAME'] = g_daemon_user
     os.environ['TERM'] = 'xterm'
     os.environ['HOME'] = '/home/' + g_daemon_user
-    
+
     # some of our python child processes will need this for localpaths.py and such
     os.environ['PYTHONPATH'] = str(g_root_repo_dir / 'ck2utils/esc')
 
@@ -439,7 +471,7 @@ def init_daemon():
         env_dump += k + '=' + os.environ[k] + '\n'
 
     logging.debug(env_dump)
-    
+
     load_state()
 
     logging.debug('updating all tracked heads...')
