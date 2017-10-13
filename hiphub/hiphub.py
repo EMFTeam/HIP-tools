@@ -14,6 +14,7 @@ import logging
 import lockfile
 import subprocess
 from pathlib import Path
+import slack
 
 ##########
 
@@ -348,6 +349,29 @@ def archive_emf_beta():
     os.chdir(str(g_base_dir))
 
 
+def check_swmh_compat(branch):
+    logging.info('checking save compatibility for SWMH...')
+    # get on the right branch
+    os.chdir(str(g_root_repo_dir / 'SWMH-BETA'))
+    git_run(['checkout', branch])
+
+    cp = subprocess.run(['/usr/bin/python3', 'save_compat.py', str(g_root_repo_dir / 'SWMH-BETA/SWMH')], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+
+    if cp.returncode == 0:
+        result = cp.stdout.strip()
+        if result != 'compatible':
+            slack.isis_sendmsg(":shakefist: SWMH {}".format(result), channel='#github')
+    else:
+        logging.error('failed to check save compatibility for SWMH:\n>command: {}\n>code: {}\n>error:\n{}\n'.format(mod_path, cp.args, cp.returncode, cp.stderr))
+
+        slack.isis_sendmsg("ERROR: SWMH compat check failed to complete", channel='#github')
+
+        git_run(['reset', '--hard', 'HEAD'])
+        git_run(['clean', '-df'])
+
+    os.chdir(str(g_base_dir))
+
+
 def process_head_change(repo, branch, head_rev):
     head = '{}:{}'.format(repo, branch)
     do_processing = True
@@ -372,6 +396,7 @@ def process_head_change(repo, branch, head_rev):
             changed_files = git_files_changed(repo, branch, g_last_rev[head])
 
         if repo == 'SWMH-BETA':
+            check_swmh_compat(branch)
             if head in g_last_rev:
                 build_mini = should_rebuild_mini(repo, branch, changed_files)
                 build_sed = build_mini or should_rebuild_sed(repo, branch, changed_files)
