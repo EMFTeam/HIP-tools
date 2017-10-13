@@ -51,7 +51,7 @@ class TooManyRetriesException(Exception):
     def __str__(self):
         return 'Retried command too many times'
 
-    
+
 class RebuildFailedException(Exception):
     def __str__(self):
         return 'Rebuild of downstream repository failed'
@@ -94,7 +94,7 @@ def update_head(repo, branch):
 
     # first, make the repo a carbon copy of HEAD -- remove changes to index, remove untracked changes
     git_run(['reset', '--hard', 'HEAD'])
-    git_run(['clean', '-f'])
+    git_run(['clean', '-df'])
 
     # now checkout the desired branch and pull
     git_run(['fetch'], retry=True)
@@ -203,10 +203,10 @@ def rebuild_emf(repo, branch):
         logging.error('failed to rebuild EMF:\n>command: {}\n>code: {}\n>error:\n{}\n'
                       .format(cp.args, cp.returncode, cp.stderr))
         git_run(['reset', '--hard', 'HEAD'])
-        git_run(['clean', '-f'])
+        git_run(['clean', '-df'])
         os.chdir(str(g_base_dir))
         raise RebuildFailedException()
-    
+
     # did anything change besides our version.txt?
     version_file = 'EMF/version.txt'
     if not has_this_repo_changed(ignored_file=version_file):
@@ -250,7 +250,7 @@ def rebuild_mini(repo, branch):
     if cp.returncode != 0:
         logging.error('failed to rebuild MiniSWMH:\n>command: {}\n>code: {}\n>error:\n{}\n'.format(cp.args, cp.returncode, cp.stderr))
         git_run(['reset', '--hard', 'HEAD'])
-        git_run(['clean', '-f'])
+        git_run(['clean', '-df'])
         os.chdir(str(g_base_dir))
         raise RebuildFailedException()
 
@@ -301,7 +301,7 @@ def rebuild_sed(repo, branch):
     if cp.returncode != 0:
         logging.error('failed to rebuild sed2:\n>command: {}\n>code: {}\n>error:\n{}\n'.format(cp.args, cp.returncode, cp.stderr))
         git_run(['reset', '--hard', 'HEAD'])
-        git_run(['clean', '-f'])
+        git_run(['clean', '-df'])
         os.chdir(str(g_base_dir))
         raise RebuildFailedException()
 
@@ -352,7 +352,7 @@ def process_head_change(repo, branch, head_rev):
     head = '{}:{}'.format(repo, branch)
     do_processing = True
     processing_failed = False
-    
+
     if head_rev == g_ignored_rev[head]:
         logging.debug('skipped processing of head change (self-emitted): %s/%s to rev %s', repo, branch, head_rev)
         g_ignored_rev[head] = None
@@ -429,7 +429,7 @@ def init_daemon():
     os.environ['USERNAME'] = g_daemon_user
     os.environ['TERM'] = 'xterm'
     os.environ['HOME'] = '/home/' + g_daemon_user
-    
+
     # some of our python child processes will need this for localpaths.py and such
     os.environ['PYTHONPATH'] = str(g_root_repo_dir / 'ck2utils/esc')
 
@@ -438,7 +438,7 @@ def init_daemon():
         env_dump += k + '=' + os.environ[k] + '\n'
 
     logging.debug(env_dump)
-    
+
     load_state()
 
     logging.debug('updating all tracked heads...')
