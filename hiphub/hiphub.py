@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- python-indent-offset: 4 -*-
 
-VERSION='0.21'
+VERSION='0.22'
 
 import os
 import re
@@ -362,7 +362,7 @@ def check_swmh_compat(branch):
         if result != 'compatible':
             slack.isis_sendmsg(":shakefist: SWMH {}".format(result), channel='#github')
     else:
-        logging.error('failed to check save compatibility for SWMH:\n>command: {}\n>code: {}\n>error:\n{}\n'.format(mod_path, cp.args, cp.returncode, cp.stderr))
+        logging.error('failed to check save compatibility for SWMH:\n>command: {}\n>code: {}\n>error:\n{}\n'.format(cp.args, cp.returncode, cp.stderr))
 
         slack.isis_sendmsg("ERROR: SWMH compat check failed to complete", channel='#github')
 
