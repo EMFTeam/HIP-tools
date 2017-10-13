@@ -349,27 +349,31 @@ def archive_emf_beta():
     os.chdir(str(g_base_dir))
 
 
-def check_swmh_compat(branch):
+def check_save_compat(repo, branch):
+    assert repo == 'SWMH-BETA', 'check_save_compat: unsupported repo: ' + repo
     logging.info('checking save compatibility for SWMH...')
     # get on the right branch
     os.chdir(str(g_root_repo_dir / 'SWMH-BETA'))
     git_run(['checkout', branch])
 
-    cp = subprocess.run(['/usr/bin/python3', 'save_compat.py', str(g_root_repo_dir / 'SWMH-BETA/SWMH')], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    cp = subprocess.run(['/usr/bin/python3', str(g_root_repo_dir / 'ck2utils/esc/save_compat.py'), str(g_root_repo_dir / 'SWMH-BETA/SWMH')], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
-    if cp.returncode == 0:
-        result = cp.stdout.strip()
-        if result != 'compatible':
-            slack.isis_sendmsg(":shakefist: SWMH {}".format(result), channel='#github')
-    else:
+    if cp.returncode != 0:
         logging.error('failed to check save compatibility for SWMH:\n>command: {}\n>code: {}\n>error:\n{}\n'.format(cp.args, cp.returncode, cp.stderr))
 
         slack.isis_sendmsg("ERROR: SWMH compat check failed to complete", channel='#github')
 
         git_run(['reset', '--hard', 'HEAD'])
         git_run(['clean', '-df'])
+        os.chdir(str(g_base_dir))
+        raise RebuildFailedException()
 
+    result = cp.stdout.strip()
+    compatible = result == 'compatible'
+    if not compatible:
+        slack.isis_sendmsg(":shakefist: SWMH {}".format(result), channel='#github')
     os.chdir(str(g_base_dir))
+    return compatible
 
 
 def process_head_change(repo, branch, head_rev):
@@ -391,12 +395,13 @@ def process_head_change(repo, branch, head_rev):
         build_mini = False
         build_sed = False
         build_emf = False
+        should_check_compat = False
 
         if repo in ['SWMH-BETA', 'MiniSWMH', 'EMF'] and head in g_last_rev:
             changed_files = git_files_changed(repo, branch, g_last_rev[head])
 
         if repo == 'SWMH-BETA':
-            check_swmh_compat(branch)
+            should_check_compat = True
             if head in g_last_rev:
                 build_mini = should_rebuild_mini(repo, branch, changed_files)
                 build_sed = build_mini or should_rebuild_sed(repo, branch, changed_files)
@@ -416,6 +421,8 @@ def process_head_change(repo, branch, head_rev):
                 rebuild_sed(repo, branch)
             if build_emf:
                 rebuild_emf(repo, branch)
+            if should_check_compat:
+                check_save_compat(repo, branch)
         except RebuildFailedException:
             processing_failed = True
 
