@@ -150,6 +150,7 @@ def load_state():
 def should_rebuild_mini(repo, branch, changed_files):
     assert repo == 'SWMH-BETA', 'should_rebuild_mini: unsupported trigger repository: ' + repo
     specific_paths = ['SWMH/common/landed_titles/swmh_landed_titles.txt',
+                      'SWMH/common/landed_titles/z_holy_sites.txt',
                       'SWMH/common/province_setup/00_province_setup.txt',
                       'SWMH/map/default.map',
                       'SWMH/map/definition.csv',
