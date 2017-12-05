@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 7, 'patch': 0,
+g_version = {'major': 2, 'minor': 7, 'patch': 1,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
@@ -1077,7 +1077,8 @@ def main():
                 uSWMH = enableModDefaultNo(u'MiniSWMH: Performance-Friendly SWMH ({})'.format(g_versions['uSWMH']), compat=True)
 
             # Converter...
-            if SWMH and not g_steamMode:
+            if SWMH and not g_steamMode and g_versions['Converter'] != u'no version':
+                # Don't prompt if Converter isn't present in this release package.
                 # Don't prompt if EU4 converter DLC is positively detected as missing.
                 if dlcIDs is None or 'dlc030.dlc' in dlcIDs:
                     print(u"\nNEW: HIP now supports the EU4 Converter even with SWMH enabled. This will\n"
