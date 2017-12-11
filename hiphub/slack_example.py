@@ -3,4 +3,4 @@
 import slack
 import datetime
 
-slack.isis_sendmsg("Welcome to 2017, folks. :carousel_horse:", channel='#github', wink=False)
+slack.isis_sendmsg("You know, I'm right here.", channel='#testing', wink=False)
