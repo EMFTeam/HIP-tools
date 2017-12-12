@@ -170,6 +170,8 @@ def should_rebuild_emf(repo, branch, changed_files):
     assert repo == 'EMF' or repo == 'SWMH-BETA', 'should_rebuild_emf: unsupported trigger repository: ' + repo
     if Path('EMF+SWMH/map/geographical_region.txt') in changed_files:
         return True
+    if any(Path('src') in f.parents for f in changed_files): # rebuild if rebuild scripts changed
+        return True
     # for emf_can_add_holding_slot trigger generation & emf_swmh_history:
     p_wanted_file = r'^SWMH/history/(characters|titles|provinces)/.+?\.txt$'
     return any(re.match(p_wanted_file, str(f)) for f in changed_files)
