@@ -35,7 +35,7 @@ g_repos = {
     'MiniSWMH': ['master'],
     'HIP-tools': ['master'],
     'ck2utils': ['dev'],
-    'CPRplus': ['dev'],
+#    'CPRplus': ['dev'],
     'ARKOpack': ['master'],
     'ArumbaKS': ['master'],
     'LTM': ['dev'],
