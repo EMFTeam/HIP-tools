@@ -68,7 +68,7 @@ sub can_write_files {
 }
 
 can_read_files($INPUT_FILE, $CL_FILES{header}, $CL_FILES{footer}, $BETA_CL_FILES{header}, $BETA_CL_FILES{footer});
-can_write_files( map { ($_, $_.'.tmp') } ($CL_FILES{output}, $BETA_CL_FILES{output}) );
+can_write_files( map { ($_, $_.'.tmp') } ($CL_FILES{out}, $BETA_CL_FILES{out}) );
 
 
 #########################################
@@ -90,20 +90,24 @@ while (<$cl_in>) {
 
     if (/^EMF ([\d\.]+) \[BETA\]/i) {
         my $v = $1;
-        $body = ref($beta_body);
-        $$body .= '<span class=cl_version_header>EMF v'.$v."-BETA</span>\n";
+        $body = \$beta_body;
+        $$body .= '<br/><br/><span class=cl_version_header>EMF v'.$v."-BETA</span>\n";
     }
     elsif (/^EMF ([\d\.]+) \[(\d{4}-\d{2}-\d{2})\]/i) {
         my $v = $1;
-        $release_versions{$v} = $2;
-        $body = ref($release_body);
-        $$body .= '<span class=cl_version_header>EMF v'.$v."</span><br/><i>Release Date: <b>$release_versions{$v}</b></i>\n";
+        $released_versions{$v} = $2;
+        $body = \$release_body;
+	my ($major, $minor) = split('.', $v);
+	$$body .= "<a name='v${major}.X'/>\n" if ($minor =~ /^0+$/);
+        $$body .= "<a name='v$v'/><br/><br/><span class=cl_version_header>EMF v$v</span><br/><i>Release Date: <b>$released_versions{$v}</b></i>\n";
     }
     elsif (/^EMF ([\d\.]+)/i) {
         my $v = $1;
-        $release_versions{$v} = undef;
-        $body = ref($release_body);
-        $$body .= '<span class=cl_version_header>EMF v'.$v."</span><br/><i>Release Date: <b>N/A</b></i>\n";
+        $released_versions{$v} = undef;
+        $body = \$release_body;
+	my ($major, $minor) = split('.', $v);	
+	$$body .= "<a name='v${major}.X'/>\n" if ($minor =~ /^0+$/);
+        $$body .= "<a name='v$v'/><br/><br/><span class=cl_version_header>EMF v$v</span><br/><i>Release Date: <b>N/A</b></i>\n";
     }
     elsif (/^([\t\x20]*)/) {
         croak "Changelog content found before finding its associated version on line $n_line!" unless defined $body;
@@ -195,8 +199,8 @@ my $latest_date = $rel_versions[0]->{date};
 
 unless ($beta_body) {
     $beta_body = <<EOS;
-<b><i>The EMF Open Beta is currently equivalent to the <a href='$CL_FILES{uri}#$latest_vstr'>latest release
-version</a>, EMF $latest_vstr, which was released on $latest_date. Come back when we've had a chance to get some more work done and vetted for public testing!</i></b>
+<b><i>At the moment, the latest version of the EMF Beta is equivalent to the <a href='$CL_FILES{uri}#$latest_vstr'>latest released
+version</a>, <b>EMF $latest_vstr</b>, which was released on <b>$latest_date</b>. Come back when we've had a chance to get some more work done and vetted for public testing!</i></b>
 EOS
 }
 
@@ -205,31 +209,42 @@ my $toc = "<ul>\n";
 for my $mv (sort { $b <=> $a } 1..$#MAJOR_VERSIONS) {
     my $dlc_short = $MAJOR_VERSIONS[$mv];
     my $dlc_long = $DLC_NAMES{$dlc_short};
-    my $mv_full = "v$mv.X";
-    $toc .= "<li/><a href='$CL_FILES{uri}#$mv_full'>EMF $mv_full — post-$dlc_short ($dlc_long)\n";
+    my $dlc_fancy = ($dlc_short eq $dlc_long) ? $dlc_short : "$dlc_short ($dlc_long)";
+    my $mv_full = "v${mv}.X";
+    $toc .= "<li/><a href='$CL_FILES{uri}#$mv_full'>EMF $mv_full &mdash; $dlc_fancy\n";
     $toc .= "<ul>\n";
-
+    
+    for my $v (grep { $_->{major} == $mv } @rel_versions) {
+	my $release_date = (!$v->{date}) ? "" : "<span class=tocreleasedate>[$v->{date}]</span>";
+	$toc .= "<li/><a href='$CL_FILES{uri}#$v->{vstr}'>EMF $v->{vstr}</a> $release_date";
+    }
+    
     $toc .= "</ul>\n";
 }
 
-$toc .= "</ul>\n";
+$toc .= "</ul>\n<hr>";
 
 my $cl_tmp = $CL_FILES{out}.".tmp";
-system("cat $CL_FILES{header} > $cl_tmp");
+my $cmd = "cat $CL_FILES{header} > $cl_tmp";
+(system($cmd) == 0) or croak "$cmd: nonzero exit status of $?";
 open(my $of, '>>', $cl_tmp);
+$of->print($toc);
 $of->print($release_body);
-$of->close();
-system("cat $CL_FILES{footer} >> $cl_tmp");
+$of->close() or croak "close: $cl_tmp: $!";
+$cmd = "cat $CL_FILES{footer} >> $cl_tmp";
+(system($cmd) == 0) or croak "$cmd: nonzero exit status of $?";
 
 my $bcl_tmp = $BETA_CL_FILES{out}.".tmp";
-system("cat $BETA_CL_FILES{header} > $bcl_tmp");
+$cmd = "cat $BETA_CL_FILES{header} > $bcl_tmp";
+(system($cmd) == 0) or croak "$cmd: nonzero exit status of $?";
 open($of, '>>', $bcl_tmp);
 $of->print($beta_body);
-$of->close();
-system("cat $BETA_CL_FILES{footer} >> $bcl_tmp");
+$of->close() or croak "close: $bcl_tmp: $!";
+$cmd = "cat $BETA_CL_FILES{footer} >> $bcl_tmp";
+(system($cmd) == 0) or croak "$cmd: nonzero exit status of $?";
 
-rename($cl_tmp, $CL_FILES{out});
-rename($bcl_tmp, $BETA_CL_FILES{out});
+rename($cl_tmp, $CL_FILES{out}) or croak "rename: $cl_tmp --> $CL_FILES{out}: $!";
+rename($bcl_tmp, $BETA_CL_FILES{out}) or croak "rename: $bcl_tmp --> $BETA_CL_FILES{out}: $!";
 
 exit 0;
 
