@@ -334,21 +334,26 @@ def rebuild_sed(repo, branch):
     return new_rev
 
 
-def archive_emf_beta():
-    logging.info('updating public EMF/beta archive...')
+def process_emf_beta():
+    logging.info('processing new EMF/beta...')
     os.chdir(str(g_root_repo_dir / 'EMF'))
     git_run(['checkout', 'beta'])
 
     zip_tmp_path = '{}.tmp.{}'.format(g_emfbeta_path, os.getpid())
 
+    logging.info('updating public EMF/beta archive...')
     git_run(['archive', '--format=zip', '-o', zip_tmp_path, 'HEAD'])
 
     if g_emfbeta_path.exists():
         os.unlink(str(g_emfbeta_path))
     os.rename(zip_tmp_path, str(g_emfbeta_path))
 
-    # ta-dah!
-    logging.info('ZIP archive of EMF/beta successfully updated: {}'.format(g_emfbeta_path))
+    logging.info('updating public EMF beta and cumulative release changelogs...')
+    cp = subprocess.run(['/usr/bin/perl', str(g_root_repo_dir / 'HIP-tools/hiphub/update_emf_changelogs.pl')], stderr=subprocess.PIPE, universal_newlines=True)
+
+    if cp.returncode != 0:
+        logging.error('failed to update public EMF changelogs:\n>command: {}\n>code: {}\n>error:\n{}\n'.format(cp.args, cp.returncode, cp.stderr))
+
     os.chdir(str(g_base_dir))
 
 
@@ -395,7 +400,7 @@ def process_head_change(repo, branch, head_rev):
 
     # special case for EMF beta archive rebuild
     if repo == 'EMF' and branch == 'beta':
-        archive_emf_beta()
+        process_emf_beta()
     elif do_processing:
         build_mini = False
         build_sed = False
