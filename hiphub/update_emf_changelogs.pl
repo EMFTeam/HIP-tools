@@ -12,13 +12,13 @@ my $WEB_ROOT = "$SERVER_ROOT/pub";
 my %CL_FILES = (
     header => "$WEB_ROOT/EMF_changelog_header.html",
     footer => "$WEB_ROOT/EMF_changelog_footer.html",
-    uri => "/EMF_changelog_test.html",
+    uri => "/EMF_changelog.html",
 );
 
 my %BETA_CL_FILES = (
     header => "$WEB_ROOT/EMF_beta_changelog_header.html",
     footer => "$WEB_ROOT/EMF_changelog_footer.html",
-    uri => "/EMF_BETA_changelog.html",
+    uri => "/EMF_beta_changelog.html",
 );
 
 $CL_FILES{out} = $WEB_ROOT.$CL_FILES{uri};
@@ -97,17 +97,17 @@ while (<$cl_in>) {
         my $v = $1;
         $released_versions{$v} = $2;
         $body = \$release_body;
-	my ($major, $minor) = split('.', $v);
-	$$body .= "<a name='v${major}.X'/>\n" if ($minor =~ /^0+$/);
-        $$body .= "<a name='v$v'/><br/><br/><span class=cl_version_header>EMF v$v</span><br/><i>Release Date: <b>$released_versions{$v}</b></i>\n";
+
+        my ($major, $minor) = split('.', $v);
+        $$body .= "<a name='v$v'><br/><br/><span class=cl_version_header>EMF v$v</span><br/><i>Release Date: <b>$released_versions{$v}</b></i></a>\n";
     }
     elsif (/^EMF ([\d\.]+)/i) {
         my $v = $1;
         $released_versions{$v} = undef;
         $body = \$release_body;
-	my ($major, $minor) = split('.', $v);	
-	$$body .= "<a name='v${major}.X'/>\n" if ($minor =~ /^0+$/);
-        $$body .= "<a name='v$v'/><br/><br/><span class=cl_version_header>EMF v$v</span><br/><i>Release Date: <b>N/A</b></i>\n";
+
+        my ($major, $minor) = split('.', $v);
+        $$body .= "<a name='v$v'><br/><br/><span class=cl_version_header>EMF v$v</span><br/><i>Release Date: <b>N/A</b></i></a>\n";
     }
     elsif (/^([\t\x20]*)/) {
         croak "Changelog content found before finding its associated version on line $n_line!" unless defined $body;
@@ -210,13 +210,12 @@ for my $mv (sort { $b <=> $a } 1..$#MAJOR_VERSIONS) {
     my $dlc_short = $MAJOR_VERSIONS[$mv];
     my $dlc_long = $DLC_NAMES{$dlc_short};
     my $dlc_fancy = ($dlc_short eq $dlc_long) ? $dlc_short : "$dlc_short ($dlc_long)";
-    my $mv_full = "v${mv}.X";
-    $toc .= "<li/><a href='$CL_FILES{uri}#$mv_full'>EMF $mv_full &mdash; $dlc_fancy\n";
+    $toc .= "<li/><span class=toc_major_version>EMF v$mv &mdash; $dlc_fancy</span>\n";
     $toc .= "<ul>\n";
     
     for my $v (grep { $_->{major} == $mv } @rel_versions) {
-	my $release_date = (!$v->{date}) ? "" : "<span class=tocreleasedate>[$v->{date}]</span>";
-	$toc .= "<li/><a href='$CL_FILES{uri}#$v->{vstr}'>EMF $v->{vstr}</a> $release_date";
+        my $release_date = (!$v->{date}) ? "" : "<span class=tocreleasedate>[$v->{date}]</span>";
+        $toc .= "<li/><a href='#v$v->{vstr}'>EMF v$v->{vstr}</a> $release_date";
     }
     
     $toc .= "</ul>\n";
@@ -227,19 +226,23 @@ $toc .= "</ul>\n<hr>";
 my $cl_tmp = $CL_FILES{out}.".tmp";
 my $cmd = "cat $CL_FILES{header} > $cl_tmp";
 (system($cmd) == 0) or croak "$cmd: nonzero exit status of $?";
+
 open(my $of, '>>', $cl_tmp);
 $of->print($toc);
 $of->print($release_body);
 $of->close() or croak "close: $cl_tmp: $!";
+
 $cmd = "cat $CL_FILES{footer} >> $cl_tmp";
 (system($cmd) == 0) or croak "$cmd: nonzero exit status of $?";
 
 my $bcl_tmp = $BETA_CL_FILES{out}.".tmp";
 $cmd = "cat $BETA_CL_FILES{header} > $bcl_tmp";
 (system($cmd) == 0) or croak "$cmd: nonzero exit status of $?";
+
 open($of, '>>', $bcl_tmp);
 $of->print($beta_body);
 $of->close() or croak "close: $bcl_tmp: $!";
+
 $cmd = "cat $BETA_CL_FILES{footer} >> $bcl_tmp";
 (system($cmd) == 0) or croak "$cmd: nonzero exit status of $?";
 
