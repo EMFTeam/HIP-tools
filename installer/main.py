@@ -10,8 +10,9 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 7, 'patch': 2,
+g_version = {'major': 2, 'minor': 7, 'patch': 3,
              'Developer':       'zijistark <zijistark@gmail.com>',
+             'Developer':       'IoannesBarbarus <email.is.so.90s@technoch.rat>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
 
 
@@ -1189,6 +1190,8 @@ def main():
             g_dbg.push("merge('ARKO CoA')")
             moduleOutput.append("ARKO Armoiries (%s)\n" % g_versions['ARKOC'])
             pushFolder("ARKOpack_Armoiries", targetFolder)
+            if SWMH:
+            	pushFolder("SWMH/gfx/flags", os.path.join(targetFolder, "gfx", "flags"))
             g_dbg.pop()
 
         if LTM:
