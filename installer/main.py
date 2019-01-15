@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 7, 'patch': 3,
+g_version = {'major': 2, 'minor': 7, 'patch': 4,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Developer':       'IoannesBarbarus <email.is.so.90s@technoch.rat>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
@@ -1162,12 +1162,6 @@ def main():
             g_dbg.push("merge(SWMH)")
             moduleOutput.append("SWMH (%s)\n" % g_versions['SWMH'])
             pushFolder("SWMH", targetFolder)
-            if ARKOInt:
-                pushFolder("SWMH+ArkoInterface", targetFolder)
-                if ArumbaKS:
-                    pushFolder("SWMH+ArkoInterface+AKS", targetFolder)
-            elif ArumbaKS:
-                pushFolder("SWMH+AKS", targetFolder)
             g_dbg.pop()
 
         if uSWMH:
