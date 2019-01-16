@@ -1139,19 +1139,24 @@ def main():
         g_targetSrc = {}
 
         moduleOutput = ["[HIP Release %s]\n" % g_versions['pkg']]
+        globalFlags = []
+
         g_dbg.push('merge_all')
 
         if EMF:
+            globalFlags.append('EMF_prestartup')
             moduleOutput.append("EMF: Extended Mechanics & Flavor (%s)\n" % g_versions['EMF'])
 
         if ArumbaKS:
             g_dbg.push('merge(ArumbaKS)')
+            globalFlags.append('AKS')
             moduleOutput.append("Arumba and Internal Tab Shortcuts (%s)\n" % g_versions['ArumbaKS'])
             pushFolder('ArumbaKS', targetFolder)
             g_dbg.pop()
 
         if ARKOInt:
             g_dbg.push("merge('ARKO Interface')")
+            globalFlags.append('ArkoUI')
             moduleOutput.append("ARKO Interface (%s)\n" % g_versions['ARKOI'])
             pushFolder("ARKOpack_Interface", targetFolder)
             if ArumbaKS:
@@ -1160,18 +1165,21 @@ def main():
 
         if SWMH:
             g_dbg.push("merge(SWMH)")
+            globalFlags.append('SWMH')
             moduleOutput.append("SWMH (%s)\n" % g_versions['SWMH'])
             pushFolder("SWMH", targetFolder)
             g_dbg.pop()
 
         if uSWMH:
             g_dbg.push("merge(uSWMH)")
+            globalFlags.append('MiniSWMH')
             moduleOutput.append("MiniSWMH: Performance-Friendly SWMH (%s)\n" % g_versions['uSWMH'])
             pushFolder("MiniSWMH", targetFolder)
             g_dbg.pop()
 
         if SED:
             g_dbg.push("merge(SED)")
+            globalFlags.append('SED')
             moduleOutput.append("SED: English Localisation for SWMH (%s)\n" % g_versions['SED'])
             pushFolder("SED2", targetFolder)
             if EMF:
@@ -1182,6 +1190,7 @@ def main():
 
         if ARKOCoA:
             g_dbg.push("merge('ARKO CoA')")
+            globalFlags.append('ArkoCoA')
             moduleOutput.append("ARKO Armoiries (%s)\n" % g_versions['ARKOC'])
             pushFolder("ARKOpack_Armoiries", targetFolder)
             if SWMH:
@@ -1190,6 +1199,7 @@ def main():
 
         if LTM:
             g_dbg.push("merge(LTM)")
+            globalFlags.append('LTM')
             moduleOutput.append("LTM (%s)\n" % g_versions['LTM'])
             if SWMH:
                 pushFolder("LTM+SWMH", targetFolder)
@@ -1218,6 +1228,7 @@ def main():
 
         if CPR:
             g_dbg.push('merge(CPR)')
+            globalFlags.append('CPR')
             moduleOutput.append("CPRplus (%s)\n" % g_versions['CPR'])
             wrappedPaths = set(['gfx'])
             pushFolder('CPRplus', targetFolder, wrapPaths=wrappedPaths)
@@ -1270,6 +1281,15 @@ def main():
 
         print(u"Summary of mod combination & versions (INCLUDE THIS FILE IN BUG REPORTS):")
         print(unicode(versionFilename + "\n"))
+
+        if EMF or SWMH:
+            flagPath = os.path.join(targetFolder, os.path.normpath("history/titles/e_null.txt"))
+            with open(flagPath, 'w') as of:
+                of.write('# -*- ck2.history.titles -*-\n')
+                of.write('476.1.1 = {\n')
+                for flag in globalFlags:
+                    of.write('\tset_global_flag = {}\n'.format(flag))
+                of.write('}\n')
 
         # Reset all gfx/map/interface/logs cache for every instance of a preexisting
         # user_dir that includes HIP, platform-agnostic.
