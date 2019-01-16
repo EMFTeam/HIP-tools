@@ -10,7 +10,7 @@ import time
 import re
 
 
-g_version = {'major': 2, 'minor': 7, 'patch': 4,
+g_version = {'major': 2, 'minor': 7, 'patch': 5,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Developer':       'IoannesBarbarus <email.is.so.90s@technoch.rat>',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
@@ -779,6 +779,7 @@ cprReqDLCNames = {'dlc002.dlc': 'Mongol Face Pack',
                   'dlc070.dlc': 'Monks and Mystics Content Pack',
                   'dlc072.dlc': 'South Indian Portraits',
                   'dlc073.dlc': 'Jade Dragon',
+                  'dlc074.dlc': 'Holy Fury',
                   }
 
 
