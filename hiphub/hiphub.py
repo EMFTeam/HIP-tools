@@ -31,7 +31,7 @@ g_gitbin_path = Path('/usr/bin/git')
 g_repos = {
     'SWMH-BETA': ['cp-3.0'],
     'sed2': ['dev'],
-    'EMF': ['cp-3.0', 'beta'],
+    'EMF': ['alpha', 'beta'],
     'MiniSWMH': ['master'],
     'HIP-tools': ['master'],
     'ck2utils': ['dev'],
