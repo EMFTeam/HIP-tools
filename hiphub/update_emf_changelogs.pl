@@ -25,6 +25,7 @@ $CL_FILES{out} = $WEB_ROOT.$CL_FILES{uri};
 $BETA_CL_FILES{out} = $WEB_ROOT.$BETA_CL_FILES{uri};
 
 my %DLC_NAMES = (
+    'HF'       => 'Holy Fury',
     'RoI'      => 'Rajas of India',
     'CM'       => 'Charlemagne',
     'WoL'      => 'Way of Life',
@@ -45,6 +46,7 @@ my @MAJOR_VERSIONS = (
     'RD',
     'MnM',
     'JD',
+    'HF',
 );
 
 
