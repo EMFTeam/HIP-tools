@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use Carp;
-
+use feature 'unicode_strings';
 
 my $INPUT_FILE = "EMF/EMF_changelog.txt"; # when hiphub invokes us, we are in the EMF repo root
 my $SERVER_ROOT = "/var/www/hip.zijistark.com";
@@ -84,7 +84,7 @@ my $beta_body = '';
 my $release_body = '';
 my $body = undef;
 
-open(my $cl_in, '<', $INPUT_FILE);
+open(my $cl_in, '<:encoding(UTF-8)', $INPUT_FILE);
 
 while (<$cl_in>) {
     ++$n_line;
@@ -229,7 +229,7 @@ my $cl_tmp = $CL_FILES{out}.".tmp";
 my $cmd = "cat $CL_FILES{header} > $cl_tmp";
 (system($cmd) == 0) or croak "$cmd: nonzero exit status of $?";
 
-open(my $of, '>>', $cl_tmp);
+open(my $of, '>>:encoding(UTF-8)', $cl_tmp);
 $of->print($toc);
 $of->print($release_body);
 $of->close() or croak "close: $cl_tmp: $!";
@@ -241,7 +241,7 @@ my $bcl_tmp = $BETA_CL_FILES{out}.".tmp";
 $cmd = "cat $BETA_CL_FILES{header} > $bcl_tmp";
 (system($cmd) == 0) or croak "$cmd: nonzero exit status of $?";
 
-open($of, '>>', $bcl_tmp);
+open($of, '>>:encoding(UTF-8)', $bcl_tmp);
 $of->print($beta_body);
 $of->close() or croak "close: $bcl_tmp: $!";
 
