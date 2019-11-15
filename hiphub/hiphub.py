@@ -178,7 +178,7 @@ def should_rebuild_emf(repo, branch, changed_files):
         return True
     # for trait- and culture- and religion-related codegen:
     p_wanted_file = r'/common/(?:traits|cultures|religions)/.+?\.txt$'
-    return any(re.search(p_wanted_file, str(f)) for f in changed_files):
+    return any(re.search(p_wanted_file, str(f)) for f in changed_files)
 
 
 def should_rebuild_sed(repo, branch, changed_files):
