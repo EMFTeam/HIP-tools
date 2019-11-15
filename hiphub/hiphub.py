@@ -29,10 +29,10 @@ g_gitbin_path = Path('/usr/bin/git')
 
 # repos and respective branches which we track
 g_repos = {
-    'SWMH-BETA': ['master'],
-    'sed2': ['dev'],
-    'EMF': ['alpha', 'beta'],
-    'MiniSWMH': ['master'],
+    'SWMH-BETA': ['master', '993-beta'],
+    'sed2': ['dev', '993-dev'],
+    'EMF': ['alpha', '993-alpha', 'beta'],
+    'MiniSWMH': ['master', '993-dev'],
     'HIP-tools': ['master'],
     'ck2utils': ['dev'],
 #    'CPRplus': ['dev'],
@@ -174,7 +174,11 @@ def should_rebuild_emf(repo, branch, changed_files):
         return True
     # for emf_can_add_holding_slot trigger generation & emf_swmh_history:
     p_wanted_file = r'^SWMH/history/(characters|titles|provinces)/.+?\.txt$'
-    return any(re.match(p_wanted_file, str(f)) for f in changed_files)
+    if any(re.match(p_wanted_file, str(f)) for f in changed_files):
+        return True
+    # for trait- and culture- and religion-related codegen:
+    p_wanted_file = r'/common/(?:traits|cultures|religions)/.+?\.txt$'
+    return any(re.search(p_wanted_file, str(f)) for f in changed_files):
 
 
 def should_rebuild_sed(repo, branch, changed_files):
