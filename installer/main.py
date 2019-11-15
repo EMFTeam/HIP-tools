@@ -1282,8 +1282,10 @@ def main():
         print(u"Summary of mod combination & versions (INCLUDE THIS FILE IN BUG REPORTS):")
         print(unicode(versionFilename + "\n"))
 
-        if EMF or SWMH:
-            flagPath = os.path.join(targetFolder, os.path.normpath("history/titles/e_null.txt"))
+        flagDir = os.path.join(targetFolder, os.path.normpath("history/titles"))
+        flagPath = os.path.join(flagDir, "e_null.txt")
+
+        if os.path.exists(flagDir):
             with open(flagPath, 'w') as of:
                 of.write('# -*- ck2.history.titles -*-\n')
                 of.write('476.1.1 = {\n')
