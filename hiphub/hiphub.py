@@ -483,7 +483,7 @@ def process_head_change(repo, branch, head_rev):
                 rebuild_emf(repo, branch, head_rev)
             except RebuildFailedException:
                 processing_failed = True
-        if should_check_save_compat:
+        if should_check_compat:
             try:
                 check_save_compat(repo, branch, head_rev)
             except RebuildFailedException:
