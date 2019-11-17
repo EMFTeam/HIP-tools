@@ -23,6 +23,6 @@ def sendmsg(webhook, text, channel, username, icon_emoji=None):
     conn.close()
     
 
-def isis_sendmsg(text, channel='#hiphub', wink=False):
-    icon_emoji = ':isis:' if not wink else ':isis-winking:'
-    sendmsg('/services/T055NUPPW/B34JCEDBM/OVRrTApteiWLWPKsSqkvb21c', text, channel, 'isis', icon_emoji)
+def isis_sendmsg(text, channel='#hiphub', wink=False, icon=':isis:'):
+    icon = ':isis-winking:' if wink else icon
+    sendmsg('/services/T055NUPPW/B34JCEDBM/OVRrTApteiWLWPKsSqkvb21c', text, channel, 'isis', icon)

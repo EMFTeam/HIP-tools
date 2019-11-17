@@ -64,6 +64,25 @@ def fatal(msg):
     sys.exit(1)
 
 
+def slack_errmsg(task, repo=None, branch=None, cmd=None, rc=None, stderr=''):
+    stderr.strip('\n')
+    opt_msg = ' Error output:' if stderr else ''
+    str_run = ''
+    str_trigger = ''
+    str_hdr = ':facepalm:           :shakefist: :fire::fire::fire: :persevere: :fire::fire::fire: :shakefist:           :isis-winking:'
+    if cmd:
+        assert isinstance(rc, int), "slack_errmsg requires a return code if a command is given"
+        str_cmd = cmd if isinstance(cmd, str) else ' '.join(cmd)  # TODO: add shell quoting as necessary
+        str_run = '\nExit status code from `{}` was {}.{}'.format(str_cmd, rc, opt_msg)
+    if repo:
+        assert branch, "slack_errmsg requires a triggering branch if a triggering repository is given"
+        str_trigger = ' Likely triggered by a commit to `{}/{}`.'.format(repo, branch)
+    slack.isis_sendmsg('{}\n_*Failed {}!*_{}\n{}'.format(str_hdr, task, str_trigger, str_run))
+    if stderr:
+        slack.isis_sendmsg('```\n{}\n```'.format(stderr))
+        slack.isis_sendmsg("You're welcome. Enjoy most diligently,\n_The All-Seeing Isis_", icon=':isis-winking:')
+
+    
 def git_run(args, retry=False):
     cmd = [str(g_gitbin_path)] + args
     n_tries = 0
@@ -152,7 +171,6 @@ def should_rebuild_mini(repo, branch, changed_files):
     assert repo == 'SWMH-BETA', 'should_rebuild_mini: unsupported trigger repository: ' + repo
     specific_paths = ['SWMH/common/landed_titles/swmh_landed_titles.txt',
                       'SWMH/common/landed_titles/z_holy_sites.txt',
-                      'SWMH/common/province_setup/00_province_setup.txt',
                       'SWMH/map/default.map',
                       'SWMH/map/definition.csv',
                       'SWMH/map/geographical_region.txt',
@@ -172,13 +190,16 @@ def should_rebuild_emf(repo, branch, changed_files):
         return True
     if any(Path('src') in f.parents for f in changed_files): # rebuild if rebuild scripts changed
         return True
+    if any(Path('cultures') in f.parents for f in changed_files):
+        return True
     # for emf_can_add_holding_slot trigger generation & emf_swmh_history:
     p_wanted_file = r'^SWMH/history/(characters|titles|provinces)/.+?\.txt$'
     if any(re.match(p_wanted_file, str(f)) for f in changed_files):
         return True
     # for trait- and culture- and religion-related codegen:
-    p_wanted_file = r'/common/(?:traits|cultures|religions)/.+?\.txt$'
-    return any(re.search(p_wanted_file, str(f)) for f in changed_files)
+    p_wanted_file = r'^(EMF\+SWMH|EMF\+Vanilla|EMF)/common/(traits|religions)/.+?\.txt$'
+
+    return any(re.match(p_wanted_file, str(f)) for f in changed_files)
 
 
 def should_rebuild_sed(repo, branch, changed_files):
@@ -213,6 +234,7 @@ def rebuild_emf(repo, branch):
         git_run(['reset', '--hard', 'HEAD'])
         git_run(['clean', '-df'])
         os.chdir(str(g_base_dir))
+        slack_errmsg("to rebuild auto-managed files in `EMF/{}`".format(emf_branch), repo, branch, cp.args, cp.returncode, cp.stderr)
         raise RebuildFailedException()
 
     # did anything change besides our version.txt?
@@ -225,7 +247,7 @@ def rebuild_emf(repo, branch):
 
     # if we're here, we do indeed have changes to commit.
     git_run(['add', '-A'])
-    git_run(['commit', '-a', '-m', 'regenerated managed files :robot_face:'])
+    git_run(['commit', '-a', '-m', 'rebuilt managed files :robot_face:'])
 
     # determine the head's new SHA so that we may ignore it for future processing
     new_rev = git_run(['rev-parse', 'HEAD']).stdout.strip()
@@ -260,6 +282,7 @@ def rebuild_mini(repo, branch):
         git_run(['reset', '--hard', 'HEAD'])
         git_run(['clean', '-df'])
         os.chdir(str(g_base_dir))
+        slack_errmsg("to auto-update `MiniSWMH/{}`".format(mini_branch), repo, branch, cp.args, cp.returncode, cp.stderr)
         raise RebuildFailedException()
 
     # did anything change besides our version.txt?
@@ -311,6 +334,7 @@ def rebuild_sed(repo, branch):
         git_run(['reset', '--hard', 'HEAD'])
         git_run(['clean', '-df'])
         os.chdir(str(g_base_dir))
+        slack_errmsg("to auto-update SED (`sed2/{}`)".format(sed_branch), repo, branch, cp.args, cp.returncode, cp.stderr)
         raise RebuildFailedException()
 
     # did anything change besides our version.txt?
@@ -357,7 +381,8 @@ def process_emf_beta():
 
     if cp.returncode != 0:
         logging.error('failed to update public EMF changelogs:\n>command: {}\n>code: {}\n>error:\n{}\n'.format(cp.args, cp.returncode, cp.stderr))
-
+        slack_errmsg("to update the EMF changelogs on hip.zijistark.com", cmd=cp.args, rc=cp.returncode, stderr=cp.stderr)
+        
     os.chdir(str(g_base_dir))
 
 
@@ -372,12 +397,10 @@ def check_save_compat(repo, branch):
 
     if cp.returncode != 0:
         logging.error('failed to check save compatibility for SWMH:\n>command: {}\n>code: {}\n>error:\n{}\n'.format(cp.args, cp.returncode, cp.stderr))
-
-        slack.isis_sendmsg("ERROR: SWMH compat check failed to complete", channel='#github')
-
         git_run(['reset', '--hard', 'HEAD'])
         git_run(['clean', '-df'])
         os.chdir(str(g_base_dir))
+        slack_errmsg("to complete SWMH save-compatibility check", repo, branch, cp.args, cp.returncode, cp.stderr)
         raise RebuildFailedException()
 
     result = cp.stdout.strip()
