@@ -452,19 +452,29 @@ def process_head_change(repo, branch, head_rev):
             build_sed = (head not in g_last_rev) or should_rebuild_sed(repo, branch, changed_files)
         elif repo == 'EMF':
             build_emf = (head not in g_last_rev) or should_rebuild_emf(repo, branch, changed_files)
-        try:
-            if build_mini:
-                rebuild_mini(repo, branch)
-            if build_sed:
-                rebuild_sed(repo, branch)
-            if build_emf:
-                rebuild_emf(repo, branch)
-            if should_check_compat:
-                check_save_compat(repo, branch)
-        except RebuildFailedException:
-            processing_failed = True
 
-    if not processing_failed:  # don't advance last-processed rev for this head unless its processing tasks completed OK
+        if build_mini:
+            try:
+                rebuild_mini(repo, branch, head_rev)
+            except RebuildFailedException:
+                processing_failed = True
+        if build_sed:
+            try:
+                rebuild_sed(repo, branch, head_rev)
+            except RebuildFailedException:
+                processing_failed = True
+        if build_emf:
+            try:
+                rebuild_emf(repo, branch, head_rev)
+            except RebuildFailedException:
+                processing_failed = True
+        if should_check_save_compat:
+            try:
+                check_save_compat(repo, branch, head_rev)
+            except RebuildFailedException:
+                processing_failed = True
+
+    if not processing_failed:  # don't advance last-processed rev for this head unless all of its processing tasks completed OK
         # update memory state
         g_last_rev[head] = head_rev
 
