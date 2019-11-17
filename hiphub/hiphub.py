@@ -79,8 +79,9 @@ def slack_errmsg(task, repo=None, branch=None, cmd=None, rc=None, stderr=''):
         str_trigger = ' Likely triggered by a commit to `{}/{}`.'.format(repo, branch)
     slack.isis_sendmsg('{}\n_*Failed {}!*_{}\n{}'.format(str_hdr, task, str_trigger, str_run))
     if stderr:
+        if len(stderr) > 3950:
+            stderr = stderr[:3945] + '[...]'
         slack.isis_sendmsg('```\n{}\n```'.format(stderr))
-        slack.isis_sendmsg("You're welcome. Enjoy most diligently,\n_The All-Seeing Isis_", icon=':isis-winking:')
 
     
 def git_run(args, retry=False):
