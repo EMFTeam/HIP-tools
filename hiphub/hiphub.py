@@ -41,6 +41,18 @@ g_repos = {
     'LTM': ['dev'],
 }
 
+g_webrepos = {
+    'SWMH-BETA': 'https://github.com/Aasmul',
+    'sed2': 'https://github.com/escalonn',
+    'EMF': 'https://github.com/EMFTeam',
+    'MiniSWMH': 'https://github.com/EMFTeam',
+    'HIP-tools': 'https://github.com/EMFTeam',
+    'ck2utils': 'https://github.com/zijistark',
+    'ARKOpack': 'https://github.com/ArkoG',
+    'ArumbaKS': 'https://github.com/escalonn',
+    'LTM': 'https://github.com/Leybrook',
+}
+
 g_pidfile_path = g_base_dir / 'hiphub.pid'  # we mark our currently running PID here
 g_state_dir = g_base_dir / 'state'  # we store the last-processed SHA for each tracked head within files in this folder
 g_logfile_path = g_base_dir / 'hiphub.log'  # we log info and errors here (once the daemon is off the ground and no longer attached to a session/terminal)
@@ -64,20 +76,23 @@ def fatal(msg):
     sys.exit(1)
 
 
-def slack_errmsg(task, repo=None, branch=None, cmd=None, rc=None, stderr=''):
+def slack_errmsg(task, repo=None, branch=None, cmd=None, rc=None, stderr='', rev=None):
     stderr.strip('\n')
     opt_msg = ' Error output:' if stderr else ''
     str_run = ''
     str_trigger = ''
-    str_hdr = ':facepalm:           :shakefist: :fire::fire::fire: :persevere: :fire::fire::fire: :shakefist:           :isis-winking:'
+    str_hdr = ':facepalm:                :shakefist: :fire::fire::fire: :persevere: :fire::fire::fire: :shakefist:                :isis-winking:'
     if cmd:
         assert isinstance(rc, int), "slack_errmsg requires a return code if a command is given"
         str_cmd = cmd if isinstance(cmd, str) else ' '.join(cmd)  # TODO: add shell quoting as necessary
         str_run = '\nExit status code from `{}` was {}.{}'.format(str_cmd, rc, opt_msg)
     if repo:
         assert branch, "slack_errmsg requires a triggering branch if a triggering repository is given"
-        str_trigger = ' Likely triggered by a commit to `{}/{}`.'.format(repo, branch)
-    slack.isis_sendmsg('{}\n_*Failed {}!*_{}\n{}'.format(str_hdr, task, str_trigger, str_run))
+        str_rev = ''
+        if rev:
+            str_rev = ' ({}/{}/commit/{})'.format(g_webrepos[repo], repo, rev)
+        str_trigger = ' Likely triggered by a commit to `{}/{}`{}.'.format(repo, branch, str_rev)
+    slack.isis_sendmsg('{}\n*Failed {}!*{}\n{}'.format(str_hdr, task, str_trigger, str_run))
     if stderr:
         if len(stderr) > 3950:
             stderr = stderr[:3945] + '[...]'
@@ -213,7 +228,7 @@ def should_rebuild_sed(repo, branch, changed_files):
     return any(i18n in p.parents for p in changed_files)
 
 
-def rebuild_emf(repo, branch):
+def rebuild_emf(repo, branch, rev):
     assert repo == 'EMF' or repo == 'SWMH-BETA', 'unsupported trigger repository: ' + repo
     logging.info('rebuilding EMF...')
     # get on the right branches
@@ -235,7 +250,7 @@ def rebuild_emf(repo, branch):
         git_run(['reset', '--hard', 'HEAD'])
         git_run(['clean', '-df'])
         os.chdir(str(g_base_dir))
-        slack_errmsg("to rebuild auto-managed files in `EMF/{}`".format(emf_branch), repo, branch, cp.args, cp.returncode, cp.stderr)
+        slack_errmsg("to rebuild auto-managed files in `EMF/{}`".format(emf_branch), repo, branch, cp.args, cp.returncode, cp.stderr, rev)
         raise RebuildFailedException()
 
     # did anything change besides our version.txt?
@@ -263,7 +278,7 @@ def rebuild_emf(repo, branch):
     return new_rev
 
 
-def rebuild_mini(repo, branch):
+def rebuild_mini(repo, branch, rev):
     assert repo == 'SWMH-BETA', 'rebuild_mini: unsupported repo: ' + repo
     logging.info('rebuilding MiniSWMH...')
     # get on the right branches
@@ -283,7 +298,7 @@ def rebuild_mini(repo, branch):
         git_run(['reset', '--hard', 'HEAD'])
         git_run(['clean', '-df'])
         os.chdir(str(g_base_dir))
-        slack_errmsg("to auto-update `MiniSWMH/{}`".format(mini_branch), repo, branch, cp.args, cp.returncode, cp.stderr)
+        slack_errmsg("to auto-update `MiniSWMH/{}`".format(mini_branch), repo, branch, cp.args, cp.returncode, cp.stderr, rev)
         raise RebuildFailedException()
 
     # did anything change besides our version.txt?
@@ -311,7 +326,7 @@ def rebuild_mini(repo, branch):
     return new_rev
 
 
-def rebuild_sed(repo, branch):
+def rebuild_sed(repo, branch, rev):
     logging.info('rebuilding sed2...')
 
     # get on the right branches
@@ -335,7 +350,7 @@ def rebuild_sed(repo, branch):
         git_run(['reset', '--hard', 'HEAD'])
         git_run(['clean', '-df'])
         os.chdir(str(g_base_dir))
-        slack_errmsg("to auto-update SED (`sed2/{}`)".format(sed_branch), repo, branch, cp.args, cp.returncode, cp.stderr)
+        slack_errmsg("to auto-update SED (`sed2/{}`)".format(sed_branch), repo, branch, cp.args, cp.returncode, cp.stderr, rev)
         raise RebuildFailedException()
 
     # did anything change besides our version.txt?
@@ -387,7 +402,7 @@ def process_emf_beta():
     os.chdir(str(g_base_dir))
 
 
-def check_save_compat(repo, branch):
+def check_save_compat(repo, branch, rev):
     assert repo == 'SWMH-BETA', 'check_save_compat: unsupported repo: ' + repo
     logging.info('checking save compatibility for SWMH...')
     # get on the right branch
@@ -401,7 +416,7 @@ def check_save_compat(repo, branch):
         git_run(['reset', '--hard', 'HEAD'])
         git_run(['clean', '-df'])
         os.chdir(str(g_base_dir))
-        slack_errmsg("to complete SWMH save-compatibility check", repo, branch, cp.args, cp.returncode, cp.stderr)
+        slack_errmsg("to complete SWMH save-compatibility check", repo, branch, cp.args, cp.returncode, cp.stderr, rev)
         raise RebuildFailedException()
 
     result = cp.stdout.strip()
