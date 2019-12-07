@@ -424,7 +424,7 @@ def check_save_compat(repo, branch, rev):
     if not compatible:
         if len(result) > 200:
             result = result[:200] + " [...]"
-        slack.isis_sendmsg(":shakefist: SWMH {}".format(result), channel='#github')
+        slack.isis_sendmsg(":shakefist: SWMH-BETA:{} {}".format(branch, result), channel='#github')
     os.chdir(str(g_base_dir))
     return compatible
 
