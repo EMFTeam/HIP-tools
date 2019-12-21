@@ -29,10 +29,10 @@ g_gitbin_path = Path('/usr/bin/git')
 
 # repos and respective branches which we track
 g_repos = {
-    'SWMH-BETA': ['develop'],
-    'sed2': ['993-dev'],
+    'SWMH-BETA': ['master'],
+    'sed2': ['dev'],
     'EMF': ['alpha', 'beta'],
-    'MiniSWMH': ['993-dev'],
+    'MiniSWMH': ['master'],
     'HIP-tools': ['master'],
     'ck2utils': ['dev'],
 #    'CPRplus': ['dev'],
