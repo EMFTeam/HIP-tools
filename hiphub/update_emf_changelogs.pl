@@ -49,6 +49,7 @@ my @MAJOR_VERSIONS = (
     'JD',
     'HF',
     'IC',
+    'IC',
 );
 
 
