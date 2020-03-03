@@ -6,10 +6,11 @@ zipadd () {
 
 set -e
 
+#echo "$(date '+%F')" > ./modules/version.txt
 rm -f HIP.7z
 zipadd modules
 zipadd HIP.exe
 zipadd python27.dll
 zipadd library.zip
-zipadd "HIP readme.txt"
+zipadd HIP_ReadMe.txt
 zipadd main.py
