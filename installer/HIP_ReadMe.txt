@@ -81,11 +81,11 @@ copy/paste their output into your bug report / question on the forums:
 
 On Mac or Windows, try running this (copy/paste to make sure you don't make any syntax mistakes):
 
-python -V "Documents/Paradox Interactive/Crusader Kings II/mod/main.py"
+python "Documents/Paradox Interactive/Crusader Kings II/mod/main.py" -V
 
 On Linux, you'd want to run this instead:
 
-python -V ~/.paradoxinteractive/"Crusader Kings II"/mod/main.py
+python ~/.paradoxinteractive/"Crusader Kings II"/mod/main.py -V
 
 If that works, copy all the output from that command (scroll up if you have to do so) into your forum /
 Discord post. That should tells us everything we need to know about your system, python version, HIP installer
@@ -100,9 +100,9 @@ installer?
 If the installer ran but could not complete or did something obviously broken mid-way through, try running it
 this way and repeating the steps that made it crash/error:
 
-[Mac/Windows]: python -D "Documents/Paradox Interactive/Crusader Kings II/mod/main.py"
+[Mac/Windows]: python "Documents/Paradox Interactive/Crusader Kings II/mod/main.py" -D
 
-[Linux]: python -D ~/.paradoxinteractive/"Crusader Kings II"/mod/main.py
+[Linux]: python ~/.paradoxinteractive/"Crusader Kings II"/mod/main.py -D
 
 This should generate a file called HIP_debug.log in your mod folder which you can attach on the forums,
 Discord, or any other place where HIP offers support:
