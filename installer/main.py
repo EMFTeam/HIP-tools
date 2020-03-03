@@ -10,8 +10,10 @@ import traceback
 import time
 import re
 
+YES = 'yes'
+NO = 'no'
 
-g_version = {'major': 2, 'minor': 8, 'patch': 0,
+g_version = {'major': 2, 'minor': 8, 'patch': 1,
              'Developer':       'zijistark <zijistark@gmail.com>',
              'Developer':       'IoannesBarbarus',
              'Release Manager': 'zijistark <zijistark@gmail.com>'}
@@ -19,8 +21,9 @@ g_version = {'major': 2, 'minor': 8, 'patch': 0,
 g_text = {}
 
 g_text['INTRO'] = '''\
-{}
-========================================================================
++==============================================================================+
+|{}|
++==============================================================================+
 
 All prompts require a yes/no answer. The default answer for any particular
 prompt is shown in brackets directly following it (e.g., "[yes]" or "[no]").
@@ -47,7 +50,6 @@ g_text['ENABLE_MOD_XOR'] = 'Install {} ({})? [yes]'
 g_text['ENABLE_MOD_XOR_WARN'] = '\n{} and {} are incompatible. You may only select one:'
 g_text['PUSH_FOLDER'] = 'Preparing {}'
 g_text['COMPILING'] = '> Compiling ...'
-
 
 def localise(key):
     return g_text[key]
@@ -150,21 +152,11 @@ def isFileQuickUnwrapped(path):
     _, extension = os.path.splitext(path)
     return extension.lower() in ['.dds', '.tga']
 
-
-def canonicalYes():
-    return 'yes'
-
-
-def canonicalNo():
-    return 'no'
-
+def isYesDefaultNo(answer):
+    return answer in ('y', 'yes', 'ye', 'es', 'ys', 'si', 's', 'ja', 'j', 'oui', 'd', 'da', 'tak')
 
 def isYes(answer):
-    return answer in ('', 'y', 'yes', 'ye', 'es', 'ci', 'c', 'ja', 'j', 'ok')
-
-
-def isYesDefaultNo(answer):
-    return answer in ('y', 'yes', 'ye', 'es', 'ci', 'c', 'ja', 'j')
+    return answer in ('', 'ok') or answer in isYesDefaultNo(answer)
 
 
 def promptUser(prompt, lc=True):
@@ -197,19 +189,22 @@ def quoteIfWS(s):
     return "'{}'".format(s) if ' ' in s else s
 
 
-def rmTree(directory, traceMsg=None):
-    if traceMsg:
-        g_dbg.trace(traceMsg)
-    if os.path.exists(directory):
-        g_dbg.trace("rmdir('{}')".format(directory))
-        shutil.rmtree(directory)
-
-
 def rmFile(f, traceMsg=None):
     if traceMsg:
         g_dbg.trace(traceMsg)
     g_dbg.trace('rm("{}")'.format(f))
     os.remove(f)
+
+
+def rmTree(f, traceMsg=None):
+    if traceMsg:
+        g_dbg.trace(traceMsg)
+    if os.path.exists(f):
+        if os.path.isdir(f):
+            g_dbg.trace("rmdir('{}')".format(f))
+            shutil.rmtree(f)
+        else:
+            rmFile(f)
 
 
 def mkTree(d, traceMsg=None):
@@ -304,8 +299,12 @@ g_k  = bytearray(br'"The enemy of a good plan is the dream of a perfect plan" - 
 
 def unwrapBuffer(buf, length):
     kN = len(g_k)
-    for i in xrange(length):
-        buf[i] ^= g_k[i % kN]
+    try:
+        for i in xrange(length):  # Py2
+            buf[i] ^= g_k[i % kN]
+    except NameError:
+        for i in range(length):  # Py3
+            buf[i] ^= g_k[i % kN]
 
 
 def compileTargetFile(src, dst, wrap):
@@ -419,6 +418,7 @@ def initVersionEnvInfo():
     g_programPath = os.path.abspath(g_programPath)
 
 
+
 def printVersionEnvInfo():
     # Print the installer's version info (installer *script*, not module package)
     print('HIP Installer:')
@@ -482,11 +482,11 @@ g_oldDefaultFolder = g_defaultFolder.replace('_', ' ')
 def getInstallOptions(batchMode=False):
     # Show HIP installer version & explain interactive prompting
     if not batchMode:
-        print(localise('INTRO').format('HIP Release: {}'.format(g_versions['pkg']).center(72)))
+        print(localise('INTRO').format('HIP Release: {}'.format(g_versions['pkg']).center(80-2)))
     # Determine installation target folder...
     targetFolder = ''
     useCustomFolder = False if batchMode else \
-         isYesDefaultNo(promptUser('Do you want to install to a custom folder / mod name? [{}]'.format(canonicalNo())))
+         isYesDefaultNo(promptUser('Do you want to install to a custom folder / mod name? [{}]'.format(NO)))
     if useCustomFolder:
         # Note that we use the case-preserving form of promptUser (also determines name in launcher)
         targetFolder = promptUser(localise('TARGET_FOLDER').format(g_defaultFolder), lc=False)
@@ -502,20 +502,18 @@ def getSteamMasterFolderFromRegistry(x64Mode=True):
     pathVariant = r'\Wow6432Node' if x64Mode else ''
     keyPath = r'SOFTWARE{}\Valve\Steam'.format(pathVariant)
     g_dbg.push('search_winreg_key("{}")'.format(keyPath))
-    # _winreg import will fail on Python 3, so a conditional import of 'winreg'
-    # _instead of '_winreg' in that case *should* make this part of the script
-    # _v2/v3-safe.
+    # _winreg import will fail on Python 3 for Windows, because it's been
+    # _standardized to winreg. For Python 2.7, we import _winreg instead.
     #
-    # NOTE: cygwin Python lacks _winreg
+    # NOTE: cygwin Python lacks _winreg (as it should)
+    if sys.version_info.major == 3:  # Using Python 3
+        import winreg as wreg
+    else:  # Presumably Py2.7, or else this script is now ancient and should be buried
+        import _winreg as wreg
     try:
-        import _winreg
-    except ImportError:
-        import winreg as _winreg
-    from _winreg import HKEY_LOCAL_MACHINE
-    try:
-        hReg   = _winreg.ConnectRegistry(None, HKEY_LOCAL_MACHINE)
-        hKey   = _winreg.OpenKey(hReg, keyPath)
-        folder = _winreg.QueryValueEx(hKey, 'InstallPath')
+        hReg   = wreg.ConnectRegistry(None, wreg.HKEY_LOCAL_MACHINE)
+        hKey   = wreg.OpenKey(hReg, keyPath)
+        folder = wreg.QueryValueEx(hKey, 'InstallPath')
         if not folder:
             raise EnvironmentError()
         g_dbg.trace('winreg_key_found(InstallPath => "{}")'.format(folder[0]))
