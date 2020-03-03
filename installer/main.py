@@ -156,7 +156,7 @@ def isYesDefaultNo(answer):
     return answer in ('y', 'yes', 'ye', 'es', 'ys', 'si', 's', 'ja', 'j', 'oui', 'd', 'da', 'tak')
 
 def isYes(answer):
-    return answer in ('', 'ok') or answer in isYesDefaultNo(answer)
+    return answer in ('', 'ok') or isYesDefaultNo(answer)
 
 
 def promptUser(prompt, lc=True):
