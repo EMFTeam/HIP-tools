@@ -43,7 +43,8 @@ Mac OS X Installation
 every Mac. If it's not on your Launcher already, then search Finder under Applications for Terminal. It should
 be in a subfolder in Applications with other system utilities. Run Terminal.
 
-3. The Terminal application will start in your home directory. The following command assumes that's the case.
+3. The Terminal application will start in your home directory. The following command assumes that Terminal is
+still located in your home directory.
 
 Copy and then paste the following line of text, precisely, into the Terminal window, and then hit ENTER:
 
@@ -60,7 +61,7 @@ Linux Installation
 1. Complete steps (1)-(3) in the general installation instructions at the top of this file.
 
 2. Open a terminal window. There are many terminal applications available for Linux, and if you're running
-Linux, you probably know how to access at least one, but the gist is that we're going to hit up the command
+Linux, you probably know how to access at least one. The gist is that we're going to hit up the command
 line, so open up a new terminal window.
 
 3. Copy and then paste the following line of text, precisely, into the terminal window, and then hit ENTER:
@@ -105,4 +106,4 @@ this way and repeating the steps that made it crash/error:
 [Linux]: python ~/.paradoxinteractive/"Crusader Kings II"/mod/main.py -D
 
 This should generate a file called HIP_debug.log in your mod folder which you can attach on the forums,
-Discord, or any other place where HIP offers support:
+Discord, or any other place where HIP offers support.
