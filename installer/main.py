@@ -889,10 +889,11 @@ If you want the vanilla map instead, simply type 'n' or 'no' for SWMH below:''')
         if targetFolder != g_defaultFolder:
             modBasename = 'HIP_' + targetFolder
             converterName = 'HIP - ' + targetFolder + ' - Converter'
+            modName = 'HIP - ' + targetFolder
         else:
             modBasename = 'HIP'
             converterName = 'HIP - Converter'
-        modName = 'HIP - ' + targetFolder
+            modName = 'HIP - ' + targetFolder.replace('_', ' ')
         converterTargetFolder = modBasename + '_Converter'
         if EMF or ARKOCoA or ARKOInt or CPR or SWMH:
             modUserDir = modBasename
