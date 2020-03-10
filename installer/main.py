@@ -13,10 +13,10 @@ import re
 YES = 'yes'
 NO = 'no'
 
-g_version = {'major': 2, 'minor': 8, 'patch': 1,
-             'Developer':       'zijistark <zijistark@gmail.com>',
-             'Developer':       'IoannesBarbarus',
-             'Release Manager': 'zijistark <zijistark@gmail.com>'}
+g_version = {'major': 2, 'minor': 8, 'patch': 2,
+             'Primary Developer': 'Matthew D. Hall <zijistark@gmail.com>',
+             'Developer':         'IoannesBarbarus <basque.fabio@tex.as>',
+             'Release Manager':   'Matthew D. Hall <zijistark@gmail.com>'}
 
 g_text = {}
 
@@ -576,7 +576,7 @@ def readSteamLibraryFolders(dbPath):
     folders = []
     with open(dbPath, 'rb') as f:
         while True:
-            line = f.readline()
+            line = str(f.readline())
             if len(line) == 0:
                 g_dbg.pop("num_external_libraries_found({})".format(len(folders)))
                 return folders
@@ -715,6 +715,8 @@ def scaffoldMod(modFilename, targetFolder, modBasename, modName, modPath, modUse
         if deps is not None:
             modFile.write('dependencies = {\n')
             for dependencyName in deps:
+                if ' ' in dependencyName:
+                    dependencyName = r'\"{}\"'.format(dependencyName)
                 modFile.write('"{}"\n'.format(dependencyName))
             modFile.write('}\n')
         if modUserDir is not None:
@@ -730,7 +732,7 @@ def scaffoldMod(modFilename, targetFolder, modBasename, modName, modPath, modUse
 # override HIP's files but also you must use Extra Special Redundant Double-Quoting so that Steam doesn't mangle things
 # when users download your mod. In short, do this:
 #
-# dependencies = { "\"Historical Immersion Project\"" "And_Maybe_Some_Other_Mod_You_Need_Without_Spaces" }''')
+# dependencies = { "\\"HIP - Historical Immersion Project\\"" "\\"HIP (Steam Edition)\\"" }''')
 
 
 def main():
@@ -851,7 +853,8 @@ def main():
             if cprMissingDLCNames is None:  # Failed to auto-detect game folder
                 print('\nOOPS: The HIP installer could NOT successfully determine your active CKII\n'
                       'game folder! Thus, it cannot auto-detect whether you meet all the portrait DLC\n'
-                      'prerequisites for CPRplus. All _other_ HIP modules can be installed, however.\n')
+                      'prerequisites for CPRplus. But all other HIP modules CAN still be installed!\n')
+                print()
             elif len(cprMissingDLCNames) > 0:  # DLC auto-detection succeeded, but there were missing DLCs.
                 print('\n\nCPRplus (portrait upgrade module) requires portrait pack DLCs which you,\n'
                       'unfortunately, are lacking. If you want to use CPRplus, you\'ll need to install\n'
