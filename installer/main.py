@@ -13,9 +13,9 @@ import re
 YES = 'yes'
 NO = 'no'
 
-g_version = {'major': 2, 'minor': 8, 'patch': 2,
+g_version = {'major': 2, 'minor': 8, 'patch': 3,
              'Primary Developer': 'Matthew D. Hall <zijistark@gmail.com>',
-             'Developer':         'IoannesBarbarus <basque.fabio@tex.as>',
+             # 'Developer': 'Gabriel Rath', # perhaps?
              'Release Manager':   'Matthew D. Hall <zijistark@gmail.com>'}
 
 g_text = {}
@@ -117,10 +117,10 @@ class DebugTrace(NullDebugTrace):
     def pop(self, s=None):  # Pop indent stack
         if self.i <= 0:
             raise InstallerTraceNestingError()
-        self.i -= 1
-        self.trace('}')
         if s:
             self.trace(s)
+        self.i -= 1
+        self.trace('}')
 
 
 WRAP_NONE  = 0
@@ -201,7 +201,7 @@ def rmTree(f, traceMsg=None):
         g_dbg.trace(traceMsg)
     if os.path.exists(f):
         if os.path.isdir(f):
-            g_dbg.trace("rmdir('{}')".format(f))
+            g_dbg.trace("rmTree('{}')".format(f))
             shutil.rmtree(f)
         else:
             rmFile(f)
@@ -210,7 +210,7 @@ def rmTree(f, traceMsg=None):
 def mkTree(d, traceMsg=None):
     if traceMsg:
         g_dbg.trace(traceMsg)
-    g_dbg.trace("mkdir('{}')".format(d))
+    g_dbg.trace("mkTree('{}')".format(d))
     os.makedirs(d)
 
 
@@ -227,17 +227,17 @@ def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None, wrapPath
     if not os.path.exists(srcFolder):
         g_dbg.trace("MODULE_NOT_FOUND('{}')".format(folder))
         return
-    g_dbg.push('push_module("{}")'.format(srcFolder))
+    g_dbg.push('pushModule("{}")'.format(srcFolder))
     ignoreFiles = {os.path.join(srcFolder, os.path.normpath(x)) for x in ignoreFiles}
     prunePaths = {os.path.join(srcFolder, os.path.normpath(x)) for x in prunePaths}
     wrapPaths = {os.path.join(srcFolder, os.path.normpath(x)) for x in wrapPaths}
     for x in ignoreFiles:
-        g_dbg.trace('file_filter("{}")'.format(x))
+        g_dbg.trace('ignoredFile("{}")'.format(x))
     for x in prunePaths:
-        g_dbg.trace('path_filter("{}")'.format(x))
+        g_dbg.trace('prunedPath("{}")'.format(x))
     for root, dirs, files in os.walk(srcFolder):
         newRoot = root.replace(srcFolder, targetFolder)
-        g_dbg.push('push_dir("{}")'.format(root))
+        g_dbg.push('pushDir("{}")'.format(root))
         # Prune the source directory walk in-place according to prunePaths
         # option, and, of course, don't create pruned directories (none of the
         # files in them will be copied/moved)
@@ -246,7 +246,7 @@ def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None, wrapPath
             srcPath = os.path.join(root, directory)
 #           g_dbg.trace('dir({})'.format(quoteIfWS(srcPath)))
             if srcPath in prunePaths:
-                g_dbg.trace('filtered_dir("{}")'.format(srcPath))
+                g_dbg.trace('pruneDir("{}")'.format(srcPath))
             else:
                 prunedDirs.append(directory)
                 newDir = os.path.join(newRoot, directory)
@@ -261,17 +261,17 @@ def pushFolder(folder, targetFolder, ignoreFiles=None, prunePaths=None, wrapPath
             src = os.path.join(root, f)
             dst = os.path.join(newRoot, f)
             if not isFileWanted(src):
-                g_dbg.trace('unwanted_file("{}")'.format(src))
+                g_dbg.trace('unwantedFile("{}")'.format(src))
                 continue
             if src in ignoreFiles:  # Selective ignore filter for individual files
-                g_dbg.trace('filtered_file("{}")'.format(src))
+                g_dbg.trace('filteredFile("{}")'.format(src))
                 continue
             wrapType = WRAP_NONE
             if wrapped and not src.endswith('version.txt'):
                 wrapType = WRAP_QUICK if isFileQuickUnwrapped(src) else WRAP_TOTAL
             g_targetSrc[dst] = TargetSource(folder, src, wrap=wrapType)
             nPushed += 1
-        g_dbg.trace('num_files_pushed({})'.format(nPushed))
+        g_dbg.trace('numFilesPushed({})'.format(nPushed))
         g_dbg.pop()
     g_dbg.pop()
 
@@ -280,14 +280,14 @@ def popFile(f, targetFolder):
     f = os.path.normpath(f)
     p = os.path.join(targetFolder, f)
     if p in g_targetSrc:
-        g_dbg.trace("pop_file('{}')".format(p))
+        g_dbg.trace('popFile("{}")'.format(p))
         del g_targetSrc[p]
 
 
 def popTree(d, targetFolder):
     d = os.path.normpath(d)
     t = os.path.join(targetFolder, d)
-    g_dbg.push("pop_path_prefix('{}')".format(t))
+    g_dbg.push('popPathPrefix("{}")'.format(t))
     for p in [p for p in g_targetSrc.keys() if p.startswith(t)]:
         g_dbg.trace(p)
         del g_targetSrc[p]
@@ -307,29 +307,29 @@ def unwrapBuffer(buf, length):
             buf[i] ^= g_k[i % kN]
 
 
-def compileTargetFile(src, dst, wrap):
+def compileTargetFile(src, dst, wrap, manifest):
     global g_modified
     length = os.path.getsize(src)
     buf = bytearray(length)
     with open(src, 'rb') as fsrc:
         fsrc.readinto(buf)
-    hash_md5 = hashlib.md5()
-    hash_md5.update(buf)
-    cksum = hash_md5.hexdigest()
+    if manifest:
+        hash_md5 = hashlib.md5()
+        hash_md5.update(buf)
+        cksum = hash_md5.hexdigest()
     if wrap != WRAP_NONE:
         if wrap == WRAP_QUICK:
             length = min(1 << 12, length)
         unwrapBuffer(buf, length)
     with open(dst, 'wb') as fdst:
         fdst.write(buf)
-    if g_manifest.get(src) != cksum:
-        if g_manifest:
-            g_dbg.trace("checksum_failed('{}')".format(src))
+    if manifest and manifest.get(src, None) != cksum:
+        g_dbg.trace("checksumMismatch('{}')".format(src))
         g_modified = True
 
 
 # startFolder is the reference point for the relative paths in the map file
-def compileTarget(mapFilename, startFolder):
+def compileTarget(mapFilename, startFolder, manifest):
     print(localise('COMPILING'))
     sys.stdout.flush()
     x = len(g_targetSrc) / 20.0
@@ -343,7 +343,7 @@ def compileTarget(mapFilename, startFolder):
             if src.isDir:
                 mkTree(dstPath)
             else:
-                compileTargetFile(src.srcPath, dstPath, src.wrap)
+                compileTargetFile(src.srcPath, dstPath, src.wrap, manifest)
 
 
 def detectPlatform():
@@ -360,32 +360,19 @@ def detectPlatform():
 
 
 def cleanUserDir(userDir):
-    g_dbg.push('clean_userdir("{}")'.format(userDir))
+    g_dbg.push('cleanUserDir("{}")'.format(userDir))
     for d in [os.path.join(userDir, e) for e in ['gfx', 'map']]:
-        rmTree(d)
-    g_dbg.pop()
+        if os.path.isdir(d):
+            rmTree(d)
 
 
 def resetCaches():
-    if g_platform == 'mac':
-        print('Clearing preexisting CKII gfx/map cache')
-        # Does CK2 on Mac still actually use a global cache? Seems there's been
-        # a lot of launcher work since then, IDK.
-        cleanUserDir('..')
-    elif g_platform == 'win' or g_platform == 'cyg':
+    if g_platform in ('win', 'lin', 'cyg', 'mac'):
         print('Clearing preexisting HIP-related CKII gfx/map caches ...')
-        # Match *all* userdirs in CKII user directory which include 'HIP' in their
-        # directory name, as this also covers all cases with external mods used with
-        # HIP, and then clear their caches. It works, because, without editing the
-        # user_dir line in the .mod file, it is impossible to select a target folder
-        # that won't result in a substring of 'HIP' somewhere in the combined
-        # user_dir name.
-        dirEntries = [os.path.join('..', e) for e in os.listdir('..')]
+        dirEntries = ['..'] + [os.path.join('..', e) for e in os.listdir('..')]
         for userDir in dirEntries:
             if os.path.isdir(userDir) and 'HIP' in userDir:
                 cleanUserDir(userDir)
-    elif g_platform == 'lin':
-        pass # FIXME: Don't know where the cache is on Linux these days
     else:
         raise InstallerPlatformError()
 
@@ -412,7 +399,7 @@ def initVersionEnvInfo():
     if len(sys.argv) == 0 or sys.argv[0] == '':
         raise InstallerEmptyArgvError()
     global g_programPath
-    # Resolve any symbolic links in path elements and canonicalize it
+    # Resolve any symbolic link in path elements and canonicalize it
     g_programPath = os.path.realpath(sys.argv[0])
     # Make sure it's normalized and absolute with respect to platform conventions
     g_programPath = os.path.abspath(g_programPath)
@@ -448,60 +435,85 @@ def printVersionEnvInfo():
     return
 
 
-def getManifest():
-    global g_manifest
-    g_manifest = {}
+def loadManifestFile(path):
+    g_dbg.push('loadManifestFile')
+    if not os.path.exists(path):
+        g_dbg.pop('manifestPathNotFound("{}")'.format(path))
+        return None
+    manifest = {}
     try:
-        with open('modules/release_manifest.txt') as f:
+        g_dbg.trace('openPath("{}")'.format(path))
+        with open(path) as f:
             for line in f:
                 relpath, cksum = line.split(' // ')
                 path = os.path.join('modules', os.path.normpath(relpath))
-                g_manifest[path] = cksum.strip()
-    except IOError:
-        g_dbg.push('manifest(NOT_FOUND)')
+                manifest[path] = cksum.strip()
+    except IOError as e:
+        g_dbg.pop('failureLoadingManifest("{}")'.format(e))
+        return None
+    g_dbg.pop('manifestSize({})'.format(len(manifest.keys())))
+    return manifest
+
+
+def loadManifest():
+    g_dbg.push('loadManifest')
+    stdManifestPath = os.path.normpath('modules/release_manifest.txt')
+    emfManifestPath = os.path.normpath('modules/EMF/beta_manifest.txt')
+    stdManifest = loadManifestFile(stdManifestPath)
+    emfManifest = loadManifestFile(emfManifestPath)
+    if emfManifest and stdManifest:
+        # For every path (key) in stdManifest which is not in emfManifest and is under one of the EMF repository modules
+        # (i.e., EMF, EMF+MiniSWMH, EMF+SWMH, EMF+Vanilla, src, notes, etc.), delete 
+        pass
+    return stdManifest
+    g_dbg.pop('finalManifestSize({})'.format(len(stdManifest.keys())))
 
 
 def getPkgVersions(modDirs):
     global g_versions
     g_versions = {}
-    g_dbg.push('read_versions')
+    g_dbg.push('getPkgVersions')
     for mod in modDirs.keys():
         f = os.path.join('modules', modDirs[mod], 'version.txt')
         if os.path.exists(f):
             g_versions[mod] = open(f).readline().strip()
         else:
             g_versions[mod] = 'no version'
-        g_dbg.trace("version('{}' => '{}')".format(mod, g_versions[mod]))
+        g_dbg.trace('version("{}" => "{}")'.format(mod, g_versions[mod]))
     g_dbg.pop()
 
 
 g_defaultFolder = 'Historical_Immersion_Project'
-g_oldDefaultFolder = g_defaultFolder.replace('_', ' ')
+g_spacedDefaultFolder = g_defaultFolder.replace('_', ' ')
 
 
 def getInstallOptions(batchMode=False):
-    # Show HIP installer version & explain interactive prompting
-    if not batchMode:
-        print(localise('INTRO').format('HIP Release: {}'.format(g_versions['pkg']).center(80-2)))
+    g_dbg.push('getInstallOptions')
+    g_dbg.trace('batchMode({})'.format(batchMode))
     # Determine installation target folder...
+    if batchMode:
+        g_dbg.pop('targetFolderSelection("{}")'.format(g_defaultFolder))
+        return g_defaultFolder
+    # Show HIP installer version & explain interactive prompting
+    print(localise('INTRO').format('HIP Release: {}'.format(g_versions['pkg']).center(80-2)))
+    # Give the option to install to a custom folder & .mod file
     targetFolder = ''
-    useCustomFolder = False if batchMode else \
-         isYesDefaultNo(promptUser('Do you want to install to a custom folder / mod name? [{}]'.format(NO)))
+    useCustomFolder = isYesDefaultNo(promptUser('Do you want to install to a custom folder / mod name? [{}]'.format(NO)))
     if useCustomFolder:
         # Note that we use the case-preserving form of promptUser (also determines name in launcher)
-        targetFolder = promptUser(localise('TARGET_FOLDER').format(g_defaultFolder), lc=False)
+        targetFolder = promptUser(localise('TARGET_FOLDER').format(g_spacedDefaultFolder), lc=False)
     if targetFolder == '':
         targetFolder = g_defaultFolder
-    g_dbg.trace('target_folder("{}")'.format(targetFolder))
+    g_dbg.pop('targetFolderSelection("{}")'.format(targetFolder))
     return targetFolder
 
 
 # Find Steam master folder by checking the Windows Registry (32-bit mode and
 # 64-bit mode are separate invocations)
 def getSteamMasterFolderFromRegistry(x64Mode=True):
-    pathVariant = r'\Wow6432Node' if x64Mode else ''
-    keyPath = r'SOFTWARE{}\Valve\Steam'.format(pathVariant)
-    g_dbg.push('search_winreg_key("{}")'.format(keyPath))
+    g_dbg.push('getSteamMasterFolderFromRegistry(x64Mode={})'.format(x64Mode))
+    pathVariant = '\\Wow6432Node' if x64Mode else ''
+    keyPath = 'SOFTWARE{}\\Valve\\Steam'.format(pathVariant)
     # _winreg import will fail on Python 3 for Windows, because it's been
     # _standardized to winreg. For Python 2.7, we import _winreg instead.
     #
@@ -513,10 +525,11 @@ def getSteamMasterFolderFromRegistry(x64Mode=True):
     try:
         hReg   = wreg.ConnectRegistry(None, wreg.HKEY_LOCAL_MACHINE)
         hKey   = wreg.OpenKey(hReg, keyPath)
+        g_dbg.trace('queryRegistryKey("HKEY_LOCAL_MACHINE\\{}")'.format(keyPath))
         folder = wreg.QueryValueEx(hKey, 'InstallPath')
         if not folder:
             raise EnvironmentError()
-        g_dbg.trace('winreg_key_found(InstallPath => "{}")'.format(folder[0]))
+        g_dbg.trace('registryInstallPathFound(InstallPath => "{}")'.format(folder[0]))
         hKey.Close()
         hReg.Close()
         return os.path.join(folder[0], 'steamapps')
@@ -533,22 +546,28 @@ def getSteamMasterFolderFallbackCygwin():
                   'SteamLibrary',
                   'Steam',
                   'Games/Steam']
-    g_dbg.push('find_steam_master_cygwin("{}")'.format(cygdrive))
+    g_dbg.push('getSteamMasterFolderFallbackCygwin')
+    g_dbg.trace('assumingCygwinDriveRoot("{}")'.format(cygdrive))
     for d in os.listdir(cygdrive):
+        g_dbg.trace('scanDrive("{}")'.format(d))
         for maybePath in maybePaths:
             masterFolder = os.path.join(cygdrive, d, maybePath, 'steamapps')
-            g_dbg.trace('search("{}")'.format(masterFolder))
-            if os.path.exists(os.path.join(masterFolder, 'libraryfolders.vdf')):
-                g_dbg.pop()
+            g_dbg.trace('scan("{}")'.format(masterFolder))
+            vdfPath = os.path.join(masterFolder, 'libraryfolders.vdf')
+            if os.path.exists(vdfPath):
+                g_dbg.pop('scanSuccess("{}")'.format(vdfPath))
                 return masterFolder
-    g_dbg.pop()
+    g_dbg.pop('scanFailed()')
     return None
 
 
 def getSteamMasterFolder():
-    g_dbg.push('find_steam_master')
-    folder = None
-    if g_platform == 'mac':
+    g_dbg.push('getSteamMasterFolder')
+    if g_platform == 'win':
+        folder = getSteamMasterFolderFromRegistry()
+        if folder is None:
+            folder = getSteamMasterFolderFromRegistry(x64Mode=False)  # Try the 32-bit registry key
+    elif g_platform == 'mac':
         folder = os.path.expanduser('~/Library/Application Support/Steam/SteamApps')
         if not os.path.exists(folder):
             folder = os.path.expanduser('~/Library/Application Support/Steam/steamapps')
@@ -558,57 +577,66 @@ def getSteamMasterFolder():
             folder = os.path.expanduser('~/.steam/steam/SteamApps')
     elif g_platform == 'cyg':
         folder = getSteamMasterFolderFallbackCygwin()
-    elif g_platform == 'win':
-        folder = getSteamMasterFolderFromRegistry()
-        if folder is None:
-            folder = getSteamMasterFolderFromRegistry(x64Mode=False)  # Try the 32-bit registry key
+    else:
+        raise InstallerPlatformError()
     if folder and os.path.exists(folder):
-        g_dbg.pop('steam_master("{}")'.format(folder))
+        g_dbg.pop('steamMasterFolder("{}")'.format(folder))
         return folder
     else:
-        g_dbg.pop('steam_master(NOT_FOUND)')
+        g_dbg.pop('steamMasterFolder(NOT_FOUND)')
         return None
 
 
 def readSteamLibraryFolders(dbPath):
-    g_dbg.push('read_steam_master_library_db("{}")'.format(dbPath))
-    p_library = re.compile(r'^\s*"\d+"\s+"([^"]+)"\s*$')
+    g_dbg.push('readSteamLibraryFolders("{}")'.format(dbPath))
     folders = []
-    with open(dbPath, 'rb') as f:
+    with open(dbPath, 'r') as f:
         while True:
-            line = str(f.readline())
+            line = f.readline()
             if len(line) == 0:
-                g_dbg.pop("num_external_libraries_found({})".format(len(folders)))
+                g_dbg.pop("numExternalLibrariesFound({})".format(len(folders)))
                 return folders
-            line = line.rstrip('\r\n')
-            m = p_library.match(line)
+            line = line.rstrip('\n')
+            m = re.match(r'^\s*"\d+"\s+"([^"]+)"\s*$', line)
             if m:
-                p = m.group(1).replace('\\\\', '/')
+                p = m.group(1).replace(r'\\', '/')
                 if g_platform == 'cyg':
                     i = p.find(':/')
                     if i == 1:
                         drive = p[:1]
                         p = p.replace(p[:2], '/cygdrive/' + drive.lower(), 1)
                 path = os.path.join(os.path.normpath(p), 'steamapps')
-                g_dbg.trace('external_library("{}")'.format(path))
+                g_dbg.trace('maybeExternalLibrary("{}")'.format(path))
                 if os.path.exists(path):
+                    g_dbg.trace('externalLibraryExists("{}")'.format(path))
                     folders.append(path)
 
 
 def getSteamGameFolder(masterFolder, gameName, magicFile):
-    path = os.path.join(masterFolder, 'common', gameName)
-    g_dbg.trace('potential_game_folder("{}")'.format(path))
-    if os.path.exists(os.path.join(path, magicFile)):
-        return path
+    g_dbg.push('getSteamGameFolder("{}", "{}", "{}")'.format(masterFolder, gameName, magicFile))
     libraryDBPath = os.path.join(masterFolder, 'libraryfolders.vdf')
     if not os.path.exists(libraryDBPath):
-        g_dbg.trace('steam_master_library_db(NOT_FOUND)')
-        return None
-    for f in readSteamLibraryFolders(libraryDBPath):
-        path = os.path.join(f, 'common', gameName)
-        g_dbg.trace('potential_game_folder("{}")'.format(path))
-        if os.path.exists(os.path.join(path, magicFile)):
-            return path
+        g_dbg.trace('steamLibraryDBPath(NOT_FOUND, "{}")'.format(libraryDBPath))
+    else:
+        g_dbg.trace('steamLibraryDBPath(FOUND, "{}")'.format(libraryDBPath))
+        for f in readSteamLibraryFolders(libraryDBPath):
+            path = os.path.join(f, 'common', gameName)
+            if os.path.exists(os.path.join(path, magicFile)):
+                g_dbg.pop('steamLibraryFolder(GAME_FOUND, "{}")'.format(path))
+                return path
+            else:
+                g_dbg.trace('steamLibraryFolder(GAME_NOT_FOUND, "{}")'.format(path))
+        g_dbg.pop()
+    g_dbg.push('searchForFallbackGameFolder')
+    # Try an obvious path for a fallback game folder:
+    fallbackPath = os.path.join(masterFolder, 'common', gameName)
+    g_dbg.trace('potentialFallbackGameFolder("{}")'.format(fallbackPath))
+    fallbackMagicPath = os.path.join(fallbackPath, magicFile)
+    if os.path.exists(fallbackMagicPath):
+        g_dbg.pop('fallbackGameFolderMagic(VALID)')
+        return fallbackPath
+    else:
+        g_dbg.pop('fallbackGameFolderMagic(INVALID)')
     return None
 
 
@@ -639,18 +667,25 @@ cprReqDLCNames = {'dlc002.dlc': 'Mongol Face Pack',
 # detection (game folder detection) fails, and otherwise the exact list of the
 # DLCs' IDs (e.g. "dlc010.dlc").
 def detectDLCs():
+    g_dbg.push('detectDLCs')
     masterFolder = getSteamMasterFolder()
     if not masterFolder:
+        g_dbg.pop('FAIL => steamMasterFolderNotFound')
         return None
     gameFolder = getSteamGameFolder(masterFolder, 'Crusader Kings II', 'dlc')
     if not gameFolder:
-        g_dbg.trace('game_folder(NOT_FOUND)')
+        g_dbg.pop('FAIL => steamGameFolderNotFound')
         return None
-    g_dbg.trace('game_folder("{}")'.format(gameFolder))
+    g_dbg.trace('usingGameFolder("{}")'.format(gameFolder))
     dlcFolder = os.path.join(gameFolder, 'dlc')
     if not os.path.isdir(dlcFolder):
+        g_dbg.pop('expectedDLCFolderIsNotADirectory("{}")'.format(dlcFolder))
         return None
+    g_dbg.push('installedDLCs')
     dlcIDs = [f for f in os.listdir(dlcFolder) if f.endswith('.dlc')]
+    for d in dlcIDs:
+        g_dbg.trace(d)
+    g_dbg.pop()
     return dlcIDs
 
 
@@ -777,7 +812,7 @@ def main():
         # Load release manifest:
         global g_modified
         g_modified = False
-        getManifest()
+        manifest = loadManifest()
         # These are the modules/ directories from which to grab each mod's version.txt:
         modDirs = {'pkg': '',   # Installer package version
                    'SWMH':      'SWMH',
@@ -907,7 +942,7 @@ If you want the vanilla map instead, simply type 'n' or 'no' for SWMH below:''')
         removePreexistingMod(targetFolder, modFilename)
         # Also remove old space-separated default folder for giggles and to
         # avoid ambiguity, if it's there
-        removePreexistingMod(g_oldDefaultFolder, modFilename)
+        removePreexistingMod(g_spacedDefaultFolder, modFilename)
         removePreexistingMod(converterTargetFolder, euModFilename)
         scaffoldMod(modFilename,
                     targetFolder,
@@ -1026,7 +1061,7 @@ If you want the vanilla map instead, simply type 'n' or 'no' for SWMH below:''')
         mapFilename = os.path.join(targetFolder, "file2mod_map.txt")
         startTime = time.time()
         # Do all the actual compilation (file I/O)
-        compileTarget(mapFilename, targetFolder)
+        compileTarget(mapFilename, targetFolder, manifest)
         endTime = time.time()
         print('> Compiled (%0.1f sec).\n' % (endTime - startTime))
         # Report if the installed files didn't match release manifest checksum:
