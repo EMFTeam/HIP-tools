@@ -1,13 +1,15 @@
 #!/usr/bin/python3
 # -*- python-indent-offset: 4 -*-
 
-VERSION='0.22'
+VERSION='0.9.0'
 
 import os
 import re
 import sys
 import pwd
 import time
+import random
+import hashlib
 import signal
 import daemon
 import logging
@@ -26,6 +28,8 @@ g_webhook_dir = g_webroot_dir / 'hiphub'  # folder where the webhook hints us as
 g_emfbeta_name = 'emf_beta.zip'
 g_emfbeta_path = g_webroot_dir / 'pub' / g_emfbeta_name
 g_gitbin_path = Path('/usr/bin/git')
+g_rsyncbin_path = Path('/usr/bin/rsync')
+g_zipbin_path = Path('/usr/bin/zip')
 
 # repos and respective branches which we track
 g_repos = {
@@ -380,26 +384,92 @@ def rebuild_sed(repo, branch, rev):
 
 def process_emf_beta():
     logging.info('processing new EMF/beta...')
-    os.chdir(str(g_root_repo_dir / 'EMF'))
+    emf_dir = g_root_repo_dir / 'EMF'
+    os.chdir(str(emf_dir))
     git_run(['checkout', 'beta'])
-
-    zip_tmp_path = '{}.tmp.{}'.format(g_emfbeta_path, os.getpid())
-
-    logging.info('updating public EMF/beta archive...')
-    git_run(['archive', '--format=zip', '-o', zip_tmp_path, 'HEAD'])
-
-    if g_emfbeta_path.exists():
-        os.unlink(str(g_emfbeta_path))
-    os.rename(zip_tmp_path, str(g_emfbeta_path))
 
     logging.info('updating public EMF beta and cumulative release changelogs...')
     cp = subprocess.run(['/usr/bin/perl', str(g_root_repo_dir / 'HIP-tools/hiphub/update_emf_changelogs.pl')], stderr=subprocess.PIPE, universal_newlines=True)
+    os.chdir(str(g_base_dir))
 
     if cp.returncode != 0:
         logging.error('failed to update public EMF changelogs:\n>command: {}\n>code: {}\n>error:\n{}\n'.format(cp.args, cp.returncode, cp.stderr))
         slack_errmsg("to update the EMF changelogs on hip.zijistark.com", cmd=cp.args, rc=cp.returncode, stderr=cp.stderr)
-        
-    os.chdir(str(g_base_dir))
+
+    ###########
+
+    logging.info('synchronizing EMF beta repository files with staging area...')
+    start_rsync_time = time.time()
+    staging_dir = g_base_dir / 'emf_beta'
+    if not staging_dir.exists():
+        logging.info('staging folder does not exist, so creating it: {}'.format(staging_dir))
+        staging_dir.mkdir()
+
+    rsync_cmd = [str(g_rsyncbin_path), '-ac', '--del']
+    rsync_cmd += [str(emf_dir / module) for module in ('EMF', 'EMF+MiniSWMH', 'EMF+SWMH', 'EMF+Vanilla')]
+    rsync_cmd += [str(staging_dir) + '/']
+
+    cp = subprocess.run(rsync_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+
+    if cp.returncode != 0:
+        logging.error('failed to rsync EMF beta files into staging area:\n>command: {}\n>code: {}\n>output:\n{}\n'.format(cp.args, cp.returncode, cp.stdout))
+        slack_errmsg("to update the EMF beta while trying to stage its files", cmd=cp.args, rc=cp.returncode, stderr=cp.stdout)
+        os.chdir(str(g_base_dir))
+        return
+
+    end_rsync_time = time.time()
+    logging.info("completed staging area synchronization in {:.2f}sec!".format(end_rsync_time - start_rsync_time))
+
+    ###########
+
+    logging.info('generating EMF beta release manifest (checksumming)...')
+    start_manifest_time = time.time()
+    manifest_path = staging_dir / 'emf_beta_manifest.txt'
+    if manifest_path.exists():
+        manifest_path.unlink()
+
+    path_cksum = {}
+
+    for root, dirs, files in os.walk(str(staging_dir)):
+        for i in files:
+            full_path = Path(root) / i
+            virt_path = full_path.relative_to(staging_dir)
+            cksum = hashlib.md5()
+            with full_path.open('rb') as f:
+                cksum.update(f.read())
+            path_cksum[virt_path] = cksum.hexdigest()
+
+    with manifest_path.open('w') as f:
+        for p in sorted(path_cksum):
+            print('{} // {}'.format(p, path_cksum[p]), file=f)
+
+    end_manifest_time = time.time()
+    logging.info("completed manifest generation in {:.2f}sec!".format(end_manifest_time - start_manifest_time))
+
+    ###########
+
+    logging.info('compressing EMF beta files into temporary archive...')
+    start_zip_time = time.time()
+    zip_tmp_path = Path('{}.tmp.{}.{:04d}'.format(g_emfbeta_path, os.getpid(), random.randint(0, 9999)))
+    if zip_tmp_path.exists():
+        zip_tmp_path.unlink()
+
+    zip_cmd = [str(g_zipbin_path), '-q', '-r', '-o', str(zip_tmp_path), 'emf_beta/']
+
+    cp = subprocess.run(zip_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+
+    if cp.returncode != 0:
+        logging.error('failed to archive EMF beta staging folder:\n>command: {}\n>code: {}\n>output:\n{}\n'.format(cp.args, cp.returncode, cp.stdout))
+        slack_errmsg("to update the EMF beta while trying to archive its staging folder", cmd=cp.args, rc=cp.returncode, stderr=cp.stdout)
+        return
+
+    end_zip_time = time.time()
+    logging.info("completed compression and archival in {:.2f}sec!".format(end_zip_time - start_zip_time))
+
+    ###########
+
+    zip_tmp_path.replace(g_emfbeta_path)
+    logging.info('atomically updated public EMF beta archive -- done!')
 
 
 def check_save_compat(repo, branch, rev):
