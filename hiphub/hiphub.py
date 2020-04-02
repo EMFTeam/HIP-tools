@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- python-indent-offset: 4 -*-
 
-VERSION='0.9.0'
+VERSION='1.0.0'
 
 import os
 import re
@@ -9,11 +9,12 @@ import sys
 import pwd
 import time
 import random
-import hashlib
 import signal
 import daemon
+import hashlib
 import logging
 import lockfile
+import datetime
 import subprocess
 from pathlib import Path
 import slack
@@ -440,6 +441,7 @@ def process_emf_beta():
             path_cksum[virt_path] = cksum.hexdigest()
 
     with manifest_path.open('w') as f:
+        print('time: {}'.format(datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')), file=f)
         for p in sorted(path_cksum):
             print('{} // {}'.format(p, path_cksum[p]), file=f)
 

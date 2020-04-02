@@ -13,7 +13,7 @@ import re
 YES = 'yes'
 NO = 'no'
 
-g_version = {'major': 2, 'minor': 8, 'patch': 3,
+g_version = {'major': 2, 'minor': 9, 'patch': 0,
              'Primary Developer': 'Matthew D. Hall <zijistark@gmail.com>',
              # 'Developer': 'Gabriel Rath', # perhaps?
              'Release Manager':   'Matthew D. Hall <zijistark@gmail.com>'}
@@ -436,35 +436,46 @@ def printVersionEnvInfo():
 
 
 def loadManifestFile(path):
-    g_dbg.push('loadManifestFile')
+    g_dbg.push('loadManifestFile"{}")'.format(path))
+    manifest = {}
+    t = None
     if not os.path.exists(path):
         g_dbg.pop('manifestPathNotFound("{}")'.format(path))
-        return None
-    manifest = {}
+        return (None, t)
     try:
-        g_dbg.trace('openPath("{}")'.format(path))
         with open(path) as f:
+            timeline = f.readline().rstrip('\r\n')
+            m = re.match(r'^time: (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})$')
+            t = m.group(1)
             for line in f:
                 relpath, cksum = line.split(' // ')
                 path = os.path.join('modules', os.path.normpath(relpath))
                 manifest[path] = cksum.strip()
     except IOError as e:
         g_dbg.pop('failureLoadingManifest("{}")'.format(e))
-        return None
-    g_dbg.pop('manifestSize({})'.format(len(manifest.keys())))
-    return manifest
+        return (None, t)
+    g_dbg.pop('manifestSize({})'.format(len(manifest)))
+    return (manifest, t)
 
 
 def loadManifest():
     g_dbg.push('loadManifest')
     stdManifestPath = os.path.normpath('modules/release_manifest.txt')
-    emfManifestPath = os.path.normpath('modules/EMF/beta_manifest.txt')
-    stdManifest = loadManifestFile(stdManifestPath)
-    emfManifest = loadManifestFile(emfManifestPath)
-    if emfManifest and stdManifest:
-        # For every path (key) in stdManifest which is not in emfManifest and is under one of the EMF repository modules
-        # (i.e., EMF, EMF+MiniSWMH, EMF+SWMH, EMF+Vanilla, src, notes, etc.), delete 
-        pass
+    emfManifestPath = os.path.normpath('modules/emf_beta_manifest.txt')
+    stdManifest, stdTime = loadManifestFile(stdManifestPath)
+    emfManifest, emfTime = loadManifestFile(emfManifestPath)
+    if emfManifest and emfTime > stdTime:
+        # For every path (key) in stdManifest which is not in emfManifest and is under one of the EMF repository module
+        # folders (i.e., EMF, EMF+MiniSWMH, EMF+SWMH, and EMF+Vanilla), delete the path from stdManifest.
+        toDelete = []
+        for s in stdManifest:
+            if s not in emfManifest and s[:s.find('/')] in ('EMF', 'EMF+MiniSWMH', 'EMF+SWMH', 'EMF+Vanilla'):
+                toDelete.append(s)
+        for d in toDelete:
+            del stdManifest[d]
+        # Now, let entries that ARE in emfManifest override/add to stdManifest:
+        for e in emfManifest:
+            stdManifest[e] = emfManifest[e]
     return stdManifest
     g_dbg.pop('finalManifestSize({})'.format(len(stdManifest.keys())))
 
@@ -1066,13 +1077,20 @@ If you want the vanilla map instead, simply type 'n' or 'no' for SWMH below:''')
         print('> Compiled (%0.1f sec).\n' % (endTime - startTime))
         # Report if the installed files didn't match release manifest checksum:
         if g_modified:
-            moduleOutput.append('\nWARNING: Some installed files do not match '
-                                'their released version.\n')
-            print('\nWARNING: Some installed files do not match their released version! If you have\n'
-                  '         not made any personal modifications or applied the EMF beta to the\n'
-                  '         files in the modules/ folder, then this is a certain sign of corruption\n'
-                  '         due to forgetting to delete the modules/ folder before unzipping this\n'
-                  '         release into your mod folder.\n\n')
+            msg = '''
+ERROR: Some installed files do not match their released version. This means that
+       your HIP installation will not be working as designed and is indeed
+       corrupted. This issue is caused by either of the following:
+
+A) Not deleting the previous HIP installation's "modules/" folder before
+   extracting the new HIP release archive.
+B) Modifying or adding new files inside the "modules/" folder directly when you
+   should be using a personal submod to override/change HIP files. Note that
+   installing an EMF Beta from the proper source cannot cause this issue.
+'''
+            moduleOutput.append(msg)
+            print(msg)
+            print()
         if not g_steamMode:
             print('Mapping of all compiled mod files to their HIP source modules:')
             print(mapFilename)

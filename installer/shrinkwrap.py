@@ -1,8 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 
 import os
 import sys
 import time
+import datetime
 import argparse
 import hashlib
 
@@ -148,6 +149,7 @@ for root, dirs, files in os.walk(module_folder):
         path_cksum_map[virt_path] = cksum_file(real_path)
 
 with open(manifest_path, 'wb') as f:
+    f.write('time: {}\n'.format(datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')))
     for p in sorted(path_cksum_map):
         f.write('{} // {}\n'.format(p, path_cksum_map[p]))
 
