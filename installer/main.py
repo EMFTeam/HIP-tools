@@ -13,7 +13,7 @@ import re
 YES = 'yes'
 NO = 'no'
 
-g_version = {'major': 2, 'minor': 9, 'patch': 0,
+g_version = {'major': 2, 'minor': 9, 'patch': 1,
              'Primary Developer': 'Matthew D. Hall <zijistark@gmail.com>',
              # 'Developer': 'Gabriel Rath', # perhaps?
              'Release Manager':   'Matthew D. Hall <zijistark@gmail.com>'}
@@ -445,8 +445,9 @@ def loadManifestFile(path):
     try:
         with open(path) as f:
             timeline = f.readline().rstrip('\r\n')
-            m = re.match(r'^time: (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})$')
-            t = m.group(1)
+            m = re.match(r'^time: (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})$', timeline)
+            if m:
+                t = m.group(1)
             for line in f:
                 relpath, cksum = line.split(' // ')
                 path = os.path.join('modules', os.path.normpath(relpath))
@@ -464,7 +465,7 @@ def loadManifest():
     emfManifestPath = os.path.normpath('modules/emf_beta_manifest.txt')
     stdManifest, stdTime = loadManifestFile(stdManifestPath)
     emfManifest, emfTime = loadManifestFile(emfManifestPath)
-    if emfManifest and emfTime > stdTime:
+    if emfTime and stdTime and emfTime > stdTime:
         # For every path (key) in stdManifest which is not in emfManifest and is under one of the EMF repository module
         # folders (i.e., EMF, EMF+MiniSWMH, EMF+SWMH, and EMF+Vanilla), delete the path from stdManifest.
         toDelete = []
