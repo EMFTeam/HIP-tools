@@ -465,7 +465,7 @@ def loadManifest():
     emfManifestPath = os.path.normpath('modules/emf_beta_manifest.txt')
     stdManifest, stdTime = loadManifestFile(stdManifestPath)
     emfManifest, emfTime = loadManifestFile(emfManifestPath)
-    if emfTime and stdTime and emfTime > stdTime:
+    if emfManifest and emfTime and stdTime and emfTime > stdTime:
         # For every path (key) in stdManifest which is not in emfManifest and is under one of the EMF repository module
         # folders (i.e., EMF, EMF+MiniSWMH, EMF+SWMH, and EMF+Vanilla), delete the path from stdManifest.
         toDelete = []
@@ -478,7 +478,7 @@ def loadManifest():
         for e in emfManifest:
             stdManifest[e] = emfManifest[e]
     return stdManifest
-    g_dbg.pop('finalManifestSize({})'.format(len(stdManifest.keys())))
+    g_dbg.pop('finalManifestSize({})'.format(len(stdManifest)))
 
 
 def getPkgVersions(modDirs):
