@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- python-indent-offset: 4 -*-
 
-VERSION='1.0.0'
+VERSION='1.0.1'
 
 import os
 import re
@@ -415,7 +415,6 @@ def process_emf_beta():
     if cp.returncode != 0:
         logging.error('failed to rsync EMF beta files into staging area:\n>command: {}\n>code: {}\n>output:\n{}\n'.format(cp.args, cp.returncode, cp.stdout))
         slack_errmsg("to update the EMF beta while trying to stage its files", cmd=cp.args, rc=cp.returncode, stderr=cp.stdout)
-        os.chdir(str(g_base_dir))
         return
 
     end_rsync_time = time.time()
@@ -456,13 +455,15 @@ def process_emf_beta():
     if zip_tmp_path.exists():
         zip_tmp_path.unlink()
 
-    zip_cmd = [str(g_zipbin_path), '-q', '-r', '-o', str(zip_tmp_path), 'emf_beta/']
+    os.chdir(str(g_staging_dir))
+    zip_cmd = [str(g_zipbin_path), '-q', '-r', '-o', str(zip_tmp_path), './']
 
     cp = subprocess.run(zip_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
 
     if cp.returncode != 0:
         logging.error('failed to archive EMF beta staging folder:\n>command: {}\n>code: {}\n>output:\n{}\n'.format(cp.args, cp.returncode, cp.stdout))
         slack_errmsg("to update the EMF beta while trying to archive its staging folder", cmd=cp.args, rc=cp.returncode, stderr=cp.stdout)
+        os.chdir(str(g_base_dir))
         return
 
     end_zip_time = time.time()
@@ -472,6 +473,7 @@ def process_emf_beta():
 
     zip_tmp_path.replace(g_emfbeta_path)
     logging.info('atomically updated public EMF beta archive -- done!')
+    os.chdir(str(g_base_dir))
 
 
 def check_save_compat(repo, branch, rev):
