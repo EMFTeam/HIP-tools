@@ -455,7 +455,7 @@ def process_emf_beta():
     if zip_tmp_path.exists():
         zip_tmp_path.unlink()
 
-    os.chdir(str(g_staging_dir))
+    os.chdir(str(staging_dir))
     zip_cmd = [str(g_zipbin_path), '-q', '-r', '-o', str(zip_tmp_path), './']
 
     cp = subprocess.run(zip_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
