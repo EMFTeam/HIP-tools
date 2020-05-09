@@ -13,9 +13,9 @@ import re
 YES = 'yes'
 NO = 'no'
 
-g_version = {'major': 2, 'minor': 9, 'patch': 1,
+g_version = {'major': 2, 'minor': 9, 'patch': 2,
              'Primary Developer': 'Matthew D. Hall <zijistark@gmail.com>',
-             # 'Developer': 'Gabriel Rath', # perhaps?
+             'Developer':         'Gabriel Rath <delnar.ersike@gmail.com>',
              'Release Manager':   'Matthew D. Hall <zijistark@gmail.com>'}
 
 g_text = {}
@@ -520,6 +520,32 @@ def getInstallOptions(batchMode=False):
     return targetFolder
 
 
+def hasLessThan800VerticalPixels():
+    g_dbg.push('hasLessThan800VerticalPixels')
+    ret = False
+    settings_file_path = os.path.abspath(os.path.realpath('../settings.txt'))
+    if os.path.isfile(settings_file_path):
+        with open(settings_file_path, 'r') as settings_file:
+            # Regex match starts from first "graphics" line in settings and ends at the number after y inside "size"
+            vertical_pixels = re.search(r'(graphics(\s+)?=(\s+)?{([\s\S]+)?\s+size(\s+)?=(\s+)?{([\s\S]+)?\s+y(\s+)?=(\s+)?)(?P<pixels>-?\d+(\.\d+)?(?!\w))(?=([\s\S]+)?}([\s\S]+)?})', settings_file.read())
+            if vertical_pixels:
+                vertical_pixels = vertical_pixels.group('pixels') # Contains only the number after y inside "size"
+                if vertical_pixels:
+                    try:
+                        ret = int(vertical_pixels) < 800
+                        g_dbg.pop('hasLessThan800VerticalPixels("{}")'.format(ret))
+                    except:
+                        g_dbg.pop('hasLessThan800VerticalPixels(VERTICAL_PIXELS_SETTING_PARSE_ERROR)')
+                        return False
+                else:
+                    g_dbg.pop('hasLessThan800VerticalPixels(VERTICAL_PIXELS_SETTING_NOT_FOUND)')
+            else:
+                g_dbg.pop('hasLessThan800VerticalPixels(VERTICAL_PIXELS_SETTING_NOT_FOUND)')
+    else:
+        g_dbg.pop('hasLessThan800VerticalPixels(SETTINGS_FILE_NOT_FOUND)')
+    return ret
+
+
 # Find Steam master folder by checking the Windows Registry (32-bit mode and
 # 64-bit mode are separate invocations)
 def getSteamMasterFolderFromRegistry(x64Mode=True):
@@ -795,7 +821,8 @@ def main():
         emfSelect = '--emf' in sys.argv[1:]
         ltmSelect = '--ltm' in sys.argv[1:]
         arkocSelect = '--coa' in sys.argv[1:]
-        arkoiSelect = '--interface' in sys.argv[1:]
+        arkoi768Select = '--interface768' in sys.argv[1:]
+        arkoiSelect = arkoi768Select or '--interface' in sys.argv[1:]
         if '--arko' in sys.argv[1:]:
             arkocSelect = True
             arkoiSelect = True
@@ -847,6 +874,7 @@ def main():
         EMF = False
         ARKOCoA = False
         ARKOInt = False
+        ARKOInt768 = False
         ArumbaKS = False
         CPR = False
         SWMH = False
@@ -868,6 +896,8 @@ def main():
             ARKOCoA = True
         if arkoiSelect:
             ARKOInt = True
+        if arkoi768Select:
+            ARKOInt768 = True
         if cprSelect:
             CPR = True
         if aksSelect:
@@ -894,6 +924,13 @@ def main():
             # ARKOpack...
             ARKOCoA = enableMod('ARKOpack Armoiries [CoA] ({})'.format(g_versions['ARKOC']))
             ARKOInt = enableMod('ARKOpack Interface ({})'.format(g_versions['ARKOI']))
+            if ARKOInt and hasLessThan800VerticalPixels():
+                # 768 compatibility files
+                print('\nThe HIP installer has detected that the resolution at which you run CKII\n'
+                      'has less than 800 vertical pixels. Do you wish to automatically install the\n'
+                      'following compatibility patch? Without it, ARKOpack Interface will be too large\n'
+                      'for your game resolution, and the bottoms of certain screens will be cut off.\n')
+                ARKOInt768 = enableMod('ARKOpack Interface 768px Patch ({})'.format(g_versions['ARKOI']))
             # Arumba's Keyboard Shortcuts...
             ArumbaKS = enableMod('Arumba and Internal Tab Shortcuts ({})'.format(g_versions['ArumbaKS']))
             # CPRplus...
@@ -991,6 +1028,10 @@ If you want the vanilla map instead, simply type 'n' or 'no' for SWMH below:''')
             pushFolder('ARKOpack_Interface', targetFolder)
             if ArumbaKS:
                 pushFolder('ArkoInterface+AKS', targetFolder)
+            if ARKOInt768:
+                pushFolder('ARKOpack_Interface_768', targetFolder)
+                if ArumbaKS:
+                    pushFolder('ArkoInterface768+AKS', targetFolder)
             g_dbg.pop()
         if SWMH:
             g_dbg.push('merge(SWMH)')
@@ -1020,7 +1061,7 @@ If you want the vanilla map instead, simply type 'n' or 'no' for SWMH below:''')
             moduleOutput.append('ARKO Armoiries (%s)\n' % g_versions['ARKOC'])
             pushFolder('ARKOpack_Armoiries', targetFolder)
             if SWMH:
-            	pushFolder('SWMH/gfx/flags', os.path.join(targetFolder, 'gfx', 'flags'))
+                pushFolder('SWMH/gfx/flags', os.path.join(targetFolder, 'gfx', 'flags'))
             g_dbg.pop()
         if LTM:
             g_dbg.push('merge(LTM)')
